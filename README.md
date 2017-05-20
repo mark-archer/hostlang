@@ -1,6 +1,9 @@
 
 # Host 
 A meta language.
+> A metalanguage is a language used to make statements about statements in another language
+-https://en.wikipedia.org/wiki/Metalanguage
+
 
 ### Motivations 
 There are many. I don't want to type it all right now and it should

@@ -173,10 +173,11 @@ a shorthand notation for this. e.g:
     ; so this is equivalent to the previous statement 
     new Person "Blair"
     
-    
-### todo: show errors and error handling
+## todo: more clarification on functions
 
 ### todo: more clarification on objects
+    
+### todo: show errors and error handling
     
 ### todo: show metas and square bracket syntax
 
@@ -189,6 +190,8 @@ Enables changing the language syntax
 
 ### todo: show tick and quote
 Explain unevaluated vs evaluated items and lists
+
+## todo: explain continuations
 
 ### todo: docs
 A lot more documentation will be coming.  Most of it is already written, 

@@ -82,8 +82,8 @@ to something else. More on that later.
 #### First Item as Function 
 Host requires that the first item in an unevaluated list is a function.
 The above examples do not do this for the sake of clarity but if you 
-actually type (1 2 3) into the host interpreter you'll get an error. 
-The correct way to do this would be (list 1 2 3). "list" is a function 
+actually type `(1 2 3)` into the host interpreter you'll get an error. 
+The correct way to do this would be `(list 1 2 3)`. "list" is a function 
 which just returns its arguments. Comma as the first item in a list is 
 a shorthand notation for this. e.g: 
     

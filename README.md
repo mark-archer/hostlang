@@ -10,20 +10,23 @@ There are many. I don't want to type it all right now and it should
 probably be on a separate page.  I promise that rant will happen though :)
 
 ##### Basics
-    ; I'm a comment
-    ;;; I'm a block comment ;;;
-    ;* I'm also a block comment *;
-    
-    "i'm a string and can have escaped characters like \n for newline"
-    """ I'm a block string. I treat all characters literally so \n is not a newline"""
-    1          ; an int
-    1.1        ; a float
-    re/test/i  ; regular expression 'test' ignoring case   
-     
-    ; most valid JavaScipt symbol are valid in host
-    "\u00A9"   ; ©
-    10e2       ; 1000
-    0xFF       ; 255
+```
+; I'm a comment
+;;; I'm a block comment ;;;
+;* I'm also a block comment *;
+
+"i'm a string and can have escaped characters like \n for newline"
+""" I'm a block string. I treat all characters literally so \n is not a newline"""
+1          ; an int
+1.1        ; a float
+re/test/i  ; regular expression 'test' ignoring case   
+ 
+; most valid JavaScipt symbol are valid in host
+"\u00A9"   ; ©
+10e2       ; 1000
+0xFF       ; 255
+```
+
 
 ##### Code Structure / Lists
 	;;; Host code is interpreted as lists (like Lisp) ;;;    

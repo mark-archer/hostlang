@@ -200,3 +200,14 @@ document generation tool or technique so it's easier to pull the documentation
 right out of the code.  If anyone has any suggestions I'm all ears.  For now if
 you have any questions feel free to email me at mark@ubo.us. 
 I'd be happy to hear from you and it will help me prioritize things.
+
+
+#### notes
+to update npm package
+    
+    npm version patch
+    npm publish .
+    
+to recompile standalone executable
+
+    nexe -i hostlang.js -o host.exe

@@ -1,6 +1,6 @@
 
 # Host 
-A metalanguage.
+A metalanguage for programming.
 > A metalanguage is a language used to make statements about statements in another language
 -https://en.wikipedia.org/wiki/Metalanguage
 

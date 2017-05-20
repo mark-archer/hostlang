@@ -1,4 +1,5 @@
-#Host 
+
+##Host 
 A meta language.
 
 ### Motivations 
@@ -22,7 +23,7 @@ probably be on a separate page.  I promise that rant will happen though :)
     0xFF       ; 255
 
 ##### Code Structure / Lists
-	;;; Host code is interpreted as lists (like Lisp);;;    
+	;;; Host code is interpreted as lists (like Lisp) ;;;    
     ; spaces are used to separate items in a list    
     ; parenthesis are used to start and end lists
     (1 2 3)    ; this is a list with 3 numbers
@@ -81,7 +82,9 @@ The above examples do not do this for the sake of clarity but if you
 actually type (1 2 3) into the host interpreter you'll get an error. 
 The correct way to do this would be (list 1 2 3). "list" is a function 
 which just returns its arguments. Comma as the first item in a list is 
-a shorthand notation for this (e.g. (, 1 2 3) === (list 1 2 3)) 
+a shorthand notation for this. e.g: 
+    
+    (, 1 2 3) === (list 1 2 3)) 
 
 ##### Variables
     ; create

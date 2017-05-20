@@ -72,12 +72,12 @@ probably be on a separate page.  I promise that rant will happen though :)
         7 (8 9))
     === (1 2 (3 4 5 6 7 (8 9))        
        
-    ;; That's it for the alternate syntax
-    ; We think it is more natural and easier to read, write and maintain code  
-    ; in this syntax. That being said, Host is all about freedom and flexibility 
-    ; for the programmer which is why Host supports both syntaxes out of the box. 
-    ; You can also add your own syntax on top of Host's or completely redefine it 
-    ; to something else. More on that later.
+That's it for the alternate syntax. 
+We think it is more natural and easier to read, write and maintain code 
+in this syntax. That being said, Host is all about freedom and flexibility 
+for the programmer which is why Host supports both syntaxes out of the box. 
+You can also add your own syntax on top of Host's or completely redefine it 
+to something else. More on that later.
 
 #### NOTE: 
 Host requires that the first item in an unevaluated list is a function.

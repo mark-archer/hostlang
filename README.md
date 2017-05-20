@@ -115,11 +115,13 @@ a shorthand notation for this. e.g:
     ; log some stuff to the console
     log "sum of " 1 2 3 : + 1 2 3
     
-    ;; creating functions
+    ;;; creating functions ;;;
     ; create an function which returns "hello world" 
     fn() "Hello World"
     
-    ; create a greeting function
+    ; create a greeting function 
+    ; it has two parameters, name which is required and 
+    ; greeting which is optional and defaults to "Hello"
     fn(name greeting="Hello")
         + greeting " " name "!"
         
@@ -152,7 +154,7 @@ a shorthand notation for this. e.g:
     var person : new name="Mark" email="mark@ubo.us"
     ; get name
     person.name
-    ; set some fields after the fact
+    ; set some fields after instantiation 
     set person.lastName "Archer"
         
     ; new type Person: contains three fields 
@@ -168,7 +170,7 @@ a shorthand notation for this. e.g:
     ; creates a new object of type Person with the name set to "Blair"
     new Person name="Blair"
     ; unnamed values that are passed in to 'new' are assigned to fields by order 
-    ; so this is equivelent to the previous statement 
+    ; so this is equivalent to the previous statement 
     new Person "Blair"
     
     

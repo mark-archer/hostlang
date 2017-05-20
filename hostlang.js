@@ -1592,12 +1592,8 @@ serveJs.host = host;
 //console.log(args)
 
 // for certain args situations get out
-if(args.length === 0 || args[0] === "--no-sandbox"){
-    // we're a npm module
-    // or we're in electron
-    // so get out
+if(args.length === 0 || args[0] === "--no-sandbox")
     return;
-}
 
 // =========  repl logic below ====================
 

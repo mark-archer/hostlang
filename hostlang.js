@@ -1580,18 +1580,20 @@ parse.host = host;
 reader.host = host;
 serveJs.host = host;
 
+//console.log(args)
 
-// =========  repl logic below ====================
+// for certina args get out
 if(args[0] === "--no-sandbox"){
     // we're in electron, get out
     return;
 }
-
-//// process args
-if(args[0] === "--version" || args[0] === "-v"){
-    console.log("0.0.1");
-    return
+// process args
+if(args[0] === "--version" || args[0] === "-v" || args.length === 0){
+    console.log("host version 0.0.1");
+    return;
 }
+
+// =========  repl logic below ====================
 
 var errorCB = function(err){console.error("ERROR!"); console.error(err);};
 var ctx = contextInit({}, console.log, errorCB);

@@ -1,0 +1,34 @@
+{
+  "name": "hostlang",
+  "version": "0.0.1",
+  "description": "A meta language",
+  "main": "hostlang.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "node hostlang.js runTests!"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mark-archer/hostlang.git"
+  },
+  "keywords": [
+    "host",
+    "meta",
+    "lang",
+    "language",
+    "lisp"
+  ],
+  "author": "Mark Archer",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/mark-archer/hostlang/issues"
+  },
+  "homepage": "https://github.com/mark-archer/hostlang#readme",
+  "dependencies": {
+    "cookies": "^0.7.0",
+    "node-uuid": "^1.4.8",
+    "underscore": "^1.8.3"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "hostlang",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A meta language",
   "main": "hostlang.js",
   "directories": {

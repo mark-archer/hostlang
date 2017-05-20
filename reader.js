@@ -1,5 +1,6 @@
-var fs = require('fs');
+//console.log('reader')
 
+var fs = require('fs');
 var utils = require('./utils.js');
 var fnjs = utils.fnjs;
 var untick = utils.untick;

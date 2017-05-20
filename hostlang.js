@@ -1,7 +1,4 @@
 var fs = require('fs');
-var packageFile = JSON.parse(fs.readFileSync('package.json','utf8'));
-console.log('hostlang - version ' + packageFile.version);
-
 var _ = require('underscore');
 var utils = require('./utils.js');
 var reader = require('./reader.js');
@@ -9,22 +6,31 @@ var types = require('./types.js');
 var parse = require('./parse.js');
 var serveJs = require('./http/serve.js');
 
-// skip path to host.exe and 'nexe.js' arg
-var args = utils.skip(process.argv, 2);
-var execDir = process.execPath;
-if(process && process.argv && process.argv[1] !== 'nexe.js'){
-    execDir = __dirname;
-}
-if(execDir.includes('\\')){
-    execDir = execDir.substr(0, execDir.lastIndexOf('\\'));
-} else {
-    execDir = execDir.substr(0, execDir.lastIndexOf('/'));
-}
-reader.currentDir = execDir;
-if(process && process.argv && process.argv[1] === 'nexe.js'){
-    reader.hostDir = execDir + "/hostlang"
-}
+var packageFile = JSON.parse(fs.readFileSync(reader.hostDir + '/package.json','utf8'));
+console.log('hostlang - version ' + packageFile.version);
+reader.currentDir = process.cwd();
+//console.log("cd is:" + reader.currentDir);
 
+// skip first two args: 1 is path to exe, two is path to this file
+var args = utils.skip(process.argv, 2);
+
+
+//// nexe stuff -- disabling for now
+// var execDir = process.execPath;
+// if(process && process.argv && process.argv[1] == 'nexe.js'){
+//     execDir = __dirname;
+// }
+// else {
+//     if(execDir.includes('\\')){
+//         execDir = execDir.substr(0, execDir.lastIndexOf('\\'));
+//     } else {
+//         execDir = execDir.substr(0, execDir.lastIndexOf('/'));
+//     }
+// }
+// reader.currentDir = execDir;
+// if(process && process.argv && process.argv[1] === 'nexe.js'){
+//     reader.hostDir = execDir + "/hostlang"
+// }
 //console.log(process);
 //console.log("argv0", process.argv0);
 //console.log("argv", process.argv);
@@ -1544,6 +1550,14 @@ function run(code, context, callback, onError) {
 
     evalHostBlock(code, context, processCallback);
 }
+function runFile(filePath, context, callback, onError){
+    callback = callback || console.log;
+    onError = onError || console.error;
+    context = contextInit(context, callback, onError);
+    reader.read([filePath, 'utf8'], context, function(code){
+        run(code, context, callback, onError);
+    });
+}
 
 core.run = function(expr, context, callback){
 
@@ -1560,12 +1574,6 @@ core.run = function(expr, context, callback){
         });
     });
 };
-function runFile(file, context, callback, onError){
-    callback = callback || console.log;
-    onError = onError || console.error;
-    context = contextInit(context, callback, onError);
-    core.run([file], context, callback);
-}
 
 module = module || {};
 module.exports = {

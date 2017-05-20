@@ -1,4 +1,4 @@
-console.log('types');
+//console.log('types');
 
 var _ = require('underscore');
 var utils = require('./utils.js');

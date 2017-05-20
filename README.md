@@ -87,7 +87,8 @@ not being recognized as a function. The correct way to do this would be `(list 1
 which just returns its arguments. Comma as the first item in a list is 
 a shorthand notation for this. e.g: 
     
-    (, 1 2 3) === (list 1 2 3)) 
+    (, 1 2 3) === (list 1 2 3)    
+    
 
 ##### Variables
     ; create

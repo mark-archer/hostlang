@@ -1,4 +1,6 @@
-console.log('hostlang -- version 0.0.1');
+var fs = require('fs');
+var packageFile = JSON.parse(fs.readFileSync('package.json','utf8'));
+console.log('hostlang - version ' + packageFile.version);
 
 var _ = require('underscore');
 var utils = require('./utils.js');
@@ -1558,6 +1560,12 @@ core.run = function(expr, context, callback){
         });
     });
 };
+function runFile(file, context, callback, onError){
+    callback = callback || console.log;
+    onError = onError || console.error;
+    context = contextInit(context, callback, onError);
+    core.run([file], context, callback);
+}
 
 module = module || {};
 module.exports = {
@@ -1568,6 +1576,7 @@ module.exports = {
     parse: parseHostWrapper,
     //compile: compile,
     run: run,
+    runFile: runFile,
     ccError: ccError,
     evalHost: evalHost,
     evalJs: evalJs
@@ -1582,14 +1591,11 @@ serveJs.host = host;
 
 //console.log(args)
 
-// for certina args get out
-if(args[0] === "--no-sandbox"){
-    // we're in electron, get out
-    return;
-}
-// process args
-if(args[0] === "--version" || args[0] === "-v" || args.length === 0){
-    console.log("host version 0.0.1");
+// for certain args situations get out
+if(args.length === 0 || args[0] === "--no-sandbox"){
+    // we're a npm module
+    // or we're in electron
+    // so get out
     return;
 }
 
@@ -1600,7 +1606,7 @@ var ctx = contextInit({}, console.log, errorCB);
 var ctx0 = ctx[0];
 ctx0._silent = true;
 
-if(args.length > 0){
+if(args[0] !== 'repl'){
     var file = args[0];
     var fileArgs = args.slice(1);
     fileArgs = _.map(fileArgs,function(a){

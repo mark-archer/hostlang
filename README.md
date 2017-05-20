@@ -58,7 +58,7 @@ probably be on a separate page.  I promise that rant will happen though :)
         2
         3
     === (1 2 3) NOT (1 (2) (3))
-    ; this is also true for inline syntax
+    ; this is also true for inline syntax (might change in the future)
     1 : 2 === (1 2) NOT (1 (2))
         
     ; bang (!) is used to indicate an item should be in its own list
@@ -73,11 +73,11 @@ probably be on a separate page.  I promise that rant will happen though :)
     === (1 2 (3 4 5 6 7 (8 9))        
        
     ;; That's it for the alternate syntax
-    ; We think it is more natural and easier to read, write and maintain  
-    ; code in this syntax versus syntax that users brackets or parenthesis but Host  
-    ; is all about freedom and flexibility so you're free to use parenthesis if you   
-    ; prefer. You can also add your own syntax or on top of Host's or completely   
-    ; redefine it. More on that later.
+    ; We think it is more natural and easier to read, write and maintain code  
+    ; in this syntax. That being said, Host is all about freedom and flexibility 
+    ; for the programmer which is why Host supports both syntaxes out of the box. 
+    ; You can also add your own syntax on top of Host's or completely redefine it 
+    ; to something else. More on that later.
 
 #### NOTE: 
 Host requires that the first item in an unevaluated list is a function.

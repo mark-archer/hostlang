@@ -1,0 +1,33 @@
+
+;; AND (&&) -- logical and
+fn AND(args&)
+    each args a
+    	evalOutside a
+    	if(not _)
+            return false
+	return (last _)
+set AND.isMacro true
+set AND.useRuntimeScope true
+export AND
+
+
+;; OR (||) -- logical or
+fn OR (args&)
+    each args a
+        evalOutside a
+        if _
+            return _
+    return (last _)
+set OR.isMacro true
+set OR.useRuntimeScope true
+export OR
+
+
+;; ifnot -- easier than typing if(not expr)
+fnm ifnot(``ifnTest ifnExpr&)
+    if (not ifnTest)
+        apply evalBlock ifnExpr
+set ifnot.useRuntimeScope true
+set ifnot.isInline true
+export ifnot
+

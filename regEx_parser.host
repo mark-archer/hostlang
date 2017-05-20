@@ -1,0 +1,68 @@
+
+parsers >> push : evalJs """
+function(pi, context, callback){
+    if(pi.peek(3) != "re/")
+        return callback();
+
+    // skip over leading "re/"
+    pi.pop(3);
+
+    var escapeNext = false;
+    var reStr = "";
+    while(!escapeNext && pi.peek() != "/"){
+        escapeNext = false;
+        reStr += pi.pop();
+        if(reStr[reStr.length - 1] == "\\")
+            escapeNext = true;
+    }
+
+    // skip over ending "/"
+    pi.pop();
+
+    // read in options
+    var reOptions = "";
+    while(pi.peek().match(/^[a-z]$/))
+        reOptions += pi.pop();
+
+    // create and insert re
+    pi.clist.push(new RegExp(reStr, reOptions));
+
+    callback(true);
+}
+"""
+
+return!
+
+var substr : fnjs "function(s,i,l){return s.substr(i,l);}"
+var isLetter : fnjs "function(c){return c.match(/^[a-z]$/)}"
+var regEx : fnjs "function(re,options){return new RegExp(re,options)}"
+
+parsers >> push : fn regEx_Parser(pi)
+    var n3 : pi.peek 3
+    if(!= n3 "re/")
+        return false
+
+    trace "found re/"
+    pi.pop 3
+    var reStr ""
+    var escapeNext false
+
+    ; consume chars until (not escapeNext) and we find a "/"
+    while(|| escapeNext (!= pi.peek! "/"))
+        set escapeNext false
+        set reStr : add reStr : pi.pop!
+        if(== reStr.-1 "\\")
+            set escapeNext true
+
+    ; skip ending "/"
+    pi.pop!
+
+    ; look for ending options
+    var reOptions ""
+    while(isLetter pi.peek!)
+        set reOptions : + reOptions pi.pop!
+
+    ; create and insert re
+    pi.clist >> push : regEx reStr reOptions
+
+    return true

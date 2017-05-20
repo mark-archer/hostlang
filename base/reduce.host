@@ -1,0 +1,57 @@
+
+
+;; reduce: aggregates a list
+fnm reduce (``items iterName memoName loopBody&)
+
+	; create variable for capturing the result of each loop iteration
+	var memo null
+	if(isType memoName Meta)
+		set memo memoName.value
+
+	; create loop body as function
+	unshift loopBody (` iterName memoName)
+	var loop : apply fn loopBody
+	set loop.useRuntimeScope true
+
+	; special 'continue' handler
+	fn continue (rslt)
+		set memo rslt
+		callContinuation "onContinue" rslt
+	set continue.useRuntimeScope true
+
+	; special 'break' handler
+	fn break(rslt)
+		return rslt
+	set break.isInline true
+
+	; loop through items, capturing result
+	each items i
+		set memo : loop i memo
+	memo
+
+export reduce
+
+
+;; reduce: simple
+var lst (, 1 2 3)
+reduce lst i s=0
+	+ i s
+=== 6
+
+
+;; reduce: with continue
+var lst (, 1 2 3)
+reduce lst i s=0
+	if (== i 2)
+		continue : + s 10
+	+ i s
+=== 14
+
+
+;; reduce: with break
+var lst (, 1 2 3)
+reduce lst i s=0
+	if (== i 2)
+		break : + s 10
+	+ i s
+=== 11

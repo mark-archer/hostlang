@@ -1,0 +1,87 @@
+
+;; getType
+getType 1 === Number
+getType "a" === String
+getType true === Bool
+getType null === Any
+
+;; istype -- String
+list
+	null
+	true
+	false
+	1
+	1.1
+	"a"
+	"aaa"
+	date!
+	new!
+	list!
+>> each i: isType i String
+===: list
+    false
+    false
+    false
+    false
+    false
+    true
+    true
+    false
+    false
+    false
+
+
+isType 1 Meta === false
+isType 1 test=1 === true
+
+
+;; is type should error out on 1 arg
+try
+    isType 1
+catch(e)
+    "error"
+=== "error"
+
+
+;; test creating a new type
+type TestType p=1 1 2
+	fields
+		fname[String]
+		lname[String]
+	f[Fn]=:fnp noop()null
+(evalJs "function(TestType){delete TestType.f._sourceFile; delete TestType.f._sourceLine;}") TestType
+set TestType.type "Type"
+===: evalJs """
+{
+    "name": "TestType",
+    "type": "Type",
+    "p": 1,
+    "values": [
+        1,
+        2
+    ],
+    "fields": [
+        {
+            "name": "fname",
+            "type": "Meta",
+            "value_type": "`String",
+            "isList": false
+        },
+        {
+            "name": "lname",
+            "type": "Meta",
+            "value_type": "`String",
+            "isList": false
+        }
+    ],
+    "f": {
+        "type": "Fn",
+        "name": "noop",
+        "params": [],
+        "ccode": [
+            null
+        ],
+        "closure": null
+    }
+}
+"""

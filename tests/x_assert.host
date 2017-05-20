@@ -1,0 +1,20 @@
+
+;; assertEq: object compare
+== new! (new test=1) === false
+
+== (new test=1) new! === false
+
+;; assertEq checks values, not references
+new! === new!
+(new test=1) === (new test=1)
+
+;; _eq checks references
+== new! new! === false
+
+
+;; todo: ==?
+; checks that the right side has everything the left side has
+;;;
+    (new test=1) ==? new! ; any object will equal new!
+    new test1=1 test2=2 ==? new test1=1
+;;;

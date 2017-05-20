@@ -1,0 +1,214 @@
+
+;; if: simple, base of all continuations
+var i 1
+if i true
+=== true
+set i 0
+if i true
+=== 0
+
+
+;; if: with expressions
+var i 0
+if (set i (+ i 1))
+	set i : add i 1
+=== 2
+i === 2
+
+
+;; if: when test returns false then return _
+var i 0
+var blah "bar"
+if i "foo"
+=== "bar"
+
+set i 1
+if i "foo"
+=== "foo"
+
+
+;; ifnot -- basic tests
+"prior this"
+ifnot 1 1 === "prior this"
+ifnot 0 1 === 1
+ifnot (add -1 1) (add "z" "ero") === "zero"
+ifnot (add 1 1) (add "some" "thing") === "zero"
+ifnot (add -1 1) (add "some" "thing") === "something"
+
+;; cond: multiple test+expr: first test to be true gets expr evaluated and returned
+var i 3
+cond
+    (== i 1) "i is one"
+    (== i 2) "i is two"
+    true     "i is something else"
+=== "i is something else"
+set i 2
+cond
+    (== i 1) "i is one"
+    (== i 2) "i is two"
+    true     "i is something else"
+=== "i is two"
+set i 1
+cond
+    (== i 1) "i is one"
+    (== i 2) "i is two"
+    true     "i is something else"
+=== "i is one"
+
+
+
+;; cond -- inside function
+fn checkI(i)
+	cond
+    	(== i 1)
+    		add "i" " is"
+	    	add _  " one"
+    	(== i 2)
+			"i is two"
+	    true
+    		add "i is something " "else"
+list
+	checkI 1
+	checkI 2
+	checkI 3
+=== (, "i is one" "i is two" "i is something else")
+
+
+;; if -- inside each and function
+fn doStuff()
+	var lst (, 1 2 3)
+	each lst i
+		if(== i 2)
+			add "evn: " i
+		if(!= i 2)
+			add "odd: " i
+list
+	doStuff!
+	doStuff!
+=== : evalJs """
+[
+    [
+        "odd: 1",
+        "evn: 2",
+        "odd: 3"
+    ],
+    [
+        "odd: 1",
+        "evn: 2",
+        "odd: 3"
+    ]
+]
+"""
+
+
+;; test if inside nested eaches and functions
+var i 20
+fn getI()
+	set i : add i 1
+	ifnot (mod i 3)
+		return -1;
+	return i
+var lst (, 1 2 3 4)
+each lst i
+	each lst i
+		getI!
+	last _
+=== : evalJs """
+[
+    -1,
+    28,
+    32,
+    -1
+]
+"""
+
+
+;; test each with a bunch of crazy shit
+fn doSmt(i)
+	return i
+var lst (' 1 2 3)
+fn doLst()
+    each lst i
+        each lst j
+            var tmp (list i j)
+            doSmt i
+            doSmt j
+            if (&& (== i 3) (== j 3))
+                return
+                    list
+                        doSmt i
+                        doSmt j
+                        doSmt (add i j)
+                        doSmt (* i j)
+                        doSmt (/ i j)
+                        doSmt (- i j)
+            tmp
+list
+	doLst!
+	doLst!
+
+
+;; make sure cond return isn't interfering with fn return
+fn doSmt()
+    var i 1
+    cond
+        (== i 1) "one"
+    "ignore cond result"
+doSmt!
+=== "ignore cond result"
+
+
+;; make sure return inside cond maps to fn return
+var lst : ' 1 2 3
+fn testRtnInEach()
+	each lst i
+		cond
+			(== i 1) :	return lst
+			true i
+testRtnInEach!
+=== (' 1 2 3)
+
+
+;; if-elif-else
+var lst list!
+for (i -1 5)
+	if (< i 2)
+		if(== i 0)
+			"zero"
+		elif (== i -1)
+			"-one"
+		else
+			">zero"
+		add _ " -- if"
+	elif (> i 2)
+		if(== i 3)
+			"== three"
+		elif (== i 4)
+			"== four"
+		else
+			"> four"
+		>> add " -- elif"
+	else
+		"must be two -- else"
+	push lst ( add i ": " _ )
+=== : evalJs """
+[
+    "-1: -one -- if",
+    "0: zero -- if",
+    "1: >zero -- if",
+    "2: must be two -- else",
+    "3: == three -- elif",
+    "4: == four -- elif",
+    "5: > four -- elif"
+]
+"""
+
+;; check parsing corner case
+parse """
+fn walk(path)
+	1 >> 1
+		if false
+			walk p
+add 1 1
+"""
+apply evalBlock _ === 2

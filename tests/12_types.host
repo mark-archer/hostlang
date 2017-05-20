@@ -1,0 +1,22 @@
+
+warn "12_types.host -- not finished"
+return!
+
+isObject null === false
+isObject 1 === false
+isObject list! === false
+isObject new! === true
+
+
+var lst : list
+    null
+    undefined
+    NaN
+    Infinity
+    1
+    1.1
+    "a"
+    true
+    list!
+    new!
+    list new!

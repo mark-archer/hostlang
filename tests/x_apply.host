@@ -1,0 +1,22 @@
+;; apply: in function
+fn sum(nums[*Int]): apply add nums
+sum (, 1 2 3)
+=== 6
+
+
+;; apply: save code block in variable and eval after
+var code
+	'
+		add 1
+		, * 2
+		, * 3
+		, * 3
+apply evalBlock code
+
+
+;; apply eval to a quoted expression
+var code : ' add 1 1
+tick code
+apply eval (list code)
+=== 2
+

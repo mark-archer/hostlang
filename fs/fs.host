@@ -1,0 +1,65 @@
+
+
+var fsjs : evalJs "require('fs')"
+
+
+;var fs new!
+;export fs
+
+fn readFile(path options="utf8")
+    ;log path
+    fsjs.readFileSync path options
+export readFile
+
+
+set context.0.currentDirectory __dirname
+fn cd(path=null)
+    ifnot path
+        return context.0.currentDirectory
+    ; todo verify path is a valid location
+    set context.0.currentDirectory path
+export cd
+
+fn ls(path=null)
+    ifnot path
+        set path context.0.currentDirectory
+    fsjs.readdirSync path
+export ls
+
+fn deleteFile(path)
+    fsjs.unlinkSync path
+    true
+export deleteFile
+
+fn fileExists(path)
+    try
+        fsjs.accessSync path fsjs.constants.F_OK
+        true
+    catch(e)
+        false
+export fileExists
+
+var fileEqual : evalJs """function(expr, context, callback){
+    var compare = require('file-compare').compare;
+    var file1 = expr[0];
+    var file2 = expr[1];
+    compare(file1, file2, function(rslt,err){
+        if(err) return ccError(context, err);
+        callback(rslt);
+    });
+}"""
+export fileEqual
+
+fn walk(dir)
+    var paths list!
+    fn doWalk(dir)
+	    ls dir	>> each p
+            set p: add dir "\\" p
+            if(reader.isDir p)
+                doWalk p
+            else
+                push paths p
+    doWalk dir
+    paths
+export walk
+

@@ -1,0 +1,19 @@
+list
+	../somethingElse/subFolder
+	./fs/fs
+	/some/path
+	./inCurrentGroup
+	/rootGroup
+	../sibblingToCurrentGroup
+	/path/ends/with/slash/
+=== : evalJs """
+[
+    "../somethingElse/subFolder",
+    "./fs/fs",
+    "/some/path",
+    "./inCurrentGroup",
+    "/rootGroup",
+    "../sibblingToCurrentGroup",
+    "/path/ends/with/slash/"
+]
+"""

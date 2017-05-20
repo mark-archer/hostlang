@@ -1,0 +1,52 @@
+;; each: processes a list 1 item at a time
+var lst (, 1 2 3 )
+var j 0
+each lst i
+    0
+=== : list 0 0 0
+
+
+;; each: inside fn
+fn testEa()
+    var lst (, 1 2 3 )
+    var j 0
+    each lst i
+        0
+testEa! === : list 0 0 0
+
+
+;; each: inside two fns
+fn testEa()
+    fn testEa2()
+        var lst (, 1 2 3 )
+        var j 0
+        each lst i
+            0
+    _!
+_! === : list 0 0 0
+
+
+;; each: simple
+var lst (, 1 2 3)
+each lst i
+    + i 1
+=== (, 2 3 4)
+
+
+;; each: continue
+var lst (, 1 2 3)
+each lst i
+	if (== i 2)
+		continue "hi"
+	i
+=== (, 1 "hi" 3)
+
+return _
+
+;; each: break
+var lst (' 1 2 3)
+each lst i
+	if (== i 2)
+		break "hi"
+	i
+=== "hi"

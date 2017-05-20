@@ -1,0 +1,7 @@
+dist
+node_modules
+.idea
+tmp
+release
+host.exe
+sessions.json

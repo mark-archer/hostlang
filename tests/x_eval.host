@@ -1,0 +1,12 @@
+
+
+;; eval a quoted expression
+var code : ' add 1 1
+>> eval
+=== 2
+
+
+;; eval a ticked expression
+var code : ` add 1 1
+>> eval
+=== 2

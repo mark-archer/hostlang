@@ -1,0 +1,11 @@
+
+set core.assertCnt 0
+
+fn assertEq(a b)
+    set core.assertCnt : + core.assertCnt 1
+    if (not (_eqValues a b))
+        error : list "not equal" a b
+    a
+
+export assertEq
+

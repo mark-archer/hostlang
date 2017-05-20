@@ -1,0 +1,200 @@
+load
+    "host/base/"
+    "host/html/html.js"
+
+fnm html (elems&)
+    var in (get "host/base/in.host").in
+    var htmlJs : get "host/html/html.js"
+    each elems e
+	    cond
+		    (&& (isList e) (in e.1 (' eval bind))) ; NOTE this means "`" is a valid eval indicator
+		        e
+			(isList e)
+				untick e
+				apply html e
+			(isSym e)
+			    if(== e.1 "`")
+			        untick e
+			    else
+                    htmlJs.createElement : untick e
+			true
+				e
+	var rslts _
+	var firstE : shift rslts
+	each rslts e
+		cond
+		    (isList e)
+		        untick e
+		        cond
+		            (== e.0 'bind)
+                        htmlJs.bind firstE (untick e.1) e.2 e.3 e.4
+                    (in e.0 (, ` 'eval))
+                        set e.0 `
+                        var check e.1
+                        set check check.1 ; todo this is because of some kind of bug, (== e.1.1 'evalBlock) doesn't work
+                        if(== check 'evalBlock)
+                            e >> insert 'atom 1
+                        eval e
+                        htmlJs.appendChild firstE _
+                    true
+                        error e
+			(isMeta e)
+			    set e : eval e
+			    htmlJs.setAttribute firstE e.name e.value
+            (isSym e)
+                htmlJs.appendChild firstE : eval e
+            true
+                htmlJs.appendChild firstE e
+	firstE
+set html.useRuntimeScope true
+set html.html exports
+export html
+
+
+;; create convenience functions for common html tags
+' h1 h2 h3 h4 h5 h6
+    ^ div span p a pre
+    ^ input label button br
+    ^ table tr td thead tbody tfoot
+    ^ ul ol li
+>> without `
+>> each tag
+    set tag : untick tag
+    var fnTmpl : fnm(args&)
+    set fnTmpl.name tag
+    set fnTmpl.ccode : list
+        ` 'unshift 'args : tick : quote tag
+        ' apply html args
+    set fnTmpl.closure null
+    set fnTmpl.useRuntimeScope true
+    set fnTmpl.name tag
+    set exports.`tag fnTmpl
+    set context.0.`tag fnTmpl
+
+
+html div
+toJSON _
+=== "__HTML <div></div>"
+
+
+html div
+	"normal"
+	br
+	b "bold"
+	br
+	i "italics"
+	br
+	"normal2"
+toJSON _
+=== """__HTML <div>normal<br><b>bold</b><br><i>italics</i><br>normal2</div>"""
+
+
+var div exports.div
+
+;; check that the html-tag specific macros are there
+div "test"
+>> toJSON
+=== "__HTML <div>test</div>"
+
+;; test that inputs and metas work
+html input class="form-control"
+>> toJSON
+=== """__HTML <input class="form-control">"""
+
+
+;; test html evaluating a symbol which references complex data
+var test (, 1 2 new!)
+div : `test
+>> toJSON === "__HTML <div>12{}</div>"
+
+
+;; test html evaluating an expression
+set test (, 1 2 3)
+div : ` sum test
+>> toJSON === "__HTML <div>6</div>"
+
+;; test html evaluating a block expression
+div
+	` <<
+		sum test
+		>> add 1
+>> toJSON === "__HTML <div>7</div>"
+
+
+;; test html evaluating a symbol
+var test "hi"
+div `test
+>> toJSON === "__HTML <div>hi</div>"
+
+
+;; test complex evaluation logic and two way data binding
+var p exports.p
+var name "mark"
+var obj1 : new name=name age=32
+div
+	` each (names obj1) n : list
+		p `n
+		p: bind text obj1.`n
+>>> var objForm
+set obj1.name "archer"
+objForm >> toJSON
+; NOTE innerText of p is "archer"
+=== "__HTML <div><p>name</p><p>archer</p><p>age</p><p>32</p></div>"
+
+
+;; dynamically build and update children
+var lst:, 1 2 3
+var ulList: ul: bind kids lst i: li `i
+push lst 4
+push lst 5
+push lst 6
+pop lst
+pop lst
+shift lst
+shift lst
+for (i 2)
+	set lst.`i "I love you still"
+set lst.1 "test"
+ulList >> toJSON
+=== "__HTML <ul><li>I love you still</li><li>test</li><li>I love you still</li></ul>"
+
+
+;; test push, pop, unshift, shift, insert, removeAt
+var lst :, 1 2 3
+var ulList: ul: bind kids lst i: li `i
+lst >> push 3
+lst >> pop
+lst >> unshift 4
+lst >> shift
+lst >> insert 1 1
+lst >> removeAt 1
+ulList >> toJSON
+=== "__HTML <ul><li>1</li><li>2</li><li>3</li></ul>"
+
+
+warn "html.host -- test two way binding"
+return!
+
+html
+	button class="btn btn-default"
+        "click me"
+        bind click log
+
+;; test binding to a function declared outside html
+fn testHandler(evt)
+	log evt
+html
+	button class="btn btn-default"
+        "click me"
+        bind click testHandler
+return!
+
+;; test binding to a function inside html
+html
+	button class="btn btn-default"
+        "click me"
+        bind click
+        	fn(evt): log evt
+
+
+

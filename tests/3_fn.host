@@ -1,0 +1,90 @@
+;; fn: minimal declaration
+fn()
+set _.closure (,)
+set _._sourceFile null
+set _._sourceLine null
+=== : evalJs """
+{
+    "type": "Fn",
+    "params": [],
+    "ccode": [],
+    "closure": [],
+    "_sourceFile": null,
+    "_sourceLine": null
+}
+"""
+_! === null
+
+
+;; fn: named
+fn hi()
+set _.closure (,), set _._sourceFile null, set _._sourceLine null
+=== : evalJs """
+{
+    "type": "Fn",
+    "params": [],
+    "ccode": [],
+    "closure": [],
+    name: "hi", "_sourceFile": null, "_sourceLine": null
+}
+"""
+_! === null
+
+
+;; fn: named, returns value
+fn hi() "hi"
+set _.closure (,), set _.closure (,), set _._sourceFile null, set _._sourceLine null
+=== : evalJs """
+{
+    "type": "Fn",
+    "name": "hi",
+    "params": [],
+    "ccode": [
+        "hi"
+    ],
+    "closure": [],
+    "_sourceFile": null,
+    "_sourceLine": null
+
+}
+"""
+_! === "hi"
+
+
+;; fn: param
+fn hi(name): add "hi " name "!"
+_ "Blair"
+=== "hi Blair!"
+
+
+;; fn: optional param, calling fn by name
+fn hi(name="there"): add "hi " name "!"
+_ "Blair"
+=== "hi Blair!"
+hi!
+=== "hi there!"
+
+
+;; fn: rest param
+fn sum(nums&[Int]): apply add nums
+sum 1 2 3
+=== 6
+
+
+;; fn: closure
+var i 0
+fn incI()
+    set i (add i 1)
+list incI! incI! incI!
+=== (, 1 2 3)
+
+
+;; fn: return type
+fn testRtnType()[Int] ; enclose=false
+	1
+_.return_type === [Int]
+
+
+;; fnjs: test async version
+var f : evalJs "function(context, callback, a1){callback(a1); return 'sync'}"
+f "async" === "async"

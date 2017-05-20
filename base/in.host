@@ -1,0 +1,29 @@
+
+fn in (item list)
+    each list i
+        if (== i item)
+            return true
+            ;return item
+    false
+export in
+
+
+;; in : basic true test
+in 1 (, 1 2 3)
+=== true
+
+
+;; in : basic false test
+in 4 (, 1 2 3)
+=== false
+
+
+;; in : check for null
+in null (, 1 null 3)
+=== true
+
+
+;; in : check for no null
+in null (, 1 2 3)
+=== false
+

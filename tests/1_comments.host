@@ -1,0 +1,13 @@
+
+;; test line comment
+add
+	1
+	;comment
+	1
+=== 2
+
+;; test block comment - ;;;
+add 1;;;comment;;;1 === 2
+
+;; test lock comment - ;* *;
+add 1;*comment*;1 === 2

@@ -1,0 +1,304 @@
+;; items separated by spaces
+parse "1 2 3"
+=== : evalJs """
+[
+    "`",
+    [
+        "`",
+        1,
+        2,
+        3
+    ]
+]
+"""
+list 1 2 3
+=== : evalJs """
+[
+    1,
+    2,
+    3
+]
+"""
+
+
+;; explicit lists
+parse """(1 2 3) 4"""
+=== : evalJs """
+["`",
+    ["`",
+        ["`",1,2,3],4]] """
+
+
+;; interplay of parenthesis and implicit atoms
+parse """(1 2 3)"""
+=== : evalJs """
+["`",
+    ["`",1,2,3]]"""
+
+
+
+;; indented lists
+parse """
+    1
+    -2
+    3
+"""
+=== : evalJs """
+["`",
+    ["`", 1, -2, 3]] """
+
+
+;; tabs vs spaces
+parse """
+	1
+    1.2
+	-3
+    10e2
+	0xFF
+"""
+=== : evalJs """
+["`",
+    ["`", 1, 1.2, -3, 1000, 255]] """
+
+
+;; vertical bar
+parse """
+    1 2 , 3 , 4 5
+"""
+=== : evalJs """
+["`",
+    ["`",
+        ["`",1,2],3,
+        ["`",4,5]]] """
+
+
+;; colon
+parse """
+1 2: 3 4
+"""
+=== : evalJs """
+[
+    "`",
+    [
+        "`",
+        1,
+        2,
+        [
+            "`",
+            3,
+            4
+        ]
+    ]
+]
+"""
+
+
+;; tabs
+parse """
+1 2
+	3 4
+		5 6
+	7 8
+9 10
+"""
+===: evalJs """
+[
+    "`",
+    [
+        "`",
+        1,
+        2,
+        [
+            "`",
+            3,
+            4,
+            [
+                "`",
+                5,
+                6
+            ]
+        ],
+        [
+            "`",
+            7,
+            8
+        ]
+    ],
+    [
+        "`",
+        9,
+        10
+    ]
+]"""
+
+
+;; caret
+parse """
+1 2
+    ^ 3 4
+    ^ 5 6
+"""
+=== : evalJs """["`",["`",1,2,3,4,5,6]]"""
+list 1 2
+    ^ 3 4
+    ^ 5 6
+=== : list 1 2 3 4 5 6
+
+
+;; explicit list override
+' 1 2 (3
+4 5)
+    6 7
+    8 9
+=== : evalJs """
+[
+    "`",
+    1,
+    2,
+    [
+        "`",
+        3,
+        4,
+        5
+    ],
+    [
+        "`",
+        6,
+        7
+    ],
+    [
+        "`",
+        8,
+        9
+    ]
+]
+"""
+
+
+;; bang
+' 1! 2!! (3!)!
+=== : evalJs """
+[
+    "`",
+    [
+        "`",
+        1
+    ],
+    [
+        "`",
+        [
+            "`",
+            2
+        ]
+    ],
+    [
+        "`",
+        [
+            "`",
+            [
+                "`",
+                3
+            ]
+        ]
+    ]
+]
+"""
+
+
+;; bang: tabs and implicit lists
+'
+    1!
+    2!
+    3!
+=== : evalJs """
+[
+    "`",
+    [
+        "`",
+        1
+    ],
+    [
+        "`",
+        2
+    ],
+    [
+        "`",
+        3
+    ]
+]
+"""
+
+;; list after implicit atom should be evaluated separately
+'test
+(multiply 2 2)
+=== 4
+
+
+;; list: ignore blank lines with different indentation from above
+list
+    1
+
+    2
+=== (, 1 2)
+
+
+;; inline lists: complex condition
+parse """
+>> each lst: afn 4, fn2 6 : 7 8
+"end line"
+"""
+===: evalJs """
+[
+    "`",
+    [
+        "`",
+        "`each",
+        "`_",
+        "`lst",
+        [
+            "`",
+            "`afn",
+            4
+        ],
+        [
+            "`",
+            "`fn2",
+            6,
+            [
+                "`",
+                7,
+                8
+            ]
+        ]
+    ],
+    "end line"
+]
+"""
+
+
+;; inline lists: complex condition
+parse """
+>> each lst: if 6 : 1
+"end line"
+"""
+===: evalJs """
+[
+    "`",
+    [
+        "`",
+        "`each",
+        "`_",
+        "`lst",
+        [
+            "`",
+            "`cond",
+            [
+                "`",
+                6,
+                1
+            ]
+        ]
+    ],
+    "end line"
+]
+"""

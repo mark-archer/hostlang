@@ -1,0 +1,8 @@
+;; export example
+fn hi()"hi"
+fn hi2()"also Hi"
+fn hi3()"private hi"
+
+export hi hi2
+keys _
+=== (, "hi" "hi2")

@@ -1,0 +1,195 @@
+;; acr: setter
+new!
+set _.name "Blair"
+=== : evalJs """ {name:"Blair"} """
+set _.age 28
+=== : evalJs """ {name:"Blair",age:28} """
+set _.spouse.name "Mark"
+=== : evalJs """ {name:"Blair",age:28,spouse:{name:"Mark"}} """
+
+
+;; acr: getter
+var blair _
+blair.spouse.name === "Mark"
+blair.spouse.father.name === null
+blair.father.name === null
+
+
+;; acr: parse inside parens
+parse """
+list
+	list (exit context.0.callDepth) 5 6
+"""
+=== : evalJs """
+[
+    "`",
+    [
+        "`",
+        "`list",
+        [
+            "`",
+            "`list",
+            [
+                "`",
+                "`exit",
+                [
+                    "`",
+                    "`getr",
+                    [
+                        "`context",
+                        0,
+                        "`callDepth"
+                    ]
+                ]
+            ],
+            5,
+            6
+        ]
+    ]
+]
+"""
+
+
+;; set value to zero
+new!
+set _.test 0
+=== : evalJs """
+{test:0}
+"""
+
+
+;; path with complex names
+var "complex name" (new test="boom!")
+context.0."complex name".test === "boom!"
+
+warn "4_acr.host -- colon doesn't work with setr without space"
+;;;
+parse "p.toStr: fn(p) p.name"
+;;;
+
+
+;; make sure bang applies to result of getting object path
+parse "test.test!" === : evalJs """
+[
+    "`",
+    [
+        "`",
+        [
+            "`",
+            "`getr",
+            [
+                "`test",
+                "`test"
+            ]
+        ]
+    ]
+]
+"""
+
+
+
+;; test all types of ObjectPath getting and setting
+var t new! , var tt new!
+set tt.test "fn"        ;setr simple
+set t.(tt.test) add     ;setr with nested getr
+set t.t.(tt.test) add
+t.t.fn === add          ;setr with nested getr in different loc
+t.fn 1 2 === 3          ;getr as fn
+tt.test === "fn"        ;getr simple
+t.(tt.test) === add     ;getr with nested getr
+
+tt."test" === "fn"      ;getr with string
+set t."foo" "bar"
+t.foo === "bar"         ;setr with string
+
+set t.2 "two"
+set tt.1 1
+
+t.(add 1 1) === "two"  ;getr with fn call in path
+set t.(add 1 1) "1+1"
+t.2 === "1+1"          ;setr with fn call in path
+
+;t.(t.fn 2) === "1+1"  ;getr with getr fn call in path
+
+set t.(t.fn 2) "2"
+t.2 === "2"            ;setr with getr fn call in path
+
+set t.0 "zero"
+set t.fn : fn()0
+t.fn!
+t.(atom t.fn!)         ;getr with explicit, no-param fn call in path
+
+set t.(atom t.fn!) "z"
+t.0 === "z"            ;setr with explicit fn call in path
+
+
+; make sure set isn't converted to setr when getr is in value position
+parse "set memo memoName.value"
+=== : evalJs """
+[
+    "`",
+    [
+        "`",
+        "`set",
+        "`memo",
+        [
+            "`",
+            "`getr",
+            [
+                "`memoName",
+                "`value"
+            ]
+        ]
+    ]
+]
+"""
+
+
+warn "unfinished tests"
+return _
+
+parse "core.num: 1 2"
+=== : evalJs """
+[
+    "`",
+    [
+        "`",
+        "`setr",
+        [
+            "`core",
+            "`num"
+        ],
+        [
+            "`",
+            1,
+            2
+        ]
+    ]
+]
+"""
+
+;;;
+parse "
+(load assert)
+.assertEq
+"
+=== : evalJs """
+[
+    "`",
+    [
+        "`",
+        "`getr",
+        [
+            [
+                "`",
+                "`load",
+                "`assert"
+            ],
+            "`assertEq"
+        ]
+    ]
+]
+"""
+;;;
+
+

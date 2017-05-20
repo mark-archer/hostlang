@@ -1,0 +1,51 @@
+
+;; var: test basic functionality
+var name : add "hi " "there!"
+name
+=== "hi there!"
+
+;; var: return value that was just assigned
+var i 1
+=== 1
+
+;; var: test error on declaring a variable twice in the same scope
+;;;
+try
+	var i 1
+	var i 2
+catch (err)
+	"error"
+=== "error"
+;;;
+
+
+;; set: mutates an existing variable's value
+var i 1
+add i 2
+set i _
+i === 3
+
+;; set: works for bindings in outer scopes
+var i 1
+<<
+	add i === 1
+	set i 2
+i === 2
+
+
+;; rm: removes variables
+var i 1
+i === 1
+>> add i === 2
+rm i
+try
+    add i
+catch (e)
+    "error"
+=== "error"
+
+
+;; var: test complex names
+var "complext name" "someVal"
+eval "`complext name"
+=== "someVal"

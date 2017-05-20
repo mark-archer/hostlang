@@ -1,0 +1,14 @@
+
+; test load
+read "./hostlang/logic.host"
+_.AND
+_ 1 === 1
+
+
+; test import
+<<
+    load "./hostlang/logic.host"
+    && 1 === 1
+
+warn "0_load -- needs more tests"
+

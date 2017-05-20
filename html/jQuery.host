@@ -1,0 +1,16 @@
+
+var jQuery new!
+export jQuery
+
+set jQuery.find : fnjs """
+function(content, selector) {
+    return $(content).find(selector).toArray();
+}
+"""
+
+set jQuery.attr : fnjs """
+function(content, selector) {
+    return $(content).attr(selector);
+}
+"""
+

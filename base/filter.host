@@ -1,0 +1,40 @@
+
+;; filter: filters a list
+fnm filter (``items iterName loopBody&)
+
+	; create variable for capturing the unfiltered items
+	var lst (,)
+
+	; create loop body as function
+	unshift loopBody (` iterName)
+	var loop : apply fn loopBody
+	set loop.useRuntimeScope true
+
+	; special 'continue' handler
+	fn continue (rslt)
+		push lst rslt
+		callContinuation "onContinue" rslt
+	set continue.useRuntimeScope true
+
+	; special 'break' handler
+	fn break(rslt?)
+		if(!= rslt null)
+			push lst rslt
+		return lst
+	set break.isInline true
+
+	; loop through items, capturing result
+	each items i
+		if (loop i)
+			push lst i
+	lst
+set filter.useRuntimeScope true
+export filter
+
+;; filter: break and continue
+var lst (, 1 2 3 4 5 6)
+filter lst i
+	if(== i 2) : continue 0
+	if(== i 5) : break!
+	mod i 2
+=== (, 1 0 3)

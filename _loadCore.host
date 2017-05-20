@@ -1,0 +1,81 @@
+
+;var coreDir : add (reader.realPath "./hostlang/") "/"
+var coreDir : add reader.hostDir "/"
+
+
+;; load core
+reader.ls coreDir
+>> each f
+	if(utils.endsWith f ".js") continue! ; don't load js files ;if(== f "utils.js") continue!  ; don't load utils module
+	set f : add coreDir f
+	if(not(reader.isDir f))
+		reader.read f
+	else
+		null
+>> compact
+>> each module
+	names module
+	>> each name
+		set core.`name module.`name
+
+
+;; runTests -- function to run tests repeatedly
+var testsDir : add coreDir "tests/"
+set core.runTests : fn runTests()
+    var errs (,)
+    reader.ls testsDir
+    >> each f
+        set f: add testsDir f
+        set f: reader.realPath f
+        if(not(reader.isDir f))
+            ifnot (endsWith f ".host")
+                continue!
+            set reader.cachedReads.`f null
+            try
+                reader.read f
+            catch(e)
+                push errs e
+        else
+            null
+    >> compact
+    if errs.length
+        errs >> unshift "ERRORS"
+        error errs
+        ;evalJs "function(errs){console.error(errs)}"
+        ;_ errs
+        ;errs
+    else
+        "all tests passed"
+
+
+;; load -- function to load (run path).exports into context.0
+set core.load : fn load(paths& reload=null)
+    each paths path
+        set path : reader.realPath path
+        if(reader.isDir path)
+            reader.ls path
+            >> each p: add path "/" p
+            >> push reload=reload
+            >>> apply load
+        else
+            if reload
+                set reader.cachedReads.`path null
+            var m: reader.read path
+            each (names m) n
+                if (== n "_moduleSourceFile") continue!
+                if context.0.`n
+                    warn: add "_loadCore.host: load -- overwriting " n
+                set context.0.`n m.`n
+            list
+                add "imported " path
+                names m
+set core.load.useRuntimeScope true
+
+
+;; get -- function to get (run path).exports
+set core.get : fn get(path)
+    ; todo: determine if it's a file path or url
+    reader.read path
+
+
+

@@ -1,0 +1,29 @@
+
+;;; names ;;;
+; -- for object
+new test1=1 test2=2
+>> names === (, "test1" "test2")
+
+; -- for array
+(, 1 2 3)
+>> names === (, "0" "1" "2")
+
+
+;;; values ;;;
+; -- for object
+new test1=1 test2=2
+>> values === (, 1 2)
+
+; -- for array
+(, 1 2 3)
+>> values === (, 1 2 3)
+
+
+; exists
+var i 1
+if(exists i)
+    "i exists"
+=== "i exists"
+if(exists ii)
+    "ii exists"
+=== "i exists"

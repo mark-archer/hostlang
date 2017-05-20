@@ -1,0 +1,19 @@
+
+
+warn "warn.host -- finish this"
+return _
+
+fn warn(args&)
+    ;log _sourceFile
+    if (exists _sourceFile)
+        log "warn args" args
+        cond
+            (&& (== args.length 1) (isType args.0 String))
+                args.0 (add _SourceFile " -- " args.0
+            true
+                unshift args _sourceFile
+    apply (utils.warn) args
+warn.useRuntimeScope true
+export warn
+
+warn "test"

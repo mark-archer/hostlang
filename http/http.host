@@ -1,0 +1,49 @@
+
+var http new!
+export http
+
+set http.get : fnjs """function(expr, context, callback){
+
+	var http = require('http');
+
+	var options = {
+	  host: 'example.com',
+	  port: 80,
+	  path: '/foo.html'
+	};
+
+	var options = expr[0];
+
+	var rslt = '';
+
+	http.get(options, function(resp){
+		resp.on('data', function(chunk){
+			rslt += chunk;
+ 		});
+		resp.on('end', function(){
+			callback(rslt);
+		});
+	}).on("error", function(e){
+		ccError(context, e)
+	});
+}
+"""
+
+
+set http.testUrl : fnjs """
+    function (expr, context, callback) {
+        var aUrl = expr[0];
+        var http = require('http'),
+            url = require('url');
+        var options = {
+            method: 'HEAD',
+            host: url.parse(aUrl).host,
+            port: 80,
+            path: url.parse(aUrl).pathname
+        };
+        var req = http.request(options, function (r) {
+            callback(r.statusCode== 200);
+        });
+        req.end();
+    }
+"""

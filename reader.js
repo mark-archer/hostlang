@@ -47,7 +47,7 @@ reader.read = function(expr, context, callback){
     reader.realPath([path],context, function (path) {
 
         // if it's in the cache just return is
-        if(reader.cachedReads[path])
+        if(!raw && reader.cachedReads[path])
             return callback(reader.cachedReads[path]);
 
         fs.lstat(path,function(err, stats){

@@ -9,6 +9,72 @@ A metalanguage for programming.
 There are many. I don't want to type it all right now and it should
 probably be on a separate page.  I promise that rant will happen though :)
 
+## Getting Started
+
+The easiest way to get started is to run Host as an npm module.
+You'll need to already have nodejs and npm installed.
+
+1) install hostlang with npm
+```npm
+npm install hostlang
+```
+    
+2) create a file named app.js with these contents
+```javascript
+var host = require('hostlang');
+```
+
+3) run it with the 'repl' argument 
+```npm
+node app.js repl
+```
+
+3) try some of these commands (type ".exit" to quit)
+```
+<< "Hello World!"
+Hello World!
+<< runTests!
+...
+all tests passed
+<< var myVar "some value"
+some value
+<< myVar
+some value
+<< fn myFn()"Hello World!"
+#Fn: myFn []
+<< myFn!
+Hello World!
+<< fn addTwo(a b): + a b
+#Fn: addTwo [ ...
+<< addTwo 1 2
+3
+<< .exit
+```
+
+4) create a file named app.host with these contents
+```
+fn greet(name=null)
+    if name
+        + "Hello " name "!"
+    else
+        "Hey You!"
+greet!
+```
+
+5) run it interactively 
+```
+node app.js repl
+...
+<< run "./testApp.host"
+Hey You!
+```
+
+8) call your function
+```
+<< greet "Everyone"
+Hello Everyone!
+```
+
 ##### Basics
     ; I'm a comment
     ;;; I'm a block comment ;;;

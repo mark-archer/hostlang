@@ -1,4 +1,3 @@
 
 var host = require('./hostlang.js');
-
-host.runFile("./warn.host");
+host.runFile("./testApp.host");

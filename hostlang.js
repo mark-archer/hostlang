@@ -1560,7 +1560,6 @@ function runFile(filePath, context, callback, onError){
 }
 
 core.run = function(expr, context, callback){
-
     var filePath = expr[0];
     reader.read([filePath, 'utf8'], context, function(code){
         return parseHost(code, context, function (pcode) {
@@ -1599,9 +1598,7 @@ serveJs.host = host;
 
 //console.log(args)
 
-// for certain args situations get out
-if(args.length === 0 || args[0] === "--no-sandbox")
-    return;
+
 
 // =========  repl logic below ====================
 
@@ -1609,6 +1606,14 @@ var errorCB = function(err){console.error("ERROR!"); console.error(err);};
 var ctx = contextInit({}, console.log, errorCB);
 var ctx0 = ctx[0];
 ctx0._silent = true;
+
+// host.repl = function(expr, context, callback){
+//
+// };
+
+// for certain args situations get out
+if(args.length === 0 || args[0] === "--no-sandbox")
+    return;
 
 if(args[0] !== 'repl'){
     var file = args[0];
@@ -1631,6 +1636,9 @@ if(args[0] !== 'repl'){
 } else {
     run('"host ready"', ctx, console.log, errorCB)
 }
+
+//host.repl([],ctx,console.log);
+
 const repl = require('repl');
 function replEval(cmd, context, filename, callback) {
     var ppRslt = function(rslt){

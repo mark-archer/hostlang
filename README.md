@@ -100,15 +100,15 @@ Hello Everyone!
 ##### Code Structure / Lists
 	;;; Host code is interpreted as lists (like Lisp) ;;;    
     ; spaces are used to separate items in a list    
-    ; parenthesis are used to start and end lists
+    ; parentheses are used to start and end lists
     (1 2 3)    ; this is a list with 3 numbers
         
     ;;; Host also has an alternate syntax for specifying lists ;;;
         
-    ; if parenthesis are omitted, newlines are used to start and end lists    
+    ; if parentheses are omitted, newlines are used to start and end lists    
     1 2 3      ; this is a list with 3 numbers
         
-    ; when parenthesis are omitted tabs can be used to indicate sublists
+    ; when parentheses are omitted tabs can be used to indicate sublists
     1 2
         3 4
         5 6
@@ -136,8 +136,8 @@ Hello Everyone!
     ; bang (!) is used to indicate an item should be in its own list
     1 2! 3 === (1 (2) 3)
         
-    ; parenthesis can be used inside tabbed lists but once you're in 
-    ; the parenthesis world tabs and newlines are ignored
+    ; parentheses can be used inside tabbed lists but once you're in 
+    ; the parentheses world tabs and newlines are ignored
     1 2 (3 
         4 5
             6

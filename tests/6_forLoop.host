@@ -11,7 +11,6 @@ for (i 3 6)
 	push lst i
 === : (' 3 4 5 6)
 
-
 ;; for: startNum endNum step
 var lst (')
 for (i 3 8 2)

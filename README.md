@@ -205,15 +205,18 @@ a shorthand notation for this. e.g:
         
 ##### Examples (in no particular order)
     ; for i from 0 to 2
-    for(i 3): log i
+    for(i 2): log i
         
     ; for i from -1 to 1
     for(i -1 1)
         
     ; for i from 0 to 10 count by 2
     for (i 0 10 2)
+    
+    ; load the 'base' namespace (includes range)
+    load "host/base"
         
-    ; map 10 to 19 with some weird logic
+    ; map 10 to 20 with some weird logic    
     map (range 10 20) n
         if(> n 15) n
         elif(> n 13): + n 5
@@ -223,7 +226,7 @@ a shorthand notation for this. e.g:
     var o new!
         
     ; object with some fields set
-    var person : new name="Mark" email="mark@ubo.us"
+    var person : new name="Mark" email="mark@ubo.us"    
     ; get name
     person.name
     ; set some fields after instantiation 

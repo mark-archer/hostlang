@@ -273,8 +273,8 @@ A lot more documentation will be coming.  Most of it is already written,
 I just need to get it into a presentable format.  I'm looking for a good
 document generation tool or technique so it's easier to pull the documentation
 right out of the code.  If anyone has any suggestions I'm all ears.  For now if
-you have any questions feel free to email me at mark@ubo.us. 
-I'd be happy to hear from you and it will help me prioritize things.
+you have any questions create an issue.  It will help create public documentation 
+and will help me prioritize things.
 
 
 #### notes

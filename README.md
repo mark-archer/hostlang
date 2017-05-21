@@ -13,7 +13,7 @@ probably be on a separate page.  I promise that rant will happen though :)
 
 The easiest way to get started is to run Host as an npm module.
 You'll need to already have nodejs and npm installed. Just installing 
-nodejs should give you both. It downloaded at http://nodejs.org
+nodejs should give you both. It can be downloaded from http://nodejs.org
 
 0) create a folder for your code and open a terminal at that location
 ```bash

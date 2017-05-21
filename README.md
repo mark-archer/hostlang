@@ -15,14 +15,14 @@ The easiest way to get started is to run Host as an npm module.
 You'll need to already have nodejs and npm installed.
 
 0) create a folder for your code and open a terminal at that location
-```npm
+```bash
 cd ~
 mkdir firstHost
 cd firstHost
 ```
 
 1) install hostlang with npm
-```npm
+```bash
 npm install hostlang
 ```
     
@@ -32,7 +32,7 @@ var host = require('hostlang');
 ```
 
 3) run it with the 'repl' argument 
-```npm
+```bash
 node app.js repl
 ```
 
@@ -69,7 +69,7 @@ greet!
 ```
 
 5) start your host repl again 
-```
+```bash
 node app.js repl
 ```
 

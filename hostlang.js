@@ -1442,7 +1442,7 @@ function contextInit(context, callback, onError) {
         context = [context];
     context = context || [{}];
     var root = _.first(context);
-    root.callDepth = root.callDepth || 0;
+    root.callDepth = root.callDepth || core.maxCallDepth;
     root.onExit = makeContinuation(context, callback);
     root.onReturn = makeContinuation(context, callback);
     root.onReturn.source = "rootInit";

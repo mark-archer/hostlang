@@ -65,10 +65,11 @@ reader.read = function(expr, context, callback){
                 return fs.readFile(path, options, function (err, code) {
                     if(err) return ccError(context, err);
 
-                    var ctx = {_sourceFile:path,exports:{},_silent:context[0]._silent};
+                    var ctx = {_sourceFile:path,exports:{},_silent:context[0]._silent,callDepth:context[0].callDepth};
                     reader.cachedReads[path] = ctx.exports; // set before loaded, prevents infinite recursion of loading a->b->a->...
                     reader.host.run(code, ctx, function (rslt) {
                         ctx.exports._moduleSourceFile = path;
+                        context[0].callDepth = ctx.callDepth;
                         callback(ctx.exports);
                     }, function(err){
                         ccError(context, [path, err]);

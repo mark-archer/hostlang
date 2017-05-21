@@ -14,12 +14,19 @@ probably be on a separate page.  I promise that rant will happen though :)
 The easiest way to get started is to run Host as an npm module.
 You'll need to already have nodejs and npm installed.
 
+0) create a folder for your code and open a terminal at that location
+```npm
+cd ~
+mkdir firstHost
+cd firstHost
+```
+
 1) install hostlang with npm
 ```npm
 npm install hostlang
 ```
     
-2) create a file named app.js with these contents
+2) create a file named app.js with just this line
 ```javascript
 var host = require('hostlang');
 ```
@@ -40,7 +47,7 @@ all tests passed
 some value
 << myVar
 some value
-<< fn myFn()"Hello World!"
+<< fn myFn() "Hello World!"
 #Fn: myFn []
 << myFn!
 Hello World!
@@ -61,16 +68,15 @@ fn greet(name=null)
 greet!
 ```
 
-5) run it interactively 
+5) start your host repl again 
 ```
 node app.js repl
-...
-<< run "./testApp.host"
-Hey You!
 ```
 
-8) call your function
+6) run your file interactively and call your `greet` function
 ```
+<< run "./app.host"
+Hey You!
 << greet "Everyone"
 Hello Everyone!
 ```
@@ -86,7 +92,7 @@ Hello Everyone!
     1.1        ; a float
     re/test/i  ; regular expression 'test' ignoring case   
      
-    ; most valid JavaScipt symbol are valid in host
+    ; most valid JavaScipt symbols are valid in host
     "\u00A9"   ; ©
     10e2       ; 1000
     0xFF       ; 255

@@ -226,7 +226,7 @@ a shorthand notation for this. e.g:
     var o new!
         
     ; object with some fields set
-    var person : new name="Mark" email="mark@ubo.us"    
+    var person : new name="Mark" email="mark@test.no"    
     ; get name
     person.name
     ; set some fields after instantiation 

@@ -2,7 +2,7 @@
 var _ = require('underscore');
 var utils = require('../utils.js');
 var http = require('http');
-var uuid = require('node-uuid');
+var uuid = require('uuid');
 var Cookies = require('cookies');
 var fs = require('fs');
 

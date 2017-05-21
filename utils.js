@@ -1,7 +1,7 @@
 //console.log('utils');
 
 var _ = _ || require('underscore');
-var uuid = require('node-uuid');
+var uuid = require('uuid');
 
 var system_id = '00000000-0000-0000-0000-000000000000';
 var type_type_id = '00000000-0000-0000-0000-000000000001';

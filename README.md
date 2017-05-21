@@ -277,7 +277,29 @@ you have any questions create an issue.  It will help create public documentatio
 and will help me prioritize things.
 
 
-#### notes
+### CLI Usage
+
+start a repl
+```
+node hostlang.js repl
+```
+
+start a repl and then evaluate a file
+```
+node hostlang.js <path/to/file.host>
+```
+
+evaluate some code and return
+```
+node hostlang.js -e "<code>"
+```
+
+evaluate a file and return
+```
+node hostlang.js -f <path/to/file.host>
+```
+
+### Notes
 to update npm package
     
     npm version patch

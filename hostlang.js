@@ -1612,12 +1612,28 @@ ctx0._silent = true;
 // };
 
 // for certain args situations get out
-if(args.length === 0 || args[0] === "--no-sandbox")
+if(args.length === 0 || args[0] === "--no-sandbox" /*for electron*/)
     return;
 
-if(args[0] !== 'repl'){
-    var file = args[0];
-    var fileArgs = args.slice(1);
+// -e means evaluate and return
+if (args[0] === '-e'){
+    run(args[1], ctx, console.log, errorCB);
+    return;
+}
+// repl means just start the repl
+else if(args[0] === 'repl'){
+    run('"host ready"', ctx, console.log, errorCB)
+}
+// otherwise assume it's a file path
+else{
+    var returnAfter = false;
+    var file = args.shift();
+    if(file === "-f"){
+        returnAfter = true;
+        file = args.shift();
+    }
+
+    var fileArgs = args;
     fileArgs = _.map(fileArgs,function(a){
         if(a[0] !== '"' && a.includes('=')){
             var iEq = a.indexOf('=');
@@ -1633,11 +1649,10 @@ if(args[0] !== 'repl'){
         ctx[0]._sourceFile = file;
         run(fileContents, ctx, console.log, errorCB)
     });
-} else {
-    run('"host ready"', ctx, console.log, errorCB)
-}
 
-//host.repl([],ctx,console.log);
+    if(returnAfter)
+        return;
+}
 
 const repl = require('repl');
 function replEval(cmd, context, filename, callback) {

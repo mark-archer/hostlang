@@ -147,7 +147,7 @@ Hello Everyone!
 That's it for the alternate syntax. 
 We think it is more natural and easier to read, write and maintain code 
 in this syntax. That being said, Host is all about freedom and flexibility 
-for the programmer which is why Host supports both syntaxes out of the box. 
+for the programmer which is why it supports both syntaxes out of the box. 
 You can also add your own syntax on top of Host's or completely redefine it 
 to something else. More on that later.
 

@@ -1,13 +1,14 @@
 {
   "name": "hostlang",
   "version": "0.0.8",
-  "description": "A meta language",
+  "description": "A metalanguage for programming",
   "main": "hostlang.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "test": "node hostlang.js -e runTests!"
+    "test": "node hostlang.js -e runTests!",
+    "start": "node hostlang.js repl"
   },
   "repository": {
     "type": "git",

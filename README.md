@@ -86,7 +86,7 @@ Hello Everyone!
     ;;; I'm a block comment ;;;
     ;* I'm also a block comment *;
     
-    "i'm a string and can have escaped characters like \n for newline"
+    "I'm a string and can have escaped characters like \n for newline"
     """ I'm a block string. I treat all characters literally so \n is not a newline"""
     1          ; an int
     1.1        ; a float
@@ -98,17 +98,18 @@ Hello Everyone!
     0xFF       ; 255
 
 ##### Code Structure / Lists
-	;;; Host code is interpreted as lists (like Lisp) ;;;    
+    ;;; Host code is structured as lists (like Lisp) ;;;    
     ; spaces are used to separate items in a list    
     ; parentheses are used to start and end lists
     (1 2 3)    ; this is a list with 3 numbers
-        
+
+##### Alternate Syntax / Indented Lists 
     ;;; Host also has an alternate syntax for specifying lists ;;;
         
-    ; if parentheses are omitted, newlines are used to start and end lists    
+    ; if parentheses are omitted, newlines are used to delimit lists    
     1 2 3      ; this is a list with 3 numbers
         
-    ; when parentheses are omitted tabs can be used to indicate sublists
+    ; tabs are used to indicate sublists
     1 2
         3 4
         5 6
@@ -133,11 +134,11 @@ Hello Everyone!
     ; this is also true for inline syntax (might change in the future)
     1 : 2 === (1 2) NOT (1 (2))
         
-    ; bang (!) is used to indicate an item should be in its own list
+    ; exclamation mark (aka bang, !) is used to indicate an item should be in its own list
     1 2! 3 === (1 (2) 3)
         
-    ; parentheses can be used inside tabbed lists but once you're in 
-    ; the parentheses world tabs and newlines are ignored
+    ; parentheses can be used inside indented lists but once you're in 
+    ; the parenthesis world tabs and newlines are ignored
     1 2 (3 
         4 5
             6

@@ -247,6 +247,7 @@ a shorthand notation for this. e.g:
         
     ; create a new object of type Person with the name and age fields set
     new Person name="Blair" age="youthful"
+    
     ; unnamed values that are passed in to 'new' are assigned to fields by order 
     ; so this is equivalent to the previous statement 
     new Person "Blair" "youthful"

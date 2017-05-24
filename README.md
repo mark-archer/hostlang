@@ -154,7 +154,7 @@ for the programmer which is why it supports both syntaxes out of the box.
 You can also add your own syntax on top of Host's or completely redefine it 
 to something else. More on that later.
 
-#### First Item as Function 
+#### First Item is Function 
 Host requires that the first item in an unevaluated list is a function.
 The above examples do not do this for the sake of clarity but if you 
 actually type `(1 2 3)` into the host interpreter you'll get an error about `1`

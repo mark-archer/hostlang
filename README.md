@@ -191,12 +191,12 @@ a shorthand notation for this. e.g:
     log "sum of " 1 2 3 : + 1 2 3
     
     ;;; creating functions ;;;
-    ; create a function which returns "hello world" 
-    fn() "Hello World"
+    ; create a function which returns "Hello World!" 
+    fn() "Hello World!"
     
-    ; create a greeting function 
-    ; it has two parameters, name which is required and 
-    ; greeting which is optional and defaults to "Hello"
+    ; create a greeting function that has two parameters 
+    ;   name: which is required and 
+    ;   greeting: which is optional and defaults to "Hello"
     fn(name greeting="Hello")
         + greeting " " name "!"
         
@@ -211,17 +211,17 @@ a shorthand notation for this. e.g:
     for(i 2): log i
         
     ; for i from -1 to 1
-    for(i -1 1)
+    for(i -1 1): log i
         
     ; for i from 0 to 10 count by 2
-    for (i 0 10 2)
+    for (i 0 10 2): log i
     
     ; load the 'base' namespace (includes range)
     load "host/base"
         
     ; map 10 to 20 with some weird logic    
     map (range 10 20) n
-        if(> n 15) n
+        if(> n 15): - n 1
         elif(> n 13): + n 5
         else n
         
@@ -229,25 +229,25 @@ a shorthand notation for this. e.g:
     var o new!
         
     ; object with some fields set
-    var person : new name="Mark" email="mark@test.no"    
+    var person : new name="Mark" email="mark@test.co"    
     ; get name
     person.name
-    ; set some fields after instantiation 
+    ; set a field after instantiation 
     set person.lastName "Archer"
         
-    ; new type Person: contains three fields 
-    ; name which is a string that defaults to "no name"
-    ; age which as no type specified and defaults to 0
-    ; email which has a type of String and no default
+    ; new type Person, contains three fields 
+    ;   name: which is a string that defaults to "no name"
+    ;   age: which has no type specified and defaults to 0
+    ;   email: which has a type of String and no default
     type Person: fields name[String]="no name" age=0 email[String]
         
-    ; creates a new object of type Person with fields set to defaults
-    ; fields with no defaults have undefined values which is usually considered invalid
+    ; create a new object of type Person with fields set to defaults
+    ; fields with no defaults are set to `undefined` which is usually considered an invalid state
     new Person
         
-    ; creates a new object of type Person with the name set to "Blair"
+    ; create a new object of type Person with the name set to "Blair"
     new Person name="Blair"
-    ; unnamed values that are passed in to 'new' are assigned to fields by order 
+    ; unnamed values that are passed in to `new` are assigned to fields by order 
     ; so this is equivalent to the previous statement 
     new Person "Blair"
     

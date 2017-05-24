@@ -191,7 +191,7 @@ a shorthand notation for this. e.g:
     log "sum of " 1 2 3 : + 1 2 3
     
     ;;; creating functions ;;;
-    ; create an function which returns "hello world" 
+    ; create a function which returns "hello world" 
     fn() "Hello World"
     
     ; create a greeting function 

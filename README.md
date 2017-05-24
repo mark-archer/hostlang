@@ -242,12 +242,12 @@ a shorthand notation for this. e.g:
     type Person: fields name[String]="no name" age=0 email[String]
         
     ; create a new object of type Person with fields set to defaults
-    ; fields with no defaults are set to `undefined` which is usually considered an invalid state
+    ; fields with no defaults are set to 'undefined' which is usually considered an invalid state
     new Person
         
     ; create a new object of type Person with the name and age fields set
     new Person name="Blair" age="youthful"
-    ; unnamed values that are passed in to `new` are assigned to fields by order 
+    ; unnamed values that are passed in to 'new' are assigned to fields by order 
     ; so this is equivalent to the previous statement 
     new Person "Blair" "youthful"
     

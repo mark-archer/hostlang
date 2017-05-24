@@ -245,11 +245,11 @@ a shorthand notation for this. e.g:
     ; fields with no defaults are set to `undefined` which is usually considered an invalid state
     new Person
         
-    ; create a new object of type Person with the name set to "Blair"
-    new Person name="Blair"
+    ; create a new object of type Person with the name and age fields set
+    new Person name="Blair" age="youthful"
     ; unnamed values that are passed in to `new` are assigned to fields by order 
     ; so this is equivalent to the previous statement 
-    new Person "Blair"
+    new Person "Blair" "youthful"
     
 ### todo: more clarification on functions
 

@@ -1,0 +1,7 @@
+fn mean(lst[*Int])
+	if(not lst.length): return 0
+	var sum 0
+	each lst i
+		set sum : + sum i
+	/ sum lst.length
+

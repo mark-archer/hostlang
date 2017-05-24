@@ -4,4 +4,4 @@ fn mean(lst[*Int])
 	each lst i
 		set sum : + sum : OR i 0
 	/ sum lst.length
-
+export mean

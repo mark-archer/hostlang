@@ -14,31 +14,6 @@ reader.currentDir = process.cwd();
 // skip first two args: 1 is path to exe, two is path to this file
 var args = utils.skip(process.argv, 2);
 
-
-//// nexe stuff -- disabling for now
-// var execDir = process.execPath;
-// if(process && process.argv && process.argv[1] == 'nexe.js'){
-//     execDir = __dirname;
-// }
-// else {
-//     if(execDir.includes('\\')){
-//         execDir = execDir.substr(0, execDir.lastIndexOf('\\'));
-//     } else {
-//         execDir = execDir.substr(0, execDir.lastIndexOf('/'));
-//     }
-// }
-// reader.currentDir = execDir;
-// if(process && process.argv && process.argv[1] === 'nexe.js'){
-//     reader.hostDir = execDir + "/hostlang"
-// }
-//console.log(process);
-//console.log("argv0", process.argv0);
-//console.log("argv", process.argv);
-//console.log("__dirname", __dirname);
-//console.log("execPath", process.execPath, execDir);
-//console.log("host args", args);
-
-
 var log = utils.log;
 var copy = utils.copy;
 var fnjs = utils.fnjs;

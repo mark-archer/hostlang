@@ -79,6 +79,9 @@ function metaValue(item){
     return isMeta(item) && item.value || item; // metaValue of a non-meta is the item itself
 }
 
+types.isSymbol = utils.isSym;
+types.isSym = utils.isSym;
+
 // register types
 types._knownTypes = [Meta];
 for(var n in types){

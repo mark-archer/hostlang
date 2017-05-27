@@ -5,6 +5,7 @@ var reader = require('./reader.js');
 var types = require('./types.js');
 var parse = require('./parse.js');
 var serveJs = require('./http/serve.js');
+var proc = require('./proc.js');
 
 var packageFile = JSON.parse(fs.readFileSync(reader.hostDir + '/package.json','utf8'));
 console.log('hostlang - version ' + packageFile.version);
@@ -948,6 +949,24 @@ function evalSym(expr, context, callback){
     return ccError(context,"Couldn't resolve symbol: " + sym);
 
 }
+function evalMeta(expr, context, callback){
+    var meta = expr;
+    var names = _.keys(meta);
+    function evalMetaPart(expr, context, callback){
+        var name = expr;
+        var value = meta[name];
+        // if not unevaluated then return
+        if(!(Symbol.isType(value) || Expression.isType(value)))
+            return callback(value);
+        evalHost(value, context, function(value){
+            meta[name] = value;
+            callback(value);
+        });
+    }
+    return eachSync(names, evalMetaPart, context, function(metaValues){
+        callback(meta);
+    });
+}
 function evalHost(expr, context, callback){
     var top = context[0];
     top.callDepth++;
@@ -959,22 +978,7 @@ function evalHost(expr, context, callback){
 
     // evalMeta
     if(expr && eqObjects(expr.type, Meta) && expr !== Meta){
-        var meta = expr;
-        var names = _.keys(meta);
-        function evalMetaPart(expr, context, callback){
-            var name = expr;
-            var value = meta[name];
-            // if not unevaluated then return
-            if(!(Symbol.isType(value) || Expression.isType(value)))
-                return callback(value);
-            evalHost(value, context, function(value){
-                meta[name] = value;
-                callback(value);
-            });
-        }
-        return eachSync(names, evalMetaPart, context, function(metaValues){
-            callback(meta);
-        });
+        return evalMeta(expr, context, callback);
     }
 
     // if not list, eval symbol
@@ -983,7 +987,6 @@ function evalHost(expr, context, callback){
             return callback(expr);
         return evalSym(expr,context, callback);
     }
-
 
     // no backtick means this has already been processed
     if(expr[0] !== '`')
@@ -1011,15 +1014,15 @@ function evalHost(expr, context, callback){
 }
 function evalHostBlock(expr, context, callback){
     expr = untick(expr);
-    if(expr[0] == '`fn' || expr[1] == '`fn')
+    if(expr[0] === '`fn' || expr[1] === '`fn')
         console.log(expr);
 
     // short circuit on lengths zero and one
-    if(expr.length == 0){
+    if(expr.length === 0){
         bind(context, "_", null);
         return callback(null);
     }
-    if(expr.length == 1){
+    if(expr.length === 1){
         return evalHost(expr[0], context, function(rslt){
             bind(context, "_", rslt);
             callback(rslt);
@@ -1483,36 +1486,10 @@ function run(code, context, callback, onError) {
             top._isRunning = false;
             run(code, context, callback, onError);
         });
-        // return run('read "/"',ctx,function(modules){
-        //     for(var i =0; i<modules.length; i++){
-        //         var module = modules[i];
-        //         for(var n in module){
-        //             if(module.hasOwnProperty(n)){
-        //                 if(core[n])
-        //                     console.warn("core." + n + " is being overwritten");
-        //                 core[n] = module[n];
-        //             }
-        //         }
-        //     }
-        //     top._isRunning = false;
-        //     run(code, context,callback,onError);
-        // }, function(err){
-        //     processError({msg:"error loading core",err:err});
-        // });
-    }
-
-    // if it's not a list convert it to an executable list
-    if(_.isObject(code) && !_.isArray(code)){
-        throw "Not implemented";
-        // if(code.type == type_script_id)
-        //     code = code.ccode || code.code;
-        // if(code.type == type_fn_id)
-        //     code = [['`', code]];
     }
 
     // if it's a string, assume it's code that needs to be parsed first
     if(_.isString(code)){
-        //code = '\n' + code + '\n'; // guards parse logic (kinda messy)
         return parseHost(code, context, function (rslt) {
             setTimeout(function(){
                 top._isRunning = false;
@@ -1523,6 +1500,7 @@ function run(code, context, callback, onError) {
         });
     }
 
+    //proc.initProc(code,context, processCallback);
     evalHostBlock(code, context, processCallback);
 }
 function runFile(filePath, context, callback, onError){
@@ -1533,7 +1511,6 @@ function runFile(filePath, context, callback, onError){
         run(code, context, callback, onError);
     });
 }
-
 core.run = function(expr, context, callback){
     var filePath = expr[0];
     reader.read([filePath, 'utf8'], context, function(code){
@@ -1561,7 +1538,11 @@ module.exports = {
     runFile: runFile,
     ccError: ccError,
     evalHost: evalHost,
-    evalJs: evalJs
+    evalJs: evalJs,
+    evalSym: evalSym,
+    evalMeta: evalMeta,
+    applyHost: applyHost,
+    bind:bind
 };
 var host = module.exports;
 host.utils = utils;
@@ -1570,6 +1551,7 @@ types.host = host;
 parse.host = host;
 reader.host = host;
 serveJs.host = host;
+proc.host = host;
 
 //console.log(args)
 

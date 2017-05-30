@@ -1542,7 +1542,8 @@ module.exports = {
     evalSym: evalSym,
     evalMeta: evalMeta,
     applyHost: applyHost,
-    bind:bind
+    bind:bind,
+    utils:utils
 };
 var host = module.exports;
 host.utils = utils;

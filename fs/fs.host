@@ -11,6 +11,11 @@ fn readFile(path options="utf8")
     fsjs.readFileSync path options
 export readFile
 
+fn writeFile(path content options="utf8")
+    fsjs.writeFileSync path options
+    true
+export writeFile
+
 
 set context.0.currentDirectory __dirname
 fn cd(path=null)

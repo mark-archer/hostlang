@@ -204,7 +204,40 @@ a shorthand notation for this. e.g:
     fn(leaveEarly)
         if leaveEarly : return "leaving early"
         "leaving normally"
-    
+
+##### Piping 
+In Host, underscore (`_`) is a special variable which always has the result of the last statement executed in a block of code.  Paired with this are the piping operators `>>` and `>>>`.  These operators will pipe the result of the last statement as the first or second argument respecively.  In many situations these allow for better flow of logic and less temp variables. 
+
+For example, say you have three functions: `words` which splits a string into a list of words, `uniq` which takes a list and returns a new one with duplicates removed, and `unknownWords` which takes a list of words and returns a list of words that didn't match some dictionary.  With these three functions a simple `spellcheck` function can be put together.  
+```
+fn spellcheck(text)
+    text >> words >> uniq >> unknownWords
+```
+Notice with piping there are no superfluous variables or deep nesting of functions calls needed to link the output of one function to the input of the next.  Also notice how the code reads in the same order the work should be done in. Compare it with the non-piping alternatives below.
+```
+;; with variables
+fn spellcheck(text)
+    var lstWords : words text
+    var lstUniqueWords : uniq lstWords
+    unknownWords lstUniqueWords
+
+;; with nested function calls (Host Form)
+fn spellcheck(text)
+    unknownWords : uniq : words text
+
+;; with nested function calls (Parentheses Form)
+fn spellcheck(text)
+    (unknownWords (uniq (words text)))
+
+;; with nested function calls (JS form)
+function spellcheck(text){
+    return unknownWords(uniq(words(text)));
+}
+```
+The first alternative is to use variables.  I think this is best because the flow of the code matches flow of thought and the variable names help document what the intent is.  But that's also a lot of typing to string three functions together.  The rest of the examples are showing different forms of nested function calls.  We assert that nesting functions should be avoided for two reasons. First, they are harder to read because they result in algorithem being written right-to-left so they then have to be read backwards.  Second, it is harder to maintain because of the same right-to-left issue and also because of parenthesis management (if you're not using Host's syntax).  
+
+Piping is just a nice-to-have feature in Host and you're free to not use them but we hope you agree that it's an improvement over explicit varilables and function call nesting.  
+
         
 ##### Examples (in no particular order)
     ; for i from 0 to 2

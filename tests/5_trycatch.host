@@ -16,7 +16,7 @@ tcTest 1
 ;; test tryCatch with catchCode
 fn tcTest(i=0)
 	try
-		[name="catchCode" value=((err) (atom "caught error!"))]
+		[name="catchCode" value=((err) (one "caught error!"))]
 		foo
 tcTest 1
 === "caught error!"

@@ -12,7 +12,7 @@ console.log('hostlang - version ' + packageFile.version);
 reader.currentDir = process.cwd();
 //console.log("cd is:" + reader.currentDir);
 
-// skip first two args: 1 is path to exe, two is path to this file
+// skip first two args: first is path to exe, second is path to this file
 var args = utils.skip(process.argv, 2);
 
 var log = utils.log;
@@ -1480,6 +1480,7 @@ function run(code, context, callback, onError) {
 
     // load core if it hasn't already been
     if(!core.loaded){
+    //if(!core.loaded && false){
         core.loaded = true;
         //var ctx = {};
         return reader.read(["host/_loadCore.host"], context, function (rslt) {

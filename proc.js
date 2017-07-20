@@ -1,6 +1,7 @@
+console.log('proc');
+
 var _ = require('underscore');
 //var host = require('./hostlang.js');
-//console.log('proc', host);
 var utils = require('./utils.js');
 var reader = require('./reader.js');
 var types = require('./types.js');
@@ -54,6 +55,7 @@ function newProc(expr, context, callback){
 process.newProc = newProc;
 
 process.initProc = function(expr, context, callback){
+    utils.untick(expr);
     var p = newProc(expr, context, callback);
     procNext(p);
     return p;
@@ -155,8 +157,6 @@ function procNext(proc) {
     // otherwise just return the item
     return procCallback(item);
 }
-
-
 
 
 process.test = function(){

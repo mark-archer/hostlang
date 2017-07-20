@@ -30,7 +30,7 @@ fnm type(name args&)
 
 		; if it's named set it by name
 		if(&& (isMeta a) a.name)
-			set t.(atom a.name) a.value
+			set t.(one a.name) a.value
 		else
 			; otherwise add it to the list of unnamed values
 			; maybe -- throw error

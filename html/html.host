@@ -33,7 +33,7 @@ fnm html (elems&)
                         var check e.1
                         set check check.1 ; todo this is because of some kind of bug, (== e.1.1 'evalBlock) doesn't work
                         if(== check 'evalBlock)
-                            e >> insert 'atom 1
+                            e >> insert 'one 1
                         eval e
                         htmlJs.appendChild firstE _
                     true

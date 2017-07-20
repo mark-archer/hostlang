@@ -72,13 +72,17 @@ var newid = uuid.v1;
 utils.newid = newid;
 utils.Id = newid;
 
+// function isid(sid){
+//     if(!sid) return false;
+//     if(!sid.toString) return false;
+//     sid = sid.toString();
+//     var pid = uuid.unparse(uuid.parse(sid));
+//     return pid.toString() == sid;
+// }
 function isid(sid){
-    if(!sid) return false;
-    if(!sid.toString) return false;
-    sid = sid.toString();
-    var pid = uuid.unparse(uuid.parse(sid));
-    return pid.toString() == sid;
-}
+    //return !!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.exec(sid);
+    return _.isString(sid) && !!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.exec(sid);
+};
 utils.isid = isid;
 
 function ispath(s) {
@@ -288,14 +292,14 @@ utils.list = function (){
     return l;
 };
 
-utils.atom = function (a){
-    return a;
-};
 utils.one = function (a) {
     if(arguments.length != 1)
         throw "one -- requires a single argument which will be returned";
     return a;
 };
+// utils.atom = function (a){
+//     return a;
+// };
 
 utils.add = function (){
     var r = arguments[0];
@@ -506,7 +510,7 @@ utils.append = function(context, callback, list1, list2){
     //return list1;
 };
 
-//====================== List manipulators ============================
+//====================== /List manipulators ============================
 
 utils.DT = function(arg1, arg2, arg3, arg4, arg5, arg6, arg7){
     // this craziness is because I couldn't get apply to work with (new Date())
@@ -654,9 +658,10 @@ utils.eqObjects = function(obj1, obj2){
 };
 
 utils.isSym = function(sym){
-    if (_.isString(sym) && sym.length > 1 && sym[0] === '`')
-        return true;
-    return false;
+    return _.isString(sym) && sym.length > 1 && sym[0] === '`'
+    // if (_.isString(sym) && sym.length > 1 && sym[0] === '`')
+    //     return true;
+    // return false;
 };
 
 utils.nsym = function (name){

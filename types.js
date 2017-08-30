@@ -16,7 +16,7 @@ function ccError(context, err){
     types.host.ccError(context,err);
 }
 
-// prototypes
+// prime types
 var Meta = {id:"Meta",name:"Meta"}; Meta.type = Meta; types.Meta = Meta;
 var Type = {id:"Type",name:"Type"}; Type.type = Type; types.Type = Type;
 var Primitive = {id:"Primitive",name:"Primitive"}; Primitive.type = Primitive; types.Primitive = Primitive;

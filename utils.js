@@ -477,6 +477,8 @@ utils.push = function(context, callback, list, item){
     // var ary = args.shift();
     // Array.prototype.push.apply(ary, args);
     // return ary;
+    if(!(list && list.push))
+        throw ['invalid item passed as list:',list];
     list.push(item);
     listNotify(list, "Add", [list.length-1], context, function(){callback(list)});
     //return list;

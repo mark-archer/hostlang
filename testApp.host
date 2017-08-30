@@ -1,6 +1,0 @@
-fn greet(name=null)
-    if name
-        + "Hello " name "!"
-    else
-        "Hey You!"
-greet!

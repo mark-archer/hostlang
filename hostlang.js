@@ -5,6 +5,7 @@ var reader = require('./reader.js');
 var types = require('./types.js');
 var parse = require('./parse.js');
 var serveJs = require('./http/serve.js');
+//var proc = require('./proc_20170830.js');
 var proc = require('./proc.js');
 
 var packageFile = JSON.parse(fs.readFileSync(reader.hostDir + '/package.json','utf8'));
@@ -1012,7 +1013,7 @@ function evalHost(expr, context, callback){
         applyHost(expr,context,callback);
     });
 }
-function evalHostBlock(expr, context, callback){
+function evalHostBlock_old(expr, context, callback){
     expr = untick(expr);
     if(expr[0] === '`fn' || expr[1] === '`fn')
         console.log(expr);
@@ -1037,6 +1038,49 @@ function evalHostBlock(expr, context, callback){
             callback(rslt);
         });
     }
+
+    eachSync(expr, evalExpr, context, function(rslts){
+        var rslt = null;
+        if(rslts && rslts.length) rslt = rslts[rslts.length - 1];
+        return callback(rslt);
+    });
+}
+function evalHostBlock(expr, context, callback){
+    expr = untick(expr);
+    
+    // short circuit on lengths zero and one
+    if(expr.length === 0){
+        bind(context, "_", null);
+        return callback(null);
+    }
+    if(expr.length === 1){
+        return evalHost(expr[0], context, function(rslt){
+            bind(context, "_", rslt);
+            callback(rslt);
+        });
+    }
+
+    // var calls = [];
+    // for(var i=0; i<expr.length; i++){
+    //     calls.push({
+    //         f:evalHost, 
+    //         args:[expr[i], 
+    //         context]})
+    // }
+    // function interCall(rslt){
+    //     if(rslt === undefined) rslt = null; // don't want to set _ to undefined because of scoping
+    //     bind(context,"_", rslt);
+    // }
+    // var p = proc.new(calls, interCall, context, callback);    
+    
+    
+    function evalExpr(expr, context, callback){
+        evalHost(expr, context,function(rslt){
+            if(rslt === undefined) rslt = null; // don't want to set _ to undefined because of scoping
+            bind(context,"_", rslt);
+            callback(rslt);
+        });
+    }    
 
     eachSync(expr, evalExpr, context, function(rslts){
         var rslt = null;

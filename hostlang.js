@@ -176,20 +176,6 @@ function eachSync(items, fn, context, callback){
         callback(rslts);
     }).start();
 
-    // var calls = [];
-    // for(var i=0; i<items.length; i++){
-    //     calls.push({
-    //         f:fn,
-    //         args:[items[i], context]})
-    // }    
-    // var rslts = [];
-    // function interCall(rslt){
-    //     rslts.push(rslt);
-    // }
-    // proc.new(calls, interCall, context, function(rslt){
-    //     callback(rslts);
-    // }).start();
-
     // var exited = false;
     // var i = -1;
     // var rslts = [];

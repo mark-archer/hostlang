@@ -25,19 +25,23 @@ var procing = false;
 //     procCBs[cbid](rslt);
 // }
 
-proc.new = function(calls, interCall, context, callback){
+proc.new = function(workerFn, items, interCall, context, callback){
     var pid = utils.newid();
     var p = {
         pid:pid,
+        fn:workerFn,
+        interCall: interCall,
+        items:items,
         context: context, 
         callback:callback,
-        calls:calls || [],
-        iCall: 0,
-        interCall: interCall
+        itemIndex: 0
     };
     procs[pid] = p;
-    procsReady.push(p);
-    procLoop();
+
+    p.start = function(){
+        procsReady.push(p);
+        procLoop();
+    }    
     return p;
 }
 
@@ -61,22 +65,27 @@ function procLoop(){
 }
 
 function procNext(p){
-    var call = p.calls[p.iCall]; p.iCall++;
-    var f = call.f;
-    var args = call.args;
-    args.push(function(rslt){
-        if(p.interCall)
-            p.interCall(rslt);
+    var item = p.items[p.itemIndex]; p.itemIndex++;
+    var fn = p.fn
+    var args = [
+        item, 
+        p.context,
+        /*callback*/ function(rslt){
+            if(p.interCall) p.interCall(rslt);
+        
+            // terminal condition
+            if(p.itemIndex >= p.items.length)
+                return p.callback(rslt);
+                
+            procsReady.push(p);
+            if(!procing)
+                 setTimeout(procLoop,0);
+        }
+    ]
     
-        // terminal condition
-        if(p.iCall >= p.calls.length)
-            return p.callback(rslt);
-            
-        procsReady.push(p);
-        if(!procing)
-             setTimeout(procLoop,0);
-    });
-    f.apply(call.self || null, args);
+    p.context[0].callDepth = 0; // if we're using proc we're automatically resetting the callDepth
+    //fn.apply(p.self || null, args);
+    fn.apply(null, args);
 }
 
 module = module || {};

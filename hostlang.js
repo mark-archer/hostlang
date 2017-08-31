@@ -163,29 +163,50 @@ function eachSync(items, fn, context, callback){
         return ccError(context, "eachSync - items not a list");
 
     // short circuit on lengths zero and one
-    if(items.length == 0)
+    if(items.length === 0)
         return callback([]);
-    if(items.length == 1)
+    if(items.length === 1)
         return fn(items[0], context, function (rslt) {callback([rslt])});
 
-    var exited = false;
-
-    var i = -1;
     var rslts = [];
-    function next(rslt){
-        if(exited)
-            return ccError(context, 'eachSync has already exited');
-        if(i > -1){
-            rslts[i] = rslt;
-        }
-        i++;
-        if(i>=items.length){
-            exited = true;
-            return callback(rslts);
-        }
-        fn(items[i], context, next);
+    function interCall(rslt){
+        rslts.push(rslt);
     }
-    next();
+    proc.new(fn, items, interCall, context, function(rslt){
+        callback(rslts);
+    }).start();
+
+    // var calls = [];
+    // for(var i=0; i<items.length; i++){
+    //     calls.push({
+    //         f:fn,
+    //         args:[items[i], context]})
+    // }    
+    // var rslts = [];
+    // function interCall(rslt){
+    //     rslts.push(rslt);
+    // }
+    // proc.new(calls, interCall, context, function(rslt){
+    //     callback(rslts);
+    // }).start();
+
+    // var exited = false;
+    // var i = -1;
+    // var rslts = [];
+    // function next(rslt){
+    //     if(exited)
+    //         return ccError(context, 'eachSync has already exited');
+    //     if(i > -1){
+    //         rslts[i] = rslt;
+    //     }
+    //     i++;
+    //     if(i>=items.length){
+    //         exited = true;
+    //         return callback(rslts);
+    //     }
+    //     fn(items[i], context, next);
+    // }
+    // next();
 }
 core.eachSync = eachSync;
 
@@ -812,22 +833,7 @@ function applyFn_host(expr, context, callback){
 }
 var applyTypes = {};
 applyTypes.default = function(expr, context, callback){
-    return ccError(context, ["value not recognized as function",expr[0]]);
-    // evalHost(expr[1], context, function (maybeFn) {
-    //     log(maybeFn);
-    //     if(_.isFunction(maybeFn)){
-    //         maybeFn = fnjs(maybeFn);
-    //         expr[1] = maybeFn;
-    //     }
-    //     var fnType = gettype(maybeFn);
-    //     if(applyTypes[fnType]){
-    //         var t1 = expr[1];
-    //         expr[1] = expr[0];
-    //         expr[0] = t1;
-    //         return applyHost(expr, context, callback);
-    //     }
-    //     return ccError(context,{msg:"value was not recognized as a function",value:expr[0]})
-    // });
+    return ccError(context, ["value not recognized as function",expr[0]]);    
 };
 applyTypes[Fnjs.id] = applyFn_JS;
 applyTypes[Fn.id] = applyFn_host;
@@ -972,6 +978,7 @@ function evalHost(expr, context, callback){
     var top = context[0];
     top.callDepth++;
     if(top.callDepth > core.maxCallDepth){
+        console.log('resetting stack');
         return setTimeout(function(){top.callDepth = 0; evalHost(expr, context, callback);}, 0);
     }
 
@@ -1013,38 +1020,6 @@ function evalHost(expr, context, callback){
         applyHost(expr,context,callback);
     });
 }
-function evalHostBlock_old(expr, context, callback){
-    expr = untick(expr);
-    if(expr[0] === '`fn' || expr[1] === '`fn')
-        console.log(expr);
-
-    // short circuit on lengths zero and one
-    if(expr.length === 0){
-        bind(context, "_", null);
-        return callback(null);
-    }
-    if(expr.length === 1){
-        return evalHost(expr[0], context, function(rslt){
-            bind(context, "_", rslt);
-            callback(rslt);
-        });
-    }
-
-
-    function evalExpr(expr, context, callback){
-        evalHost(expr, context,function(rslt){
-            if(rslt === undefined) rslt = null; // don't want to set this to undefined because of scoping
-            bind(context,"_", rslt);
-            callback(rslt);
-        });
-    }
-
-    eachSync(expr, evalExpr, context, function(rslts){
-        var rslt = null;
-        if(rslts && rslts.length) rslt = rslts[rslts.length - 1];
-        return callback(rslt);
-    });
-}
 function evalHostBlock(expr, context, callback){
     expr = untick(expr);
     
@@ -1059,20 +1034,6 @@ function evalHostBlock(expr, context, callback){
             callback(rslt);
         });
     }
-
-    // var calls = [];
-    // for(var i=0; i<expr.length; i++){
-    //     calls.push({
-    //         f:evalHost, 
-    //         args:[expr[i], 
-    //         context]})
-    // }
-    // function interCall(rslt){
-    //     if(rslt === undefined) rslt = null; // don't want to set _ to undefined because of scoping
-    //     bind(context,"_", rslt);
-    // }
-    // var p = proc.new(calls, interCall, context, callback);    
-    
     
     function evalExpr(expr, context, callback){
         evalHost(expr, context,function(rslt){
@@ -1360,6 +1321,7 @@ function forJs(expr, context, callback){
         bindings.onBreak = makeContinuation(context,callback);
         newScope(context,bindings);
 
+
         function loopBody(item, context, callback){
             bindings.onContinue = makeContinuation(context, callback);
             var code = copy(expr);
@@ -1371,19 +1333,32 @@ function forJs(expr, context, callback){
             });
         }
 
-        var i = null;
-        function next(rslt){
-            if(i === null)
-                i = start;
-            else
-                i += step;
-
-            if((step > 0 && i > end) || (step < 0 && i < end))
-                ccBreak(context,rslt);
-            else
-                loopBody(i, context, next);
-        }
-        next();
+        var p = null;
+        var i = start;
+        function interCall(rslt){            
+            i += step;
+            // if we're not done, add another item to the call list
+            if(!((step > 0 && i > end) || (step < 0 && i < end))){
+                p.items.push(i); // TODO we could just set p.items.[0]=i && p.itemIndex=0
+            }
+        }        
+        
+        p = proc.new(loopBody, [i], interCall, context, function(rslt){ccBreak(context,rslt);});
+        p.start();
+        
+        // return;
+        // var i = null;
+        // function next(rslt){
+        //     if(i === null)
+        //         i = start;
+        //     else
+        //         i += step;
+        //     if((step > 0 && i > end) || (step < 0 && i < end))
+        //         ccBreak(context,rslt);
+        //     else
+        //         loopBody(i, context, next);
+        // }
+        // next();
     });
 }
 core.for = fnjs("for",forJs);

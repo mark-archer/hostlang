@@ -1,8 +1,8 @@
 console.log('proc');
 
-var _ = require('lodash');
+var _ = require('underscore');
 //var host = require('./hostlang.js');
- var utils = require('./utils.js');
+var utils = require('./utils.js');
 // var reader = require('./reader.js');
 // var types = require('./types.js');
 
@@ -12,18 +12,6 @@ var procCBs = {};
 var procsReady = [];
 var procing = false;
 
-// function ccError(context, err){
-//     proc.host.ccError(context, err);
-// }
-
-// function newCB(callback){
-//     var cbid = utils.newid();
-//     procCBs[cbid] = callback;
-//     return cbid;
-// }
-// function doCB(cbid, rslt){
-//     procCBs[cbid](rslt);
-// }
 
 proc.new = function(workerFn, items, interCall, context, callback){
     var pid = utils.newid();

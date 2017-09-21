@@ -1,6 +1,6 @@
 //console.log('types');
 
-var _ = require('lodash');
+var _ = require('underscore');
 var utils = require('./utils.js');
 var untick = utils.untick;
 var issym = utils.isSym;
@@ -315,6 +315,7 @@ types.new = function(expr, context, callback){
 types.isFunction = function(f){
     return _.isFunction(f) || eqObjects(f.type, Fn) || eqObjects(f.type, Fnjs);
 };
+
 
 module = module || {};
 module.exports = types;

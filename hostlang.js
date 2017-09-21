@@ -1,17 +1,21 @@
-var fs = require('fs');
+//var fs = require('fs');
+
 var _ = require('underscore');
 var utils = require('./utils.js');
-//var reader = require('./reader.js');
 var types = require('./types.js');
 var parse = require('./parse.js');
-var serveJs = require('./http/serve.js');
-//var proc = require('./proc_20170830.js');
 var proc = require('./proc.js');
 
-var packageFile = JSON.parse(fs.readFileSync(reader.hostDir + '/package.json','utf8'));
-console.log('hostlang - version ' + packageFile.version);
-reader.currentDir = process.cwd();
+//var reader = require('./reader.js');
+//var serveJs = require('./http/serve.js');
+
+
+//var packageFile = JSON.parse(fs.readFileSync(reader.hostDir + '/package.json','utf8'));
+//console.log('hostlang - version ' + packageFile.version);
+//reader.currentDir = process.cwd();
 //console.log("cd is:" + reader.currentDir);
+
+console.log('hostlang');
 
 // skip first two args: first is path to exe, second is path to this file
 var args = utils.skip(process.argv, 2);
@@ -52,17 +56,17 @@ function copyToNative(obj){
     for (var n in obj) if(obj.hasOwnProperty(n)) native[n] = obj[n];
 }
 copyToNative(utils);
-copyToNative(reader);
 copyToNative(types);
 copyToNative(parse);
-copyToNative(serveJs);
+//copyToNative(reader);
+//copyToNative(serveJs);
 
 var core = {};
 core.core = core;
 core.utils = utils;
 core.maxCallDepth = 500;
 core.__dirname = __dirname;
-core.reader = reader;
+//core.reader = reader;
 
 
 core.list = {
@@ -1488,16 +1492,16 @@ function run(code, context, callback, onError) {
     top._isRunning = true;
 
 
-    // load core if it hasn't already been
-    if(!core.loaded){
-    //if(!core.loaded && false){
-        core.loaded = true;
-        //var ctx = {};
-        return reader.read(["host/_loadCore.host"], context, function (rslt) {
-            top._isRunning = false;
-            run(code, context, callback, onError);
-        });
-    }
+    // // load core if it hasn't already been
+    // if(!core.loaded){
+    // //if(!core.loaded && false){
+    //     core.loaded = true;
+    //     //var ctx = {};
+    //     return reader.read(["host/_loadCore.host"], context, function (rslt) {
+    //         top._isRunning = false;
+    //         run(code, context, callback, onError);
+    //     });
+    // }
 
     // if it's a string, assume it's code that needs to be parsed first
     if(_.isString(code)){
@@ -1514,28 +1518,28 @@ function run(code, context, callback, onError) {
     //proc.initProc(code,context, processCallback);
     evalHostBlock(code, context, processCallback);
 }
-function runFile(filePath, context, callback, onError){
-    callback = callback || console.log;
-    onError = onError || console.error;
-    context = contextInit(context, callback, onError);
-    reader.read([filePath, 'utf8'], context, function(code){
-        run(code, context, callback, onError);
-    });
-}
-core.run = function(expr, context, callback){
-    var filePath = expr[0];
-    reader.read([filePath, 'utf8'], context, function(code){
-        return parseHost(code, context, function (pcode) {
-            var oldReturn = getBinding(context,"onReturn");
-            function fileRan(rslt){
-                bind(context, "onReturn", oldReturn);
-                callback(rslt);
-            }
-            bind(context, "onReturn", makeContinuation(context,fileRan));
-            evalHostBlock(pcode, context, fileRan);
-        });
-    });
-};
+// function runFile(filePath, context, callback, onError){
+//     callback = callback || console.log;
+//     onError = onError || console.error;
+//     context = contextInit(context, callback, onError);
+//     reader.read([filePath, 'utf8'], context, function(code){
+//         run(code, context, callback, onError);
+//     });
+// }
+// core.run = function(expr, context, callback){
+//     var filePath = expr[0];
+//     reader.read([filePath, 'utf8'], context, function(code){
+//         return parseHost(code, context, function (pcode) {
+//             var oldReturn = getBinding(context,"onReturn");
+//             function fileRan(rslt){
+//                 bind(context, "onReturn", oldReturn);
+//                 callback(rslt);
+//             }
+//             bind(context, "onReturn", makeContinuation(context,fileRan));
+//             evalHostBlock(pcode, context, fileRan);
+//         });
+//     });
+// };
 
 module = module || {};
 module.exports = {
@@ -1546,7 +1550,7 @@ module.exports = {
     parse: parseHostWrapper,
     //compile: compile,
     run: run,
-    runFile: runFile,
+    //runFile: runFile,
     ccError: ccError,
     evalHost: evalHost,
     evalJs: evalJs,
@@ -1554,84 +1558,86 @@ module.exports = {
     evalMeta: evalMeta,
     applyHost: applyHost,
     bind:bind,
-    utils:utils
+    utils:utils,
+    types:types
 };
 var host = module.exports;
 host.utils = utils;
 utils.host = host;
 types.host = host;
 parse.host = host;
-reader.host = host;
-serveJs.host = host;
 proc.host = host;
+//reader.host = host;
+//serveJs.host = host;
 
 //console.log(args)
 
 
+// below should be moved to a CLI specific script
 
-// =========  repl logic below ====================
+// // =========  repl logic below ====================
 
-var errorCB = function(err){console.error("ERROR!"); console.error(err);};
-var ctx = contextInit({}, console.log, errorCB);
-var ctx0 = ctx[0];
-ctx0._silent = true;
+// var errorCB = function(err){console.error("ERROR!"); console.error(err);};
+// var ctx = contextInit({}, console.log, errorCB);
+// var ctx0 = ctx[0];
+// ctx0._silent = true;
 
-// host.repl = function(expr, context, callback){
-//
-// };
+// // host.repl = function(expr, context, callback){
+// //
+// // };
 
-// for certain args situations get out
-if(args.length === 0 || args[0] === "--no-sandbox" /*for electron*/)
-    return;
+// // for certain args situations get out
+// if(args.length === 0 || args[0] === "--no-sandbox" /*for electron*/)
+//     return;
 
-// -e means evaluate and return
-if (args[0] === '-e'){
-    run(args[1], ctx, console.log, errorCB);
-    return;
-}
-// repl means just start the repl
-else if(args[0] === 'repl'){
-    run('"host ready"', ctx, console.log, errorCB)
-}
-// otherwise assume it's a file path
-else{
-    var returnAfter = false;
-    var file = args.shift();
-    if(file === "-f"){
-        returnAfter = true;
-        file = args.shift();
-    }
+// // -e means evaluate and return
+// if (args[0] === '-e'){
+//     run(args[1], ctx, console.log, errorCB);
+//     return;
+// }
+// // repl means just start the repl
+// else if(args[0] === 'repl'){
+//     run('"host ready"', ctx, console.log, errorCB)
+// }
+// // otherwise assume it's a file path
+// else{
+//     var returnAfter = false;
+//     var file = args.shift();
+//     if(file === "-f"){
+//         returnAfter = true;
+//         file = args.shift();
+//     }
 
-    var fileArgs = args;
-    fileArgs = _.map(fileArgs,function(a){
-        if(a[0] !== '"' && a.includes('=')){
-            var iEq = a.indexOf('=');
-            var aName = a.substr(0,iEq);
-            a = a.substring(iEq+1);
-            ctx[aName] = a;
-        }
-        return a;
-    });
+//     var fileArgs = args;
+//     fileArgs = _.map(fileArgs,function(a){
+//         if(a[0] !== '"' && a.includes('=')){
+//             var iEq = a.indexOf('=');
+//             var aName = a.substr(0,iEq);
+//             a = a.substring(iEq+1);
+//             ctx[aName] = a;
+//         }
+//         return a;
+//     });
 
-    ctx0._args = fileArgs;
-    reader.read([file, "utf8"], ctx, function(fileContents){
-        ctx[0]._sourceFile = file;
-        run(fileContents, ctx, console.log, errorCB)
-    });
+//     ctx0._args = fileArgs;
+//     reader.read([file, "utf8"], ctx, function(fileContents){
+//         ctx[0]._sourceFile = file;
+//         run(fileContents, ctx, console.log, errorCB)
+//     });
 
-    if(returnAfter)
-        return;
-}
+//     if(returnAfter)
+//         return;
+// }
 
-const repl = require('repl');
-function replEval(cmd, context, filename, callback) {
-    var ppRslt = function(rslt){
-        if(types.Fn.isType(rslt))
-            rslt = "#Fn: " + (rslt.name || "<anon>") + " " + utils.dataToString(rslt.params,4);
-        if(_.isObject(rslt) && !_.isFunction(rslt))
-            rslt = utils.dataToString(rslt,4);
-        callback(rslt);
-    };
-    run(cmd,ctx,ppRslt,errorCB);
-}
-repl.start({prompt: '<< ', eval: replEval});
+// const repl = require('repl');
+// function replEval(cmd, context, filename, callback) {
+//     var ppRslt = function(rslt){
+//         if(types.Fn.isType(rslt))
+//             rslt = "#Fn: " + (rslt.name || "<anon>") + " " + utils.dataToString(rslt.params,4);
+//         if(_.isObject(rslt) && !_.isFunction(rslt))
+//             rslt = utils.dataToString(rslt,4);
+//         callback(rslt);
+//     };
+//     run(cmd,ctx,ppRslt,errorCB);
+// }
+// repl.start({prompt: '<< ', eval: replEval});

@@ -345,3 +345,11 @@ to update npm package
 to recompile standalone executable
 
     nexe -i hostlang.js -o host.exe
+
+webpack
+
+    ; to bundle for browser
+    webpack ./hostlang.js ../public/hostlang.web.js
+
+    ; to minify include -p option
+    webpack ./hostlang.js ../public/hostlang.web.js -p 

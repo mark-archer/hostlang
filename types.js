@@ -1,6 +1,6 @@
 //console.log('types');
 
-var _ = require('underscore');
+var _ = require('lodash');
 var utils = require('./utils.js');
 var untick = utils.untick;
 var issym = utils.isSym;

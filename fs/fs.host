@@ -36,7 +36,7 @@ fn deleteFile(path)
     true
 export deleteFile
 
-fn fileExists(path)
+fn fileExists(path) 
     try
         fsjs.accessSync path fsjs.constants.F_OK
         true

@@ -75,35 +75,35 @@ core.list = {
     code: 'items'
 };
 
-function pipe(expr, context, callback){
-    var f = expr.shift();
-    if(_.isArray(f) && f[0] === "`")
-        return evalHost(f,context, function (f){
-            expr.unshift(f);
-            pipe(expr, context, callback);
-        });
-
-    f = ssym(f);
-    if(!_.isString(f))
-        return ccError(context,["pipe -- first argumnet should be function name (string), given:",f]);
-
-    var a1 = getBinding(context,"_");
-
-    var objectFunc = a1 && a1[f];
-    var typeFunc = a1 && a1.type && a1.type[f];
-    f = nsym(f);
-
-    if(!_.isArray(a1) && _.isObject(a1))
-        f = objectFunc || typeFunc || f;
-
-    expr.unshift(a1);
-    expr.unshift(f);
-    expr.unshift("`");
-    evalHost(expr,context,callback);
-}
-core.pipe = fnjs("pipe", pipe);
-core.pipe.isMacro = true;
-core.pipe.useRuntimeScope = true;
+// function pipe(expr, context, callback){
+//     var f = expr.shift();
+//     if(_.isArray(f) && f[0] === "`")
+//         return evalHost(f,context, function (f){
+//             expr.unshift(f);
+//             pipe(expr, context, callback);
+//         });
+//
+//     f = ssym(f);
+//     if(!_.isString(f))
+//         return ccError(context,["pipe -- first argumnet should be function name (string), given:",f]);
+//
+//     var a1 = getBinding(context,"_");
+//
+//     var objectFunc = a1 && a1[f];
+//     var typeFunc = a1 && a1.type && a1.type[f];
+//     f = nsym(f);
+//
+//     if(!_.isArray(a1) && _.isObject(a1))
+//         f = objectFunc || typeFunc || f;
+//
+//     expr.unshift(a1);
+//     expr.unshift(f);
+//     expr.unshift("`");
+//     evalHost(expr,context,callback);
+// }
+// core.pipe = fnjs("pipe", pipe);
+// core.pipe.isMacro = true;
+// core.pipe.useRuntimeScope = true;
 
 utils.objectPath = fnjs(function(){
     var l = [];
@@ -115,48 +115,48 @@ utils.objectPath = fnjs(function(){
 });
 utils.objectPath.isMacro = true;
 
-function eachAsync(items, fn, context, callback){
-    if(!_.isArray(items))
-        return ccError(context,"eachAsync - items not a list");
-    if(!items.length)
-        return callback(items);
-    var rslts = [];
-    var errored = false;
-    var rsltCnt = 0;
-    var exited = false;
-
-    var bindings = {_source:"eachAsync"};
-    bindings.onError = makeContinuation(context,function(err){
-        if(exited) return ccError(context,{msg:"eachAsync exited then errored",err:err}); //throw "eachAsync exited then errored";
-        if(errored) return;
-        errored = true;
-        ccError(context,err);
-    });
-    bindings.onCallback = makeContinuation(context, function(rslts, context){
-        if(errored) return;
-        if(exited) return ccError(context,"eachAsync has already exited");
-        exited = true;
-        callback(rslts);
-    });
-    newScope(context, bindings);
-
-    function gatherRslts(i, rslt){
-        if(errored) return;
-        rslts[i] = rslt;
-        rsltCnt++;
-        if(rsltCnt >= items.length){
-            return ccCallback(context,rslts);
-        }
-    }
-    function execFn(i){
-        var ctx = _.clone(context);
-        fn(items[i], ctx, function(rslt){
-            gatherRslts(i, rslt);
-        });
-    }
-    for(var i = 0; i< items.length; i++)
-        execFn(i);
-}
+// function eachAsync(items, fn, context, callback){
+//     if(!_.isArray(items))
+//         return ccError(context,"eachAsync - items not a list");
+//     if(!items.length)
+//         return callback(items);
+//     var rslts = [];
+//     var errored = false;
+//     var rsltCnt = 0;
+//     var exited = false;
+//
+//     var bindings = {_source:"eachAsync"};
+//     bindings.onError = makeContinuation(context,function(err){
+//         if(exited) return ccError(context,{msg:"eachAsync exited then errored",err:err}); //throw "eachAsync exited then errored";
+//         if(errored) return;
+//         errored = true;
+//         ccError(context,err);
+//     });
+//     bindings.onCallback = makeContinuation(context, function(rslts, context){
+//         if(errored) return;
+//         if(exited) return ccError(context,"eachAsync has already exited");
+//         exited = true;
+//         callback(rslts);
+//     });
+//     newScope(context, bindings);
+//
+//     function gatherRslts(i, rslt){
+//         if(errored) return;
+//         rslts[i] = rslt;
+//         rsltCnt++;
+//         if(rsltCnt >= items.length){
+//             return ccCallback(context,rslts);
+//         }
+//     }
+//     function execFn(i){
+//         var ctx = _.clone(context);
+//         fn(items[i], ctx, function(rslt){
+//             gatherRslts(i, rslt);
+//         });
+//     }
+//     for(var i = 0; i< items.length; i++)
+//         execFn(i);
+// }
 function eachSync(items, fn, context, callback){
 
     if(!_.isArray(items))
@@ -310,28 +310,28 @@ exists.isMacro = true;
 exists.useRuntimeScope = true;
 core.exists = exists;
 
-var value = fnjs("value", function(expr, context, callback){
-    untick(expr);
-    if(expr.length < 1 || expr.length > 2)
-        return ccError(context, "val -- expects 1 or 2 arguments (a symbol name argument and an optional offset argument), given: " + expr.length);
-
-    var name = untick(expr[0]);
-    var offset = expr[1];
-
-    if(!_.isNumber(offset))
-        offset = 0;
-    var scopes = context;
-    for(var bi = scopes.length-(1+offset); bi >=0; bi--){
-        var nvps = scopes[bi];
-        if(nvps[name] !== undefined) {
-            return callback(nvps[name]);
-        }
-    }
-    return callback(null);
-});
-value.isMacro = true;
-value.useRuntimeScope = true;
-core.value = value;
+// var value = fnjs("value", function(expr, context, callback){
+//     untick(expr);
+//     if(expr.length < 1 || expr.length > 2)
+//         return ccError(context, "val -- expects 1 or 2 arguments (a symbol name argument and an optional offset argument), given: " + expr.length);
+//
+//     var name = untick(expr[0]);
+//     var offset = expr[1];
+//
+//     if(!_.isNumber(offset))
+//         offset = 0;
+//     var scopes = context;
+//     for(var bi = scopes.length-(1+offset); bi >=0; bi--){
+//         var nvps = scopes[bi];
+//         if(nvps[name] !== undefined) {
+//             return callback(nvps[name]);
+//         }
+//     }
+//     return callback(null);
+// });
+// value.isMacro = true;
+// value.useRuntimeScope = true;
+// core.value = value;
 
 function set(expr, context, callback) {
     if(expr[0] === '`') expr.shift();
@@ -1303,6 +1303,11 @@ function forJs(expr, context, callback){
         if(!(_.isNumber(start) && _.isNumber(end) && _.isNumber(step)))
             return ccError(context, {msg:'forLoop - invalid instructors', start:start, end:end, step:step});
 
+        // if the limits are already reached just return '_'
+        if((step > 0 && start > (end-1)) || (step < 0 && start < (end + 1))){
+            return callback(getBinding(context,'_'));
+        }
+
         var bindings = {_source:"forLoop"};
         bindings.onBreak = makeContinuation(context,callback);
         newScope(context,bindings);
@@ -1324,11 +1329,11 @@ function forJs(expr, context, callback){
         function interCall(rslt){            
             i += step;
             // if we're not done, add another item to the call list
-            if(!((step > 0 && i > end) || (step < 0 && i < end))){
+            //if(!((step > 0 && i > end) || (step < 0 && i < end))){
+            if(!((step > 0 && i > (end-1)) || (step < 0 && i < (end + 1)))){
                 p.items.push(i); // TODO we could just set p.items.[0]=i && p.itemIndex=0
             }
         }        
-        
         p = proc.new(loopBody, [i], interCall, context, function(rslt){ccBreak(context,rslt);});
         p.start();
         
@@ -1535,7 +1540,7 @@ core.run = function(expr, context, callback){
 module = module || {};
 module.exports = {
     core: core,
-    eachAsync: eachAsync,
+    //eachAsync: eachAsync,
     eachSync: eachSync,
     contextInit: contextInit,
     parse: parseHostWrapper,

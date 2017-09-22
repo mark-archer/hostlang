@@ -2850,6 +2850,7 @@ types.isFunction = function(f){
     return _.isFunction(f) || eqObjects(f.type, Fn) || eqObjects(f.type, Fnjs);
 };
 
+
 module = module || {};
 module.exports = types;
 
@@ -4419,7 +4420,8 @@ module.exports = {
     evalMeta: evalMeta,
     applyHost: applyHost,
     bind:bind,
-    utils:utils
+    utils:utils,
+    types:types
 };
 var host = module.exports;
 host.utils = utils;

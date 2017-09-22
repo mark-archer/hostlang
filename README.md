@@ -348,8 +348,8 @@ to recompile standalone executable
 
 webpack
 
-    ; to bundle for browser
-    webpack ./hostlang.js ../public/hostlang.web.js
+    ; to bundle 
+    webpack ./hostlang.js hostlang.bundle.js
 
     ; to minify include -p option
-    webpack ./hostlang.js ../public/hostlang.web.js -p 
+    webpack ./hostlang.js hostlang.bundle.js -p 

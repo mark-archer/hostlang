@@ -2941,36 +2941,6 @@ core.list = {
     code: 'items'
 };
 
-// function pipe(expr, context, callback){
-//     var f = expr.shift();
-//     if(_.isArray(f) && f[0] === "`")
-//         return evalHost(f,context, function (f){
-//             expr.unshift(f);
-//             pipe(expr, context, callback);
-//         });
-//
-//     f = ssym(f);
-//     if(!_.isString(f))
-//         return ccError(context,["pipe -- first argumnet should be function name (string), given:",f]);
-//
-//     var a1 = getBinding(context,"_");
-//
-//     var objectFunc = a1 && a1[f];
-//     var typeFunc = a1 && a1.type && a1.type[f];
-//     f = nsym(f);
-//
-//     if(!_.isArray(a1) && _.isObject(a1))
-//         f = objectFunc || typeFunc || f;
-//
-//     expr.unshift(a1);
-//     expr.unshift(f);
-//     expr.unshift("`");
-//     evalHost(expr,context,callback);
-// }
-// core.pipe = fnjs("pipe", pipe);
-// core.pipe.isMacro = true;
-// core.pipe.useRuntimeScope = true;
-
 utils.objectPath = fnjs(function(){
     var l = [];
     _.each(arguments, function(a){l.push(a)});
@@ -2981,48 +2951,7 @@ utils.objectPath = fnjs(function(){
 });
 utils.objectPath.isMacro = true;
 
-// function eachAsync(items, fn, context, callback){
-//     if(!_.isArray(items))
-//         return ccError(context,"eachAsync - items not a list");
-//     if(!items.length)
-//         return callback(items);
-//     var rslts = [];
-//     var errored = false;
-//     var rsltCnt = 0;
-//     var exited = false;
-//
-//     var bindings = {_source:"eachAsync"};
-//     bindings.onError = makeContinuation(context,function(err){
-//         if(exited) return ccError(context,{msg:"eachAsync exited then errored",err:err}); //throw "eachAsync exited then errored";
-//         if(errored) return;
-//         errored = true;
-//         ccError(context,err);
-//     });
-//     bindings.onCallback = makeContinuation(context, function(rslts, context){
-//         if(errored) return;
-//         if(exited) return ccError(context,"eachAsync has already exited");
-//         exited = true;
-//         callback(rslts);
-//     });
-//     newScope(context, bindings);
-//
-//     function gatherRslts(i, rslt){
-//         if(errored) return;
-//         rslts[i] = rslt;
-//         rsltCnt++;
-//         if(rsltCnt >= items.length){
-//             return ccCallback(context,rslts);
-//         }
-//     }
-//     function execFn(i){
-//         var ctx = _.clone(context);
-//         fn(items[i], ctx, function(rslt){
-//             gatherRslts(i, rslt);
-//         });
-//     }
-//     for(var i = 0; i< items.length; i++)
-//         execFn(i);
-// }
+
 function eachSync(items, fn, context, callback){
 
     if(!_.isArray(items))
@@ -3040,25 +2969,7 @@ function eachSync(items, fn, context, callback){
     }
     proc.new(fn, items, interCall, context, function(rslt){
         callback(rslts);
-    }).start();
-
-    // var exited = false;
-    // var i = -1;
-    // var rslts = [];
-    // function next(rslt){
-    //     if(exited)
-    //         return ccError(context, 'eachSync has already exited');
-    //     if(i > -1){
-    //         rslts[i] = rslt;
-    //     }
-    //     i++;
-    //     if(i>=items.length){
-    //         exited = true;
-    //         return callback(rslts);
-    //     }
-    //     fn(items[i], context, next);
-    // }
-    // next();
+    }).start();    
 }
 core.eachSync = eachSync;
 
@@ -4316,20 +4227,20 @@ function parseHostWrapper(expr, context, callback, onError){
 }
 
 function run(code, context, callback, onError) {
-    //callback = callback || context && context.exit;
+    //context = context || {};
+    callback = callback || context && context.exit || console.log;
 
     //console.log(core.names);
 
     // prevent concurrent runs against the same context
     context = contextInit(context, callback,onError);
     var top = _.first(context);
-    if(top._isRunning){
-        console.warn("context is already in use or was left in an error state from last run");
-        //return ccError(context, "context is already in use");
-    }
+    // if(top._isRunning){
+    //     console.warn("context is already in use or was left in an error state from last run");
+    //     //return ccError(context, "context is already in use");
+    // }
 
     // set start time
-    delete top._waitingSince;
     top._startTime = Date.now();
 
     // update context as not running prior to callback
@@ -4353,21 +4264,9 @@ function run(code, context, callback, onError) {
     context = contextInit(context, processCallback, processError);
     top._isRunning = true;
 
-
-    // // load core if it hasn't already been
-    // if(!core.loaded){
-    // //if(!core.loaded && false){
-    //     core.loaded = true;
-    //     //var ctx = {};
-    //     return reader.read(["host/_loadCore.host"], context, function (rslt) {
-    //         top._isRunning = false;
-    //         run(code, context, callback, onError);
-    //     });
-    // }
-
     // if it's a string, assume it's code that needs to be parsed first
     if(_.isString(code)){
-        return parseHost(code, context, function (rslt) {
+        parseHost(code, context, function (rslt) {
             setTimeout(function(){
                 top._isRunning = false;
                 top._parsedMs = Date.now() - top._startTime;
@@ -4375,33 +4274,15 @@ function run(code, context, callback, onError) {
                 run(rslt, context, processCallback, processError);
             },0);
         });
+
+        return top;
     }
 
     //proc.initProc(code,context, processCallback);
     evalHostBlock(code, context, processCallback);
+
+    return top;
 }
-// function runFile(filePath, context, callback, onError){
-//     callback = callback || console.log;
-//     onError = onError || console.error;
-//     context = contextInit(context, callback, onError);
-//     reader.read([filePath, 'utf8'], context, function(code){
-//         run(code, context, callback, onError);
-//     });
-// }
-// core.run = function(expr, context, callback){
-//     var filePath = expr[0];
-//     reader.read([filePath, 'utf8'], context, function(code){
-//         return parseHost(code, context, function (pcode) {
-//             var oldReturn = getBinding(context,"onReturn");
-//             function fileRan(rslt){
-//                 bind(context, "onReturn", oldReturn);
-//                 callback(rslt);
-//             }
-//             bind(context, "onReturn", makeContinuation(context,fileRan));
-//             evalHostBlock(pcode, context, fileRan);
-//         });
-//     });
-// };
 
 module = module || {};
 module.exports = {

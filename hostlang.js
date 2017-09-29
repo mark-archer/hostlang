@@ -1365,6 +1365,7 @@ function parseHostWrapper(expr, context, callback, onError){
 }
 
 function run(code, context, callback, onError) {
+    //context = context || {};
     callback = callback || context && context.exit || console.log;
 
     //console.log(core.names);
@@ -1403,7 +1404,7 @@ function run(code, context, callback, onError) {
 
     // if it's a string, assume it's code that needs to be parsed first
     if(_.isString(code)){
-        return parseHost(code, context, function (rslt) {
+        parseHost(code, context, function (rslt) {
             setTimeout(function(){
                 top._isRunning = false;
                 top._parsedMs = Date.now() - top._startTime;
@@ -1411,10 +1412,14 @@ function run(code, context, callback, onError) {
                 run(rslt, context, processCallback, processError);
             },0);
         });
+
+        return top;
     }
 
     //proc.initProc(code,context, processCallback);
     evalHostBlock(code, context, processCallback);
+
+    return top;
 }
 
 module = module || {};

@@ -316,5 +316,10 @@ types.isFunction = function(f){
     return _.isFunction(f) || eqObjects(f.type, Fn) || eqObjects(f.type, Fnjs);
 };
 
+types.asNumber = function(n){
+    return Number(n);
+};
+NativeNumber.as = types.asNumber;
+
 module = module || {};
 module.exports = types;

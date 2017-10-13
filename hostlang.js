@@ -794,6 +794,7 @@ core.applyHost = applyHost;
 function evalJs(code){
     return eval('(function(){return ' + code.trim() + ';})()');
 }
+host.evalJs = evalJs;
 function evalSym(expr, context, callback){
     var symbol = expr;
 

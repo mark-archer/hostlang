@@ -4290,6 +4290,7 @@ module.exports = {
     //eachAsync: eachAsync,
     eachSync: eachSync,
     contextInit: contextInit,
+    parser: parse,
     parse: parseHostWrapper,
     //compile: compile,
     run: run,
@@ -5612,7 +5613,7 @@ function parsePath(pi, context, callback){
     return callback();
 }
 
-
+parse.terminators = /[\(\)\s\.:^|;"\[\]!]/;
 parse.parsers = [
     parseTabs, parseList, parseSymbol, parseNumber, parseQuotes, parseComments, parseObjectPath,
     parseMetaList, parsePipe, parseCatch, parseIfElifElse, parseBasicOps, parsePath];
@@ -5626,7 +5627,7 @@ function parseHost(expr, context, callback){
         root:root,
         stack:[]
     };
-    parseInfo.terminators = /[\(\)\s\.:^|;"\[\]!]/;
+    parseInfo.terminators = parse.terminators;
     parseInfo.peekWord = function (terminators) {
         terminators = terminators || parseInfo.terminators;
         var pi = parseInfo;

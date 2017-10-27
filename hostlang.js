@@ -1429,6 +1429,7 @@ module.exports = {
     //eachAsync: eachAsync,
     eachSync: eachSync,
     contextInit: contextInit,
+    parser: parse,
     parse: parseHostWrapper,
     //compile: compile,
     run: run,

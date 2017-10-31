@@ -349,11 +349,8 @@ to recompile standalone executable
 webpack
 
     ; to bundle 
-<<<<<<< HEAD
     webpack ./hostlang.js ../hostlang.bundle.js
-=======
     webpack ./hostlang.js hostlang.bundle.js && cp hostlang.bundle.js ../hostlang.bundle.js
->>>>>>> savepoint
 
     ; to minify include -p option
     webpack ./hostlang.js hostlang.bundle.js -p 

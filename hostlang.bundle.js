@@ -3786,7 +3786,12 @@ function evalHost(expr, context, callback){
 function evalHostBlock(expr, context, callback){
     expr = untick(expr);
     
-    // short circuit on lengths zero and one
+    // short circuit on nonlist, and list lengths zero and one
+    if(!_.isArray(expr)){
+        if(expr === undefined)
+            expr = null;
+        expr = [expr]
+    }
     if(expr.length === 0){
         bind(context, "_", null);
         return callback(null);
@@ -4305,8 +4310,9 @@ module.exports = {
     utils:utils,
     types:types
 };
-var host = module.exports;
+var host = module.exports || {};
 host.utils = utils;
+host.evalJs = evalJs;
 utils.host = host;
 types.host = host;
 parse.host = host;

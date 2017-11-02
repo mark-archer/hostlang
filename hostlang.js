@@ -90,6 +90,15 @@ utils.objectPath = fnjs(function(){
 utils.objectPath.isMacro = true;
 
 
+core.assertEq = function(context, callback, a,b){
+    var rslt = utils._eqValues(a,b);
+    if(!rslt)
+        ccError(context, ["Not equal", a, b]);
+    console.log("assertEq", a,b);
+    callback(a);
+}
+
+
 function eachSync(items, fn, context, callback){
 
     if(!_.isArray(items))

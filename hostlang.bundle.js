@@ -2952,6 +2952,15 @@ utils.objectPath = fnjs(function(){
 utils.objectPath.isMacro = true;
 
 
+core.assertEq = function(context, callback, a,b){
+    var rslt = utils._eqValues(a,b);
+    if(!rslt)
+        ccError(context, ["Not equal", a, b]);
+    console.log("assertEq", a,b);
+    callback(a);
+}
+
+
 function eachSync(items, fn, context, callback){
 
     if(!_.isArray(items))
@@ -5765,10 +5774,14 @@ function parseHost(expr, context, callback){
     }
 
     var iParser = 0;
+    context[0].callDepth = 1001;
     function next(proceeding){
         context[0].callDepth++;
-        if(context[0].callDepth > parse.host.core.maxCallDepth)
+        //if(context[0].callDepth > parse.host.core.maxCallDepth)
+        if(context[0].callDepth > 1000)
             return setTimeout(function(){context[0].callDepth = 0; next(proceeding)}, 0);
+
+        context[0].callDepth += 1;
 
         // if we've reached the end of the code, return
         if(parseInfo.i >= parseInfo.code.length){

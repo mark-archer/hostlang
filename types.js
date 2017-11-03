@@ -316,6 +316,8 @@ types.isFunction = function(f){
     return _.isFunction(f) || eqObjects(f.type, Fn) || eqObjects(f.type, Fnjs);
 };
 
+//types.type = function(){} // see types.host for defintion 
+
 
 module = module || {};
 module.exports = types;

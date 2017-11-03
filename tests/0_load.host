@@ -1,4 +1,9 @@
 
+log "test"
+
+warn "0_load.host -- load incomplete"
+return!
+
 ; test load
 read "host/logic.host"
 _.AND

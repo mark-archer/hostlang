@@ -55,7 +55,6 @@ catch (e)
     e
 === 3
 
-
 ;; test try catch with async fn calls
 exit _
 fn doLst()
@@ -66,3 +65,5 @@ try
 		doLst!
 catch(e)
 	"caught error"
+
+

@@ -2915,7 +2915,9 @@ native.trace = function () {
 
 // copy native modules to native namespace
 function copyToNative(obj){
-    for (var n in obj) if(obj.hasOwnProperty(n)) native[n] = obj[n];
+    for (var n in obj) 
+        if(obj.hasOwnProperty(n)) 
+            native[n] = obj[n];
 }
 copyToNative(utils);
 copyToNative(types);
@@ -2956,7 +2958,7 @@ core.assertEq = function(context, callback, a,b){
     var rslt = utils._eqValues(a,b);
     if(!rslt)
         ccError(context, ["Not equal", a, b]);
-    console.log("assertEq", a,b);
+    //console.log("assertEq", a,b);
     callback(a);
 }
 
@@ -3024,8 +3026,23 @@ function newScope(context, bindings){
     context.push(bindings);
     return bindings;
 }
+core.newScope = function(context, callback, bindings){
+    // if(!_.isObject(bindings))
+    //     bindings = {};
+    // if(!_.isArray(bindings)){
+    //     bindings= [bindings];
+    // }
+    // context.push.apply(context, bindings);
+    // callback(context);
+    newScope(context, bindings)
+    callback(_.last(context));
+}
 function exitScope(context){
     context.pop();
+}
+core.exitScope = function(context, callback){
+    exitScope(context);
+    callback(_.last(context));
 }
 function getClosure(context, offset){
 
@@ -3873,6 +3890,28 @@ core.evalOutside = fnjs(function(expr, context, callback){
 });
 core.evalOutside.useRuntimeScope = true;
 core.evalOutside.isInline = true;
+core.evalScope = function(context, callback, code, bindings, options){
+    options = options || {};
+    var bindings = bindings || {};
+    
+    // do this here to capture state of context
+    bindings.onCallback = makeContinuation(context, callback);
+    //bindings.onError = getBinding(context,"onError");
+
+    // isInline means don't treat as new function call so don't capture return continuation
+    if(!options.isInline){
+        bindings.onReturn = makeContinuation(context,callback);        
+    }
+
+    context = _.clone(context);    
+    newScope(context,bindings);
+
+    // execute code
+    var code = copy(code);
+    evalHostBlock(code,context, function (rslt) {
+        ccCallback(context, rslt);
+    });
+}
 
 function makeContinuation(context, callback){
     return {

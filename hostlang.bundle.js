@@ -2850,6 +2850,8 @@ types.isFunction = function(f){
     return _.isFunction(f) || eqObjects(f.type, Fn) || eqObjects(f.type, Fnjs);
 };
 
+//types.type = function(){} // see types.host for defintion 
+
 
 module = module || {};
 module.exports = types;
@@ -2867,6 +2869,7 @@ var utils = __webpack_require__(2);
 var types = __webpack_require__(5);
 var parse = __webpack_require__(12);
 var proc = __webpack_require__(13);
+var tests = __webpack_require__(14)
 
 //var reader = require('./reader.js');
 //var serveJs = require('./http/serve.js');
@@ -2931,6 +2934,24 @@ core.utils = utils;
 core.maxCallDepth = 500;
 core.__dirname = __dirname;
 //core.reader = reader;
+core.tests = tests;
+
+core.AND = {
+    //type:Fn,
+    type:'Fn',
+    name:'AND',
+    params:[nmeta('args&')],
+    closure:[],
+    code: `
+each args a
+    evalOutside a
+    if(not _)
+        return false
+return (last _)
+`,
+    useRuntimeScope:true,
+    isInline: true
+};
 
 
 core.list = {
@@ -3665,6 +3686,7 @@ function applyHost(expr, context, callback){
 
 
 }
+core.applyHost = applyHost;
 core.apply = {
     type:Fn,
     name:'apply',
@@ -3677,7 +3699,6 @@ core.apply = {
     useRuntimeScope:true,
     isInline: true
 };
-core.applyHost = applyHost;
 
 function evalJs(code){
     return eval('(function(){return ' + code.trim() + ';})()');
@@ -5952,6 +5973,22 @@ function procNext(p){
 
 module = module || {};
 module.exports = proc;
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)(module)))
+
+/***/ }),
+/* 14 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(module) {
+var tests = {}
+
+tests.test = function(context, callback, test){
+    
+}
+
+
+module = module || {};
+module.exports = tests;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)(module)))
 
 /***/ })

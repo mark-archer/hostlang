@@ -5,6 +5,7 @@ var utils = require('./utils.js');
 var types = require('./types.js');
 var parse = require('./parse.js');
 var proc = require('./proc.js');
+var tests = require('./tests.js')
 
 //var reader = require('./reader.js');
 //var serveJs = require('./http/serve.js');
@@ -69,6 +70,24 @@ core.utils = utils;
 core.maxCallDepth = 500;
 core.__dirname = __dirname;
 //core.reader = reader;
+core.tests = tests;
+
+core.AND = {
+    //type:Fn,
+    type:'Fn',
+    name:'AND',
+    params:[nmeta('args&')],
+    closure:[],
+    code: `
+each args a
+    evalOutside a
+    if(not _)
+        return false
+return (last _)
+`,
+    useRuntimeScope:true,
+    isInline: true
+};
 
 
 core.list = {
@@ -803,6 +822,7 @@ function applyHost(expr, context, callback){
 
 
 }
+core.applyHost = applyHost;
 core.apply = {
     type:Fn,
     name:'apply',
@@ -815,7 +835,6 @@ core.apply = {
     useRuntimeScope:true,
     isInline: true
 };
-core.applyHost = applyHost;
 
 function evalJs(code){
     return eval('(function(){return ' + code.trim() + ';})()');

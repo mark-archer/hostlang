@@ -3952,7 +3952,7 @@ function callContinuation(expr, context, callback){
         if(name === "onError")
             throw  {type: Error, msg: "unhandled error", innerError: value};
         else
-            ccError(context, name + " is not a continuation");
+            return ccError(context, name + " is not a continuation");
     //context.scopes = cont.closure;
     cont.context.length = 0;
     Array.prototype.push.apply(cont.context, cont.closure);
@@ -4356,6 +4356,45 @@ function run(code, context, callback, onError) {
     evalHostBlock(code, context, processCallback);
 
     return top;
+}
+
+core.run = function(context, callback, code){
+    context = _.clone(context);
+    var bindings = {_source:'run'}
+    bindings.onCallback = makeContinuation(context, callback);
+    bindings.onError = getBinding(context,"onError");
+    bindings.onReturn = makeContinuation(context, callback);
+    bindings.onReturn.sourceFn = "run";
+    newScope(context, bindings);
+    
+    if(_.isString(code)){
+        return parseHost(code,context, function(code){
+            context.pop();
+            core.run(context, callback, code);
+        });
+    }
+
+    evalHostBlock(code, context, function(rslt){
+        ccCallback(context, rslt);
+    });    
+}
+
+var core_require = {}
+core.require = function(context, callback, uri){
+    context = _.clone(context);
+    if(core_require[uri])
+        return callback(core_require[uri]);
+    GET(uri, null, function(rslt){
+        var newContext = {exports:{_source:uri}};
+        run(rslt, newContext, function(rslt){            
+            core_require[uri] = newContext.exports;
+            callback(core_require[uri]);
+        },function(err){
+            ccError(context,err)
+        });
+    },function(err){
+        ccError(context,err);
+    });
 }
 
 module = module || {};

@@ -1,5 +1,5 @@
 
-var str (get "host/base/string.host").string
+var str (require "hostlang/base/string.host").string
 var myRe re/test/gi
 str.replace "test Test test" myRe "foo"
 === "foo foo foo"

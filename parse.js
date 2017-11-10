@@ -847,11 +847,40 @@ function parsePath(pi, context, callback){
     }
     return callback();
 }
+function parseRegEx(pi, context, callback){
+    if(pi.peek(3) != "re/")
+        return callback();
+
+    // skip over leading "re/"
+    pi.pop(3);
+
+    var escapeNext = false;
+    var reStr = "";
+    while(!escapeNext && pi.peek() != "/"){
+        escapeNext = false;
+        reStr += pi.pop();
+        if(reStr[reStr.length - 1] == "\\")
+            escapeNext = true;
+    }
+
+    // skip over ending "/"
+    pi.pop();
+
+    // read in options
+    var reOptions = "";
+    while(pi.peek().match(/^[a-z]$/))
+        reOptions += pi.pop();
+
+    // create and insert re
+    pi.clist.push(new RegExp(reStr, reOptions));
+
+    callback(true);
+}
 
 parse.terminators = /[\(\)\s\.:^|;"\[\]!]/;
 parse.parsers = [
     parseTabs, parseList, parseSymbol, parseNumber, parseQuotes, parseComments, parseObjectPath,
-    parseMetaList, parsePipe, parseCatch, parseIfElifElse, parseBasicOps, parsePath];
+    parseMetaList, parsePipe, parseCatch, parseIfElifElse, parseBasicOps, parsePath, parseRegEx];
 function parseHost(expr, context, callback){
 
     var root = ['`'];

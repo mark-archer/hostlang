@@ -4243,7 +4243,7 @@ function sleep(expr, context, callback){
     untick(expr);
     var ms = expr.shift() || 0;
     setTimeout(function(){
-        callback();
+        callback(getBinding(context,'_'));
     }, ms);
 }
 function interval(context, callback, interval_ms, f){
@@ -4385,15 +4385,20 @@ core.run = function(context, callback, code){
 
 var core_require = {}
 core.require = function(context, callback, uri){
-    context = _.clone(context);
-    if(core_require[uri])
+    //context = _.clone(context);
+    if(core_require[uri]){
+        if(core_require[uri]._loading)
+            console.warn(uri + " was required while it was still loading");
         return callback(core_require[uri]);
+    }
     GET(uri, null, function(rslt){
-        var newContext = {_source:uri,exports:{_source:uri}};
-        run(rslt, newContext, function(rslt){            
-            core_require[uri] = newContext.exports;
+        var newContext = {_source:uri,exports:{_source:uri,_loading:true}};
+        core_require[uri] = newContext.exports;
+        run(rslt, newContext, function(rslt){
+            delete core_require[uri]._loading;
             callback(core_require[uri]);
         },function(err){
+            delete core_require[uri];
             ccError(context,err)
         });
     },function(err){
@@ -5730,11 +5735,40 @@ function parsePath(pi, context, callback){
     }
     return callback();
 }
+function parseRegEx(pi, context, callback){
+    if(pi.peek(3) != "re/")
+        return callback();
+
+    // skip over leading "re/"
+    pi.pop(3);
+
+    var escapeNext = false;
+    var reStr = "";
+    while(!escapeNext && pi.peek() != "/"){
+        escapeNext = false;
+        reStr += pi.pop();
+        if(reStr[reStr.length - 1] == "\\")
+            escapeNext = true;
+    }
+
+    // skip over ending "/"
+    pi.pop();
+
+    // read in options
+    var reOptions = "";
+    while(pi.peek().match(/^[a-z]$/))
+        reOptions += pi.pop();
+
+    // create and insert re
+    pi.clist.push(new RegExp(reStr, reOptions));
+
+    callback(true);
+}
 
 parse.terminators = /[\(\)\s\.:^|;"\[\]!]/;
 parse.parsers = [
     parseTabs, parseList, parseSymbol, parseNumber, parseQuotes, parseComments, parseObjectPath,
-    parseMetaList, parsePipe, parseCatch, parseIfElifElse, parseBasicOps, parsePath];
+    parseMetaList, parsePipe, parseCatch, parseIfElifElse, parseBasicOps, parsePath, parseRegEx];
 function parseHost(expr, context, callback){
 
     var root = ['`'];

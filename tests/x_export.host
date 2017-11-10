@@ -4,5 +4,8 @@ fn hi2()"also Hi"
 fn hi3()"private hi"
 
 export hi hi2
-keys _
-=== (, "hi" "hi2")
+var testExport _
+testExport.hi === hi
+testExport.hi2 === hi2
+testExport.hi3 === null
+

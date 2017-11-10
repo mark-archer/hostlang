@@ -1,15 +1,18 @@
 
+
 ;; for: endNum
 var lst (')
 for (i 2)
 	push lst i
-=== : (' 0 1 2)
+=== : (' 0 1)
+
 
 ;; for: startNum endNum
 var lst (')
 for (i 3 6)
 	push lst i
-=== : (' 3 4 5 6)
+=== : (' 3 4 5)
+
 
 ;; for: startNum endNum step
 var lst (')
@@ -86,11 +89,11 @@ lst
 var lst (,)
 for (i 9 7)
 	push lst i
-=== (, 9 8 7)
+=== (, 9 8)
 
 
 ;; for: auto -1 step, 1 arg
 var lst (,)
 for (i -3)
 	push lst i
-=== (, 0 -1 -2 -3)
+=== (, 0 -1 -2)

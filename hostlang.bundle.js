@@ -2975,10 +2975,10 @@ utils.objectPath = fnjs(function(){
 utils.objectPath.isMacro = true;
 
 
-core.assertEq = function(context, callback, a,b){
+core.assertEq = function(context, callback, a, b){
     var rslt = utils._eqValues(a,b);
     if(!rslt)
-        ccError(context, ["Not equal", a, b]);
+        return ccError(context, ["Not equal", a, b]);
     //console.log("assertEq", a,b);
     callback(a);
 }
@@ -4134,7 +4134,7 @@ function forJs(expr, context, callback){
     untick(params);
     eachSync(params,evalHost,context,function(params){
         if(params.length > 3)
-            return ccError(context,{msg:"forLoop - too many params",params:params});
+            return ccError(context,{msg:"forLoop - too many params, maximum of 4: iterator name, start, end, step",params:params});
 
         var start=0, end=null, step=null;
         if(params.length > 2)
@@ -4152,7 +4152,7 @@ function forJs(expr, context, callback){
         }
 
         if(!(_.isNumber(start) && _.isNumber(end) && _.isNumber(step)))
-            return ccError(context, {msg:'forLoop - invalid instructors', start:start, end:end, step:step});
+            return ccError(context, {msg:'forLoop - start, end or step is not a number', start:start, end:end, step:step});
 
         // if the limits are already reached just return '_'
         if((step > 0 && start > (end-1)) || (step < 0 && start < (end + 1))){
@@ -4185,7 +4185,11 @@ function forJs(expr, context, callback){
                 p.items.push(i); // TODO we could just set p.items.[0]=i && p.itemIndex=0
             }
         }        
-        p = proc.new(loopBody, [i], interCall, context, function(rslt){ccBreak(context,rslt);});
+        p = proc.new(loopBody, [i], interCall, context, function(rslt){
+            //ccBreak(context,rslt);
+            exitScope(context);
+            callback(rslt);
+        });
         p.start();
         
         // return;
@@ -4385,7 +4389,7 @@ core.require = function(context, callback, uri){
     if(core_require[uri])
         return callback(core_require[uri]);
     GET(uri, null, function(rslt){
-        var newContext = {exports:{_source:uri}};
+        var newContext = {_source:uri,exports:{_source:uri}};
         run(rslt, newContext, function(rslt){            
             core_require[uri] = newContext.exports;
             callback(core_require[uri]);

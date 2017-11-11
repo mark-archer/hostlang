@@ -2,7 +2,6 @@
 
 var fsjs : evalJs "require('fs')"
 
-
 ;var fs new!
 ;export fs
 

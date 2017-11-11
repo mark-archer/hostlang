@@ -8,7 +8,7 @@ var nsym = utils.nsym;
 
 var fnjs = utils.fnjs;
 var eqObjects = utils.eqObjects;
-
+var nmeta = utils.nmeta;
 
 var types = {};
 
@@ -317,6 +317,53 @@ types.isFunction = function(f){
 };
 
 //types.type = function(){} // see types.host for defintion 
+var typeCode = `
+;fnm type(name args&)
+; new type object
+var t new!
+set t.name : ssym name
+set t.type Type
+
+; bind to context
+bind context (ssym name) t 1
+
+; add to known types
+push _knownTypes t
+
+; processes addtional args
+each args a
+    ; if it's the 'fields' arg just set the list
+    if(&& (isList a) (|| (== (ssym a.0) "fields") (== (ssym a.1) "fields")))
+        untick a ; remove tick if it's there
+        shift a  ; remove 'fields' symbol
+        set t.fields a
+        continue!
+
+    ; eval it
+    set a : eval a
+
+    ; if it's named set it by name
+    if(&& (isMeta a) a.name)
+        set t.(one a.name) a.value
+    else
+        ; otherwise add it to the list of unnamed values
+        ; maybe -- throw error
+        set t.values (OR t.values list!)
+        push t.values a
+t
+`
+types.type = {
+    type:'Fn',
+    params:[
+        nmeta("name"),
+        nmeta("args&")
+    ],
+    code:typeCode,
+    //closure:[types],
+    useRuntimeScope: true,
+    isMacro:true,
+    isInline: true
+}
 
 
 module = module || {};

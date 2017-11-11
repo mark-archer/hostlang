@@ -18,6 +18,9 @@ var tests = require('./tests.js')
 
 console.log('hostlang');
 
+// makes sure the global window object is declared
+try{window} catch(e){window = {}}    
+
 // skip first two args: first is path to exe, second is path to this file
 var args = utils.skip(process.argv, 2);
 
@@ -899,6 +902,9 @@ function evalSym(expr, context, callback){
     if(native[sym])
         return callback(native[sym]);
 
+    // look in window
+    if(window[sym] !== undefined) return callback(window[sym])   
+
     return ccError(context,"Couldn't resolve symbol: " + sym);
 
 }
@@ -1443,11 +1449,12 @@ function parseHostWrapper(expr, context, callback, onError){
 function run(code, context, callback, onError) {
     //context = context || {};
     callback = callback || context && context.exit || console.log;
+    onError = onError || console.error;
 
     //console.log(core.names);
 
     // prevent concurrent runs against the same context
-    context = contextInit(context, callback,onError);
+    context = contextInit(context, callback, onError);
     var top = _.first(context);
     // if(top._isRunning){
     //     console.warn("context is already in use or was left in an error state from last run");
@@ -1463,7 +1470,7 @@ function run(code, context, callback, onError) {
             top._ranMs = Date.now() - top._startTime;
             if(!top._silent)
                 console.log((top._parsedMs + top._ranMs) + " ms - " +
-                    (top._sourceFile || "<anonymous>") + " parsed in " + top._parsedMs + " ms, ran in " + top._ranMs + " ms");
+                    (top._sourceFile || top._source || "<anonymous>") + " parsed in " + top._parsedMs + " ms, ran in " + top._ranMs + " ms");
         }
         top._isRunning = false;
         callback(rslt);
@@ -1519,27 +1526,70 @@ core.run = function(context, callback, code){
     });    
 }
 
+core.GET = function(context, callback, path, options){
+    if(path.substring(0,3) === "fs:"){
+        path = path.substring(3);
+        var fs = eval("require('./fs.js')");
+        fs.host = module.exports;//host;
+        // check if path exists
+        fs.isDir(path, context, function(isDir){
+            // if dir, return file names
+            if(isDir){
+                fs.ls(path, context, function(files){
+                    console.log("files",files);
+                    callback(files)
+                });
+            } 
+            // if file, return file contents
+            else {                
+                function afterRead(contents){
+                    console.log('contents', contents);
+                    callback(contents);
+                }
+                fs.readFile(context, callback, path, options)
+            }
+        });
+
+    } else {
+        window.GET(path, null, callback, function(err){
+            ccError(context,err);
+        });
+    }    
+}
+
 var core_require = {}
-core.require = function(context, callback, uri){
+core.require = function(context, callback, path){
     //context = _.clone(context);
-    if(core_require[uri]){
-        if(core_require[uri]._loading)
-            console.warn(uri + " was required while it was still loading");
-        return callback(core_require[uri]);
-    }
-    GET(uri, null, function(rslt){
-        var newContext = {_source:uri,exports:{_source:uri,_loading:true}};
-        core_require[uri] = newContext.exports;
-        run(rslt, newContext, function(rslt){
-            delete core_require[uri]._loading;
-            callback(core_require[uri]);
+    if(core_require[path]){
+        if(core_require[path]._loading)
+            console.warn(path + " was required while it was still loading");
+        return callback(core_require[path]);
+    }  
+    function afterGet(code){
+        var newContext = {_source:path,exports:{_source:path,_loading:true}};
+        core_require[path] = newContext.exports;
+        run(code, newContext, function(rslt){
+            delete core_require[path]._loading;
+            callback(core_require[path]);
         },function(err){
-            delete core_require[uri];
+            delete core_require[path];
             ccError(context,err)
         });
-    },function(err){
-        ccError(context,err);
-    });
+    }
+    core.GET(context, afterGet, path);  
+    // GET(path, null, function(rslt){
+    //     var newContext = {_source:path,exports:{_source:path,_loading:true}};
+    //     core_require[path] = newContext.exports;
+    //     run(rslt, newContext, function(rslt){
+    //         delete core_require[path]._loading;
+    //         callback(core_require[path]);
+    //     },function(err){
+    //         delete core_require[path];
+    //         ccError(context,err)
+    //     });
+    // },function(err){
+    //     ccError(context,err);
+    // });
 }
 
 module = module || {};

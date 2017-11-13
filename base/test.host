@@ -1,0 +1,14 @@
+
+var tests list!
+
+fnm addTest(name code)
+    ; todo create test
+    ; todo add test to list
+export addTest
+
+fn runTests(tests?)
+    ifnot tests
+        set tests
+
+    ; todo
+export runTests

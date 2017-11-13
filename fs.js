@@ -1,4 +1,4 @@
-var fs = require('fs');
+
 // var utils = require('../utils.js');
 // var fnjs = utils.fnjs;
 // var untick = utils.untick;
@@ -6,6 +6,18 @@ var fs = require('fs');
 var hostFs = {};
 hostFs.cachedReads = {};
 hostFs.currentDir = __dirname;
+
+var fs = null;
+
+var inited = false;
+hostFs.init = function(host){        
+    //fs = require('fs');
+    hostFs.host = host;
+    if(inited) return inited;
+    fs = eval("require('fs')");
+    inited = true;
+    return inited;
+}
 //hostFs.hostDir = __dirname; // + "\\hostlang";
 
 function ccError(context, err){
@@ -14,17 +26,6 @@ function ccError(context, err){
 
 hostFs.realPath = function(path, context, callback) {
     
-    //var path = untick(expr)[0];
-
-    // // check for hostlang path
-    // var start = path.substr(0,5).toLowerCase();
-    // if(start === "host/" || start === "host\\"){
-    //     path = hostFs.hostDir + "/" + path.substr(4);
-    // }
-
-    //if(path[0] === '.')
-    //    path = hostFs.currentDir + "/" + path;
-
     if(path[0] !== '/')
         path = hostFs.currentDir + "/" + path;
         
@@ -68,6 +69,20 @@ hostFs.readFile = function(context, callback, path, options){
         if(err) return ccError(context, err);
         callback(contents);
     });
+}
+
+hostFs.writeFile = function(context, callback, path, contents, options){
+    options = options || "utf8"    
+
+    if(path[0] === '.') 
+        path = hostFs.currentDir + "/" + path;
+    //hostFs.realPath(path, context, function(path){
+        console.log('writing to ', path);
+        fs.writeFile(path, contents, options, function(err, rslt){
+            if(err) return ccError(context, err);
+            callback(path);
+        });
+    //});    
 }
 
 module = module || {};

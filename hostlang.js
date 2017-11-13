@@ -6,6 +6,8 @@ var types = require('./types.js');
 var parse = require('./parse.js');
 var proc = require('./proc.js');
 var tests = require('./tests.js')
+var base = require('./base.c.js')
+base = utils.fromJSON(base);
 
 //var reader = require('./reader.js');
 //var serveJs = require('./http/serve.js');
@@ -67,6 +69,7 @@ copyToNative(parse);
 //copyToNative(reader);
 //copyToNative(serveJs);
 
+
 var core = {};
 core.core = core;
 core.utils = utils;
@@ -89,7 +92,26 @@ each args a
 return (last _)
 `,
     useRuntimeScope:true,
-    isInline: true
+    isMacro: true,
+    //,isInline: true
+};
+
+core.OR = {
+    //type:Fn,
+    type:'Fn',
+    name:'OR',
+    params:[nmeta('args&')],
+    closure:[],
+    code: `
+each args a
+    evalOutside a
+    if _
+        return _
+return (last _)
+`,
+    useRuntimeScope:true,
+    isMacro: true
+    //,isInline: true
 };
 
 
@@ -890,6 +912,10 @@ function evalSym(expr, context, callback){
     // if we didn't resolve 'this' by now return null for it (don't want to mess around with what it might mean outside of context)
     if(sym === 'this') return callback(null);
 
+    // look in base    
+    if(base[sym])
+        return callback(base[sym]);
+
     // look in core
     if(core[sym])
         return callback(core[sym]);
@@ -903,8 +929,9 @@ function evalSym(expr, context, callback){
         return callback(native[sym]);
 
     // look in window
-    if(window[sym] !== undefined) return callback(window[sym])   
-
+    if(window[sym])
+        return callback(window[sym])   
+    
     return ccError(context,"Couldn't resolve symbol: " + sym);
 
 }
@@ -1529,23 +1556,17 @@ core.run = function(context, callback, code){
 core.GET = function(context, callback, path, options){
     if(path.substring(0,3) === "fs:"){
         path = path.substring(3);
-        var fs = eval("require('./fs.js')");
-        fs.host = module.exports;//host;
+        var fs = require('./fs.js');
+        //fs.host = module.exports;//host;
+        fs.init(module.exports);
         // check if path exists
         fs.isDir(path, context, function(isDir){
             // if dir, return file names
             if(isDir){
-                fs.ls(path, context, function(files){
-                    console.log("files",files);
-                    callback(files)
-                });
+                fs.ls(path, context, callback);
             } 
             // if file, return file contents
             else {                
-                function afterRead(contents){
-                    console.log('contents', contents);
-                    callback(contents);
-                }
                 fs.readFile(context, callback, path, options)
             }
         });
@@ -1557,6 +1578,24 @@ core.GET = function(context, callback, path, options){
     }    
 }
 
+core.SAVE = function(context, callback, path, contents, options){
+    if(path.substring(0,3) === "fs:"){
+        path = path.substring(3);
+        var fs = require('./fs.js');
+        fs.init(module.exports);
+        fs.writeFile(context, callback, path, contents, options)
+    }
+    else {
+        window.SAVE(contents,{
+            path:path,
+            options:options,
+            onError:function(err){
+                ccError(context,err);
+            }
+        }, callback);
+    }
+}
+
 var core_require = {}
 core.require = function(context, callback, path){
     //context = _.clone(context);
@@ -1566,7 +1605,7 @@ core.require = function(context, callback, path){
         return callback(core_require[path]);
     }  
     function afterGet(code){
-        var newContext = {_source:path,exports:{_source:path,_loading:true}};
+        var newContext = {_sourceFile:path,exports:{_source:path,_loading:true}};
         core_require[path] = newContext.exports;
         run(code, newContext, function(rslt){
             delete core_require[path]._loading;
@@ -1591,6 +1630,8 @@ core.require = function(context, callback, path){
     //     ccError(context,err);
     // });
 }
+
+
 
 module = module || {};
 module.exports = {

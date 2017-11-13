@@ -11,7 +11,7 @@ fn readFile(path options="utf8")
 export readFile
 
 fn writeFile(path content options="utf8")
-    fsjs.writeFileSync path options
+    fsjs.writeFileSync path content options
     true
 export writeFile
 

@@ -60,7 +60,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 6);
+/******/ 	return __webpack_require__(__webpack_require__.s = 7);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -1653,7 +1653,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscor
 /* WEBPACK VAR INJECTION */(function(module) {//console.log('utils');
 
 var _ = _ || __webpack_require__(1);
-var uuid = __webpack_require__(8);
+var uuid = __webpack_require__(9);
 
 var system_id = '00000000-0000-0000-0000-000000000000';
 var type_type_id = '00000000-0000-0000-0000-000000000001';
@@ -2497,7 +2497,7 @@ if (!rng) {
 
 module.exports = rng;
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(10)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11)))
 
 /***/ }),
 /* 4 */
@@ -2909,14 +2909,111 @@ module.exports = types;
 /* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
+/* WEBPACK VAR INJECTION */(function(__dirname, module) {
+// var utils = require('../utils.js');
+// var fnjs = utils.fnjs;
+// var untick = utils.untick;
+
+var hostFs = {};
+hostFs.cachedReads = {};
+hostFs.currentDir = __dirname;
+
+var fs = null;
+
+var inited = false;
+hostFs.init = function(host){        
+    //fs = require('fs');
+    hostFs.host = host;
+    if(inited) return inited;
+    fs = eval("require('fs')");
+    inited = true;
+    return inited;
+}
+//hostFs.hostDir = __dirname; // + "\\hostlang";
+
+function ccError(context, err){
+    hostFs.host.ccError(context,err);
+}
+
+hostFs.realPath = function(path, context, callback) {
+    
+    if(path[0] !== '/')
+        path = hostFs.currentDir + "/" + path;
+        
+    fs.realpath(path, function (err, path) {        
+        if (err) return ccError(context, err);
+        callback(path);
+    });
+};
+
+hostFs.ls = function (path, context, callback) {
+    if(!path) path = ".";
+    hostFs.realPath(path, context, function(path){
+        callback(fs.readdirSync(path));
+    });
+};
+
+hostFs.cd = function (path, context, callback) {    
+    if(!path) return callback(hostFs.currentDir);
+    hostFs.realPath(path, context, function(path){
+        hostFs.currentDir = path;
+        callback(path);
+    });
+};
+
+hostFs.isDir = function (path, context, callback) {
+    hostFs.realPath(path,context, function (path) {
+        fs.lstat(path, function (err, stats) {
+            if(err) return ccError(context, err);
+            callback(stats.isDirectory());
+        });
+    });
+};
+
+hostFs.readFile = function(context, callback, path, options){    
+    //console.log("path+options",path,options)'
+    if(!options){
+        options =  "utf8";
+        raw = false;
+    }
+    fs.readFile(path, options, function (err, contents) {
+        if(err) return ccError(context, err);
+        callback(contents);
+    });
+}
+
+hostFs.writeFile = function(context, callback, path, contents, options){
+    options = options || "utf8"    
+
+    if(path[0] === '.') 
+        path = hostFs.currentDir + "/" + path;
+    //hostFs.realPath(path, context, function(path){
+        console.log('writing to ', path);
+        fs.writeFile(path, contents, options, function(err, rslt){
+            if(err) return ccError(context, err);
+            callback(path);
+        });
+    //});    
+}
+
+module = module || {};
+module.exports = hostFs;
+/* WEBPACK VAR INJECTION */}.call(exports, "/", __webpack_require__(0)(module)))
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports, __webpack_require__) {
+
 /* WEBPACK VAR INJECTION */(function(process, __dirname, module) {//var fs = require('fs');
 
 var _ = __webpack_require__(1);
 var utils = __webpack_require__(2);
 var types = __webpack_require__(5);
-var parse = __webpack_require__(12);
-var proc = __webpack_require__(13);
-var tests = __webpack_require__(14)
+var parse = __webpack_require__(13);
+var proc = __webpack_require__(14);
+var tests = __webpack_require__(15)
+var base = __webpack_require__(16)
+base = utils.fromJSON(base);
 
 //var reader = require('./reader.js');
 //var serveJs = require('./http/serve.js');
@@ -2978,6 +3075,7 @@ copyToNative(parse);
 //copyToNative(reader);
 //copyToNative(serveJs);
 
+
 var core = {};
 core.core = core;
 core.utils = utils;
@@ -3000,7 +3098,26 @@ each args a
 return (last _)
 `,
     useRuntimeScope:true,
-    isInline: true
+    isMacro: true,
+    //,isInline: true
+};
+
+core.OR = {
+    //type:Fn,
+    type:'Fn',
+    name:'OR',
+    params:[nmeta('args&')],
+    closure:[],
+    code: `
+each args a
+    evalOutside a
+    if _
+        return _
+return (last _)
+`,
+    useRuntimeScope:true,
+    isMacro: true
+    //,isInline: true
 };
 
 
@@ -3801,6 +3918,10 @@ function evalSym(expr, context, callback){
     // if we didn't resolve 'this' by now return null for it (don't want to mess around with what it might mean outside of context)
     if(sym === 'this') return callback(null);
 
+    // look in base    
+    if(base[sym])
+        return callback(base[sym]);
+
     // look in core
     if(core[sym])
         return callback(core[sym]);
@@ -3814,8 +3935,9 @@ function evalSym(expr, context, callback){
         return callback(native[sym]);
 
     // look in window
-    if(window[sym] !== undefined) return callback(window[sym])   
-
+    if(window[sym])
+        return callback(window[sym])   
+    
     return ccError(context,"Couldn't resolve symbol: " + sym);
 
 }
@@ -4440,23 +4562,17 @@ core.run = function(context, callback, code){
 core.GET = function(context, callback, path, options){
     if(path.substring(0,3) === "fs:"){
         path = path.substring(3);
-        var fs = eval("require('./fs.js')");
-        fs.host = module.exports;//host;
+        var fs = __webpack_require__(6);
+        //fs.host = module.exports;//host;
+        fs.init(module.exports);
         // check if path exists
         fs.isDir(path, context, function(isDir){
             // if dir, return file names
             if(isDir){
-                fs.ls(path, context, function(files){
-                    console.log("files",files);
-                    callback(files)
-                });
+                fs.ls(path, context, callback);
             } 
             // if file, return file contents
             else {                
-                function afterRead(contents){
-                    console.log('contents', contents);
-                    callback(contents);
-                }
                 fs.readFile(context, callback, path, options)
             }
         });
@@ -4468,6 +4584,24 @@ core.GET = function(context, callback, path, options){
     }    
 }
 
+core.SAVE = function(context, callback, path, contents, options){
+    if(path.substring(0,3) === "fs:"){
+        path = path.substring(3);
+        var fs = __webpack_require__(6);
+        fs.init(module.exports);
+        fs.writeFile(context, callback, path, contents, options)
+    }
+    else {
+        window.SAVE(contents,{
+            path:path,
+            options:options,
+            onError:function(err){
+                ccError(context,err);
+            }
+        }, callback);
+    }
+}
+
 var core_require = {}
 core.require = function(context, callback, path){
     //context = _.clone(context);
@@ -4477,7 +4611,7 @@ core.require = function(context, callback, path){
         return callback(core_require[path]);
     }  
     function afterGet(code){
-        var newContext = {_source:path,exports:{_source:path,_loading:true}};
+        var newContext = {_sourceFile:path,exports:{_source:path,_loading:true}};
         core_require[path] = newContext.exports;
         run(code, newContext, function(rslt){
             delete core_require[path]._loading;
@@ -4502,6 +4636,8 @@ core.require = function(context, callback, path){
     //     ccError(context,err);
     // });
 }
+
+
 
 module = module || {};
 module.exports = {
@@ -4605,10 +4741,10 @@ proc.host = host;
 //     run(cmd,ctx,ppRslt,errorCB);
 // }
 // repl.start({prompt: '<< ', eval: replEval});
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7), "/", __webpack_require__(0)(module)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(8), "/", __webpack_require__(0)(module)))
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports) {
 
 // shim for using process in browser
@@ -4798,11 +4934,11 @@ process.umask = function() { return 0; };
 
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var v1 = __webpack_require__(9);
-var v4 = __webpack_require__(11);
+var v1 = __webpack_require__(10);
+var v4 = __webpack_require__(12);
 
 var uuid = v4;
 uuid.v1 = v1;
@@ -4812,7 +4948,7 @@ module.exports = uuid;
 
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var rng = __webpack_require__(3);
@@ -4918,7 +5054,7 @@ module.exports = v1;
 
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports) {
 
 var g;
@@ -4945,7 +5081,7 @@ module.exports = g;
 
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var rng = __webpack_require__(3);
@@ -4980,7 +5116,7 @@ module.exports = v4;
 
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(module) {//console.log("parse");
@@ -6064,7 +6200,7 @@ module.exports = parse;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)(module)))
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(module) {console.log('proc');
@@ -6150,7 +6286,7 @@ module.exports = proc;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)(module)))
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(module) {
@@ -6164,6 +6300,12 @@ tests.test = function(context, callback, test){
 module = module || {};
 module.exports = tests;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)(module)))
+
+/***/ }),
+/* 16 */
+/***/ (function(module, exports) {
+
+module.exports = {"event":{"type":"Fn","_sourceFile":"fs:./base/events.host","_sourceLine":7,"name":"event","params":[{"name":"name","type":"Meta","isQuote":true},{"name":"params","type":"Meta","isList":true}],"ccode":[["`","`var","`handlers",["`","`list"]],["`","`var","`evt",["`","`apply","`fn",["`","`list","`params",["`","'","`each","`handlers","`h",["`","`apply","`h","`_args"]],["`","'","`","`_args"]]]],["`","`setr",["`evt","`name"],"`name"],["`","`bind","`context","`name","`evt",1],["`","`setr",["`evt","`id"],["`","`newid"]],["`","`setr",["`core","`eventHandlers",["`","`getr",["`evt","`id"]]],"`handlers"],"`evt"],"__this_ref":"__duplicate_ref_obj_2","closure":[{"_sourceFile":"fs:./base/events.host","__this_ref":"__duplicate_ref_obj_26","exports":{"_source":"fs:./base/events.host","event":"__duplicate_ref_obj_2","handle":{"type":"Fn","_sourceFile":"fs:./base/events.host","_sourceLine":26,"name":"handle","params":[{"name":"evt","type":"Meta"},{"name":"handler","type":"Meta"}],"ccode":[["`","`getr",["`core","`eventHandlers",["`","`getr",["`evt","`id"]]]],["`","`push","`_","`handler"],"`handler"],"closure":["__duplicate_ref_obj_26"],"__this_ref":"__duplicate_ref_obj_28"}},"callDepth":4,"onExit":{"type":"Continuation","closure":["__duplicate_ref_obj_26"],"context":["__this_ref:__duplicate_ref_ary_41","__duplicate_ref_obj_26"],"callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }"},"onReturn":{"type":"Continuation","closure":["__duplicate_ref_obj_26"],"context":"__duplicate_ref_ary_41","callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }","source":"rootInit"},"onError":{"type":"Continuation","closure":["__duplicate_ref_obj_26"],"context":"__duplicate_ref_ary_41","callback":"__FUNCTION function processError(err){\r\n        top._isRunning = false;\r\n        if(onError)\r\n            onError(err);\r\n        else\r\n            console.error(err);\r\n    }","__this_ref":"__duplicate_ref_obj_44"},"include":[],"_startTime":1510605930271,"_isRunning":false,"_parsedMs":24,"_lastEvaled":["\r\n[\r\n    \"handler 1, A\",\r\n    \"handler 2, A\",\r\n    \"handler 3, A\",\r\n    \"handler 1, B\",\r\n    \"handler 2, B\",\r\n    \"handler 3, B\",\r\n    \"handler 1, C\",\r\n    \"handler 2, C\",\r\n    \"handler 3, C\"\r\n]\r\n"],"callback":"__FUNCTION function (rslt){\r\n            if(p.interCall) p.interCall(rslt);\r\n        \r\n            // terminal condition\r\n            if(p.itemIndex >= p.items.length)\r\n                return p.callback(rslt);\r\n                \r\n            procsReady.push(p);\r\n            if(!procing)\r\n                 setTimeout(procLoop,0);\r\n        }","_":["__this_ref:__duplicate_ref_ary_48","handler 1, A","handler 2, A","handler 3, A","handler 1, B","handler 2, B","handler 3, B","handler 1, C","handler 2, C","handler 3, C"],"event":"__duplicate_ref_obj_2","handle":"__duplicate_ref_obj_28","keydown":{"type":"Fn","_sourceFile":"undefined","_sourceLine":"undefined","params":[{"name":"key","type":"Meta"}],"ccode":["__this_ref:__duplicate_ref_ary_52",["`","`each","`handlers","`h",["`","`apply","`h","`_args"]],["`","`","`_args"]],"__this_ref":"__duplicate_ref_obj_49","closure":["__duplicate_ref_obj_26",{"_source":"applyFn_host","name":"keydown","params":["__this_ref:__duplicate_ref_ary_58","`key"],"onCallback":{"type":"Continuation","closure":["__duplicate_ref_obj_26"],"context":"__duplicate_ref_ary_41","callback":"__FUNCTION function (rslt){\r\n            if(rslt === undefined) rslt = null; // don't want to set _ to undefined because of scoping\r\n            bind(context,\"_\", rslt);\r\n            callback(rslt);\r\n        }"},"onError":"__duplicate_ref_obj_44","_args":["`keydown","__duplicate_ref_ary_58"],"this":"__duplicate_ref_obj_2","onReturn":{"type":"Continuation","closure":["__duplicate_ref_obj_26"],"context":"__duplicate_ref_ary_41","callback":"__FUNCTION function (rslt){\r\n            if(rslt === undefined) rslt = null; // don't want to set _ to undefined because of scoping\r\n            bind(context,\"_\", rslt);\r\n            callback(rslt);\r\n        }","sourceFn":"event"},"callback":"__FUNCTION function (rslt){\r\n            //if(_.isArray(rslt)){\r\n            //    rslt = _.last(rslt);\r\n            //    console.log(nnCopy);\r\n            //}\r\n            //if(isMeta(rslt))\r\n            //    rslt = rslt.value;\r\n\r\n            if(_.isArray(rslt) && !Expression.isType(rslt))\r\n                return ccError(context,[\"acr -- path part evaluated to an array\", nnCopy, rslt]);\r\n            path.unshift(rslt);\r\n            acrJs([path, value, root, ref], context, callback);\r\n        }","handlers":[{"type":"Fn","_sourceFile":"fs:./base/events.host","_sourceLine":37,"params":[{"name":"k","type":"Meta"}],"ccode":[["`","`push","`lst",["`","`add","handler 1, ","`k"]]],"closure":["__duplicate_ref_obj_26"]},{"type":"Fn","_sourceFile":"fs:./base/events.host","_sourceLine":40,"params":[{"name":"k","type":"Meta"}],"ccode":[["`","`push","`lst",["`","`add","handler 2, ","`k"]]],"closure":["__duplicate_ref_obj_26"]},{"type":"Fn","_sourceFile":"fs:./base/events.host","_sourceLine":43,"params":[{"name":"k","type":"Meta"}],"ccode":[["`","`push","`lst",["`","`add","handler 3, ","`k"]]],"closure":["__duplicate_ref_obj_26"]}],"_":"__duplicate_ref_obj_49","evt":"__duplicate_ref_obj_49","__this_ref":"__duplicate_ref_obj_57"},{"_source":"applyFn_host","f":{"name":"fn","type":"Fnjs","ccode":"__FUNCTION function fn(expr, context, callback) {\r\n\r\n    var name, params, return_type, ccode;\r\n    untick(expr);\r\n    if(!_.isArray(expr[0]))\r\n        name = untick(expr.shift());\r\n    params = untick(expr.shift());\r\n    //assertType(params, [*(|| Meta Symbol)])\r\n    if(!_.isArray(params))\r\n        return ccError(context, [\"fn -- invalid value for 'params'\", params]);\r\n    if(isMeta(expr[0]))\r\n        return_type = expr.shift();\r\n    ccode = expr;\r\n\r\n    params = _.map(params,function(p){\r\n        if(isSym(p))\r\n            return nmeta(ssym(p));\r\n        return p;});\r\n\r\n    var offset = 0;\r\n    var f = {type:Fn.id};\r\n    f._sourceFile = expr._sourceFile;\r\n    f._sourceLine = expr._sourceLine;\r\n    if(name){\r\n        f.name = name;\r\n        bind(context, name, f, offset);\r\n    }\r\n    if(return_type) f.return_type = return_type;\r\n    f.params = params;\r\n    f.ccode = ccode;\r\n    f.closure = getClosure(context,offset);\r\n    //if(isMacro) f.isMacro = true;\r\n    //if(code && ccode.length > 0) throw \"both ccode and code were passed in to fn, only one or the other is allowed\";\r\n    //if(code) {\r\n    //    delete f.ccode;\r\n    //    f.code = code;\r\n    //}\r\n\r\n    if(return_type){\r\n        evalHost(return_type, context, function(return_type){\r\n            f.return_type = return_type;\r\n            callback(f);\r\n        })\r\n    } else {\r\n        callback(f);\r\n    }\r\n}","code":"function fn(expr, context, callback) {\r\n\r\n    var name, params, return_type, ccode;\r\n    untick(expr);\r\n    if(!_.isArray(expr[0]))\r\n        name = untick(expr.shift());\r\n    params = untick(expr.shift());\r\n    //assertType(params, [*(|| Meta Symbol)])\r\n    if(!_.isArray(params))\r\n        return ccError(context, [\"fn -- invalid value for 'params'\", params]);\r\n    if(isMeta(expr[0]))\r\n        return_type = expr.shift();\r\n    ccode = expr;\r\n\r\n    params = _.map(params,function(p){\r\n        if(isSym(p))\r\n            return nmeta(ssym(p));\r\n        return p;});\r\n\r\n    var offset = 0;\r\n    var f = {type:Fn.id};\r\n    f._sourceFile = expr._sourceFile;\r\n    f._sourceLine = expr._sourceLine;\r\n    if(name){\r\n        f.name = name;\r\n        bind(context, name, f, offset);\r\n    }\r\n    if(return_type) f.return_type = return_type;\r\n    f.params = params;\r\n    f.ccode = ccode;\r\n    f.closure = getClosure(context,offset);\r\n    //if(isMacro) f.isMacro = true;\r\n    //if(code && ccode.length > 0) throw \"both ccode and code were passed in to fn, only one or the other is allowed\";\r\n    //if(code) {\r\n    //    delete f.ccode;\r\n    //    f.code = code;\r\n    //}\r\n\r\n    if(return_type){\r\n        evalHost(return_type, context, function(return_type){\r\n            f.return_type = return_type;\r\n            callback(f);\r\n        })\r\n    } else {\r\n        callback(f);\r\n    }\r\n}","isMacro":true,"hostForm":true},"args":"__duplicate_ref_ary_52","onCallback":{"type":"Continuation","closure":["__duplicate_ref_obj_26","__duplicate_ref_obj_57"],"context":"__duplicate_ref_ary_41","callback":"__FUNCTION function (value) {\r\n        bind(context,name,value);\r\n        callback(value);\r\n    }"},"onError":"__duplicate_ref_obj_44","callback":"__FUNCTION function (rslt) {callback([rslt])}","_":"__duplicate_ref_obj_49","__this_ref":"__duplicate_ref_obj_86"},{"_source":"applyFn_host","expr":"__duplicate_ref_ary_52","onCallback":{"type":"Continuation","closure":["__duplicate_ref_obj_26","__duplicate_ref_obj_57","__duplicate_ref_obj_86"],"context":"__duplicate_ref_ary_41","callback":"__FUNCTION function (rslt){\r\n            bind(context, \"_\", rslt);\r\n            callback(rslt);\r\n        }"},"onError":"__duplicate_ref_obj_44","callback":"__FUNCTION function (rslt){\r\n            bind(context, \"_\", rslt);\r\n            callback(rslt);\r\n        }","_":"__duplicate_ref_obj_49"}],"name":"keydown","id":"96366d65-c8b3-11e7-85d0-63c81ee53ad6"},"lst":"__duplicate_ref_ary_48","_ranMs":33}],"isMacro":true,"useRuntimeScope":true},"handle":"__duplicate_ref_obj_28","filter":{"type":"Fn","_sourceFile":"fs:./base/filter.host","_sourceLine":3,"name":"filter","params":[{"name":"items","type":"Meta","isTick":true},{"name":"iterName","type":"Meta"},{"name":"loopBody","type":"Meta","isRest":true,"isList":true}],"ccode":[["`","`var","`lst",["`","`list"]],["`","`unshift","`loopBody",["`","`","`iterName"]],["`","`var","`loop",["`","`apply","`fn","`loopBody"]],["`","`setr",["`loop","`useRuntimeScope"],true],["`","`fn","`continue",["`","`rslt"],["`","`push","`lst","`rslt"],["`","`callContinuation","onContinue","`rslt"]],["`","`setr",["`continue","`useRuntimeScope"],true],["`","`fn","`break",["`",{"name":"rslt","type":"Meta","isOptional":true,"value":null}],["`","`cond",["`",["`","`_ne","`rslt",null],["`","`push","`lst","`rslt"]]],["`","`return","`lst"]],["`","`setr",["`break","`isInline"],true],["`","`each","`items","`i",["`","`cond",["`",["`","`loop","`i"],["`","`push","`lst","`i"]]]],"`lst"],"__this_ref":"__duplicate_ref_obj_93","closure":[{"_sourceFile":"fs:./base/filter.host","exports":{"_source":"fs:./base/filter.host","filter":"__duplicate_ref_obj_93"},"callDepth":0,"__this_ref":"__duplicate_ref_obj_129","onExit":{"type":"Continuation","closure":["__duplicate_ref_obj_129"],"context":["__this_ref:__duplicate_ref_ary_133","__duplicate_ref_obj_129"],"callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }"},"onReturn":{"type":"Continuation","closure":["__duplicate_ref_obj_129"],"context":"__duplicate_ref_ary_133","callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }","source":"rootInit"},"onError":{"type":"Continuation","closure":["__duplicate_ref_obj_129"],"context":"__duplicate_ref_ary_133","callback":"__FUNCTION function processError(err){\r\n        top._isRunning = false;\r\n        if(onError)\r\n            onError(err);\r\n        else\r\n            console.error(err);\r\n    }"},"include":[],"_startTime":1510605930326,"_isRunning":false,"_parsedMs":15,"_lastEvaled":[1,0,3],"callback":"__FUNCTION function (rslt){\r\n            if(p.interCall) p.interCall(rslt);\r\n        \r\n            // terminal condition\r\n            if(p.itemIndex >= p.items.length)\r\n                return p.callback(rslt);\r\n                \r\n            procsReady.push(p);\r\n            if(!procing)\r\n                 setTimeout(procLoop,0);\r\n        }","filter":"__duplicate_ref_obj_93","_":[1,0,3],"lst":[1,2,3,4,5,6],"_ranMs":6}],"isMacro":true,"useRuntimeScope":true},"in":{"type":"Fn","_sourceFile":"fs:./base/in.host","_sourceLine":2,"name":"in","params":[{"name":"item","type":"Meta"},{"name":"list","type":"Meta"}],"ccode":[["`","`each","`list","`i",["`","`cond",["`",["`","`_eq","`i","`item"],["`","`return",true]]]],false],"__this_ref":"__duplicate_ref_obj_142","closure":[{"_sourceFile":"fs:./base/in.host","exports":{"_source":"fs:./base/in.host","in":"__duplicate_ref_obj_142"},"callDepth":1,"__this_ref":"__duplicate_ref_obj_153","onExit":{"type":"Continuation","closure":["__duplicate_ref_obj_153"],"context":["__this_ref:__duplicate_ref_ary_157","__duplicate_ref_obj_153"],"callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }"},"onReturn":{"type":"Continuation","closure":["__duplicate_ref_obj_153"],"context":"__duplicate_ref_ary_157","callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }","source":"rootInit"},"onError":{"type":"Continuation","closure":["__duplicate_ref_obj_153"],"context":"__duplicate_ref_ary_157","callback":"__FUNCTION function processError(err){\r\n        top._isRunning = false;\r\n        if(onError)\r\n            onError(err);\r\n        else\r\n            console.error(err);\r\n    }"},"include":[],"_startTime":1510605930345,"_isRunning":false,"_parsedMs":9,"_lastEvaled":["`_",false],"callback":"__FUNCTION function (rslt){\r\n            if(rslt === undefined) rslt = null; // don't want to set _ to undefined because of scoping\r\n            bind(context,\"_\", rslt);\r\n            callback(rslt);\r\n        }","in":"__duplicate_ref_obj_142","_":false,"_ranMs":3}]},"isError":{"type":"Fn","_sourceFile":"fs:./base/isError.host","_sourceLine":3,"name":"isError","params":[{"name":"code","type":"Meta","isRest":true,"isList":true}],"ccode":[["`","`try",{"name":"catchCode","type":"Meta","value":["`",["`","`e"],["`","`return",true]]},["`","`apply","`evalBlock","`code"]],false],"__this_ref":"__duplicate_ref_obj_164","closure":[{"_sourceFile":"fs:./base/isError.host","exports":{"_source":"fs:./base/isError.host","isError":"__duplicate_ref_obj_164"},"callDepth":1,"__this_ref":"__duplicate_ref_obj_175","onExit":{"type":"Continuation","closure":["__duplicate_ref_obj_175"],"context":["__this_ref:__duplicate_ref_ary_179","__duplicate_ref_obj_175"],"callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }"},"onReturn":{"type":"Continuation","closure":["__duplicate_ref_obj_175"],"context":"__duplicate_ref_ary_179","callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }","source":"rootInit"},"onError":{"type":"Continuation","closure":["__duplicate_ref_obj_175"],"context":"__duplicate_ref_ary_179","callback":"__FUNCTION function processError(err){\r\n        top._isRunning = false;\r\n        if(onError)\r\n            onError(err);\r\n        else\r\n            console.error(err);\r\n    }"},"include":[],"_startTime":1510605930358,"_isRunning":false,"_parsedMs":6,"_lastEvaled":["`_",false],"callback":"__FUNCTION function (rslt){\r\n            if(rslt === undefined) rslt = null; // don't want to set _ to undefined because of scoping\r\n            bind(context,\"_\", rslt);\r\n            callback(rslt);\r\n        }","isError":"__duplicate_ref_obj_164","_":false,"test":1,"_ranMs":5}],"isMacro":true,"useRuntimeScope":true},"AND":{"type":"Fn","_sourceFile":"fs:./base/logic.host","_sourceLine":3,"name":"AND","params":[{"name":"args","type":"Meta","isRest":true,"isList":true}],"ccode":[["`","`each","`args","`a",["`","`evalOutside","`a"],["`","`cond",["`",["`","`not","`_"],["`","`return",false]]]],["`","`return",["`","`last","`_"]]],"__this_ref":"__duplicate_ref_obj_186","closure":[{"_sourceFile":"fs:./base/logic.host","__this_ref":"__duplicate_ref_obj_199","exports":{"_source":"fs:./base/logic.host","AND":"__duplicate_ref_obj_186","OR":{"type":"Fn","_sourceFile":"fs:./base/logic.host","_sourceLine":15,"name":"OR","params":[{"name":"args","type":"Meta","isRest":true,"isList":true}],"ccode":[["`","`each","`args","`a",["`","`evalOutside","`a"],["`","`cond",["`","`_",["`","`return","`_"]]]],["`","`return",["`","`last","`_"]]],"closure":["__duplicate_ref_obj_199"],"isMacro":true,"useRuntimeScope":true,"__this_ref":"__duplicate_ref_obj_201"},"ifnot":{"type":"Fn","_sourceFile":"fs:./base/logic.host","_sourceLine":27,"name":"ifnot","params":[{"name":"ifnTest","type":"Meta","isTick":true},{"name":"ifnExpr","type":"Meta","isRest":true,"isList":true}],"ccode":[["`","`cond",["`",["`","`not","`ifnTest"],["`","`apply","`evalBlock","`ifnExpr"]]]],"closure":["__duplicate_ref_obj_199"],"isMacro":true,"useRuntimeScope":true,"isInline":true,"__this_ref":"__duplicate_ref_obj_213"},"__this_ref":"__duplicate_ref_obj_200"},"callDepth":1,"onExit":{"type":"Continuation","closure":["__duplicate_ref_obj_199"],"context":["__this_ref:__duplicate_ref_ary_225","__duplicate_ref_obj_199"],"callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }"},"onReturn":{"type":"Continuation","closure":["__duplicate_ref_obj_199"],"context":"__duplicate_ref_ary_225","callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }","source":"rootInit"},"onError":{"type":"Continuation","closure":["__duplicate_ref_obj_199"],"context":"__duplicate_ref_ary_225","callback":"__FUNCTION function processError(err){\r\n        top._isRunning = false;\r\n        if(onError)\r\n            onError(err);\r\n        else\r\n            console.error(err);\r\n    }"},"include":[],"_startTime":1510605930383,"_isRunning":false,"_parsedMs":17,"_lastEvaled":["`context","`names"],"callback":"__FUNCTION function (rslt){\r\n            if(rslt === undefined) rslt = null; // don't want to set _ to undefined because of scoping\r\n            bind(context,\"_\", rslt);\r\n            callback(rslt);\r\n        }","AND":"__duplicate_ref_obj_186","_":"__duplicate_ref_obj_200","OR":"__duplicate_ref_obj_201","ifnot":"__duplicate_ref_obj_213","_ranMs":2}],"isMacro":true,"useRuntimeScope":true},"OR":"__duplicate_ref_obj_201","ifnot":"__duplicate_ref_obj_213","mean":{"type":"Fn","_sourceFile":"fs:./base/mean.host","_sourceLine":1,"name":"mean","params":[{"name":"lst","type":"Meta","value_type":"`Int","isList":true}],"ccode":[["`","`cond",["`",["`","`not",["`","`getr",["`lst","`length"]]],["`","`return",0]]],["`","`var","`sum",0],["`","`each","`lst","`i",["`","`set","`sum",["`","`add","`sum",["`","`OR","`i",0]]]],["`","`divide","`sum",["`","`getr",["`lst","`length"]]]],"__this_ref":"__duplicate_ref_obj_232","closure":[{"_sourceFile":"fs:./base/mean.host","exports":{"_source":"fs:./base/mean.host","mean":"__duplicate_ref_obj_232","__this_ref":"__duplicate_ref_obj_252"},"callDepth":1,"__this_ref":"__duplicate_ref_obj_251","onExit":{"type":"Continuation","closure":["__duplicate_ref_obj_251"],"context":["__this_ref:__duplicate_ref_ary_255","__duplicate_ref_obj_251"],"callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }"},"onReturn":{"type":"Continuation","closure":["__duplicate_ref_obj_251"],"context":"__duplicate_ref_ary_255","callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }","source":"rootInit"},"onError":{"type":"Continuation","closure":["__duplicate_ref_obj_251"],"context":"__duplicate_ref_ary_255","callback":"__FUNCTION function processError(err){\r\n        top._isRunning = false;\r\n        if(onError)\r\n            onError(err);\r\n        else\r\n            console.error(err);\r\n    }"},"include":[],"_startTime":1510605930396,"_isRunning":false,"_parsedMs":5,"_lastEvaled":["`context","`names"],"callback":"__FUNCTION function (rslt){\r\n            if(rslt === undefined) rslt = null; // don't want to set _ to undefined because of scoping\r\n            bind(context,\"_\", rslt);\r\n            callback(rslt);\r\n        }","mean":"__duplicate_ref_obj_232","_":"__duplicate_ref_obj_252","_ranMs":0}]},"range":{"type":"Fn","_sourceFile":"fs:./base/range.host","_sourceLine":3,"name":"range","params":[{"name":"start","type":"Meta"},{"name":"stop","type":"Meta","isOptional":true,"value":null},{"name":"step","type":"Meta","isOptional":true,"value":null}],"ccode":[["`","`var","`nums",["`","`list"]],["`","`var","`args",["`","`unshift","`_args","`'i"]],["`","`eval",["`","`","`for","`args",["`","'","`push","`nums","`i"]]],["`","`return","`nums"]],"__this_ref":"__duplicate_ref_obj_262","closure":[{"_sourceFile":"fs:./base/range.host","exports":{"_source":"fs:./base/range.host","range":"__duplicate_ref_obj_262"},"callDepth":3,"__this_ref":"__duplicate_ref_obj_277","onExit":{"type":"Continuation","closure":["__duplicate_ref_obj_277"],"context":["__this_ref:__duplicate_ref_ary_281","__duplicate_ref_obj_277"],"callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }"},"onReturn":{"type":"Continuation","closure":["__duplicate_ref_obj_277"],"context":"__duplicate_ref_ary_281","callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }","source":"rootInit"},"onError":{"type":"Continuation","closure":["__duplicate_ref_obj_277"],"context":"__duplicate_ref_ary_281","callback":"__FUNCTION function processError(err){\r\n        top._isRunning = false;\r\n        if(onError)\r\n            onError(err);\r\n        else\r\n            console.error(err);\r\n    }"},"include":[],"_startTime":1510605930408,"_isRunning":false,"_parsedMs":10,"_lastEvaled":[],"callback":"__FUNCTION function (rslt){\r\n            if(p.interCall) p.interCall(rslt);\r\n        \r\n            // terminal condition\r\n            if(p.itemIndex >= p.items.length)\r\n                return p.callback(rslt);\r\n                \r\n            procsReady.push(p);\r\n            if(!procing)\r\n                 setTimeout(procLoop,0);\r\n        }","range":"__duplicate_ref_obj_262","_":[],"_ranMs":7}]},"reduce":{"type":"Fn","_sourceFile":"fs:./base/reduce.host","_sourceLine":4,"name":"reduce","params":[{"name":"items","type":"Meta","isTick":true},{"name":"iterName","type":"Meta"},{"name":"memoName","type":"Meta"},{"name":"loopBody","type":"Meta","isRest":true,"isList":true}],"ccode":[["`","`var","`memo",null],["`","`cond",["`",["`","`isType","`memoName","`Meta"],["`","`set","`memo",["`","`getr",["`memoName","`value"]]]]],["`","`unshift","`loopBody",["`","`","`iterName","`memoName"]],["`","`var","`loop",["`","`apply","`fn","`loopBody"]],["`","`setr",["`loop","`useRuntimeScope"],true],["`","`fn","`continue",["`","`rslt"],["`","`set","`memo","`rslt"],["`","`callContinuation","onContinue","`rslt"]],["`","`setr",["`continue","`useRuntimeScope"],true],["`","`fn","`break",["`","`rslt"],["`","`return","`rslt"]],["`","`setr",["`break","`isInline"],true],["`","`each","`items","`i",["`","`set","`memo",["`","`loop","`i","`memo"]]],"`memo"],"__this_ref":"__duplicate_ref_obj_289","closure":[{"_sourceFile":"fs:./base/reduce.host","exports":{"_source":"fs:./base/reduce.host","reduce":"__duplicate_ref_obj_289"},"callDepth":1,"__this_ref":"__duplicate_ref_obj_324","onExit":{"type":"Continuation","closure":["__duplicate_ref_obj_324"],"context":["__this_ref:__duplicate_ref_ary_328","__duplicate_ref_obj_324"],"callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }"},"onReturn":{"type":"Continuation","closure":["__duplicate_ref_obj_324"],"context":"__duplicate_ref_ary_328","callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }","source":"rootInit"},"onError":{"type":"Continuation","closure":["__duplicate_ref_obj_324"],"context":"__duplicate_ref_ary_328","callback":"__FUNCTION function processError(err){\r\n        top._isRunning = false;\r\n        if(onError)\r\n            onError(err);\r\n        else\r\n            console.error(err);\r\n    }"},"include":[],"_startTime":1510605930444,"_isRunning":false,"_parsedMs":26,"_lastEvaled":["`_",11],"callback":"__FUNCTION function (rslt){\r\n            if(rslt === undefined) rslt = null; // don't want to set _ to undefined because of scoping\r\n            bind(context,\"_\", rslt);\r\n            callback(rslt);\r\n        }","reduce":"__duplicate_ref_obj_289","_":11,"lst":[1,2,3],"_ranMs":8}],"isMacro":true},"endsWith":"__FUNCTION function (s, end){return s.endsWith(end);}","string":{"match":{"name":"undefined","type":"Fnjs","code":"\r\nfunction(s, re){\r\n    if(!_.isString(s))\r\n        return;\r\n    return s.match(re)\r\n}","ccode":"__FUNCTION function (s, re){\r\n    if(!_.isString(s))\r\n        return;\r\n    return s.match(re)\r\n}","async":false},"replace":{"name":"undefined","type":"Fnjs","code":"\r\nfunction (s, re, val){\r\n    return s.replace(re, val);\r\n}\r\n","ccode":"__FUNCTION function (s, re, val){\r\n    return s.replace(re, val);\r\n}","async":false},"toLower":{"name":"undefined","type":"Fnjs","code":"function(s){return s.toLowerCase();s}","__this_ref":"__duplicate_ref_obj_339"},"substr":{"name":"undefined","type":"Fnjs","code":"function(s, start, end){\r\n    return s.substr(start, end)\r\n}","__this_ref":"__duplicate_ref_obj_340"}},"regEx":"__FUNCTION function (exp, options){\r\n    return new RegExp(exp, options)\r\n}","toLower":"__duplicate_ref_obj_339","substr":"__duplicate_ref_obj_340","addTest":{"type":"Fn","_sourceFile":"fs:./base/test.host","_sourceLine":4,"name":"addTest","params":[{"name":"name","type":"Meta"},{"name":"code","type":"Meta"}],"ccode":[],"__this_ref":"__duplicate_ref_obj_341","closure":[{"_sourceFile":"fs:./base/test.host","__this_ref":"__duplicate_ref_obj_347","exports":{"_source":"fs:./base/test.host","addTest":"__duplicate_ref_obj_341","runTests":{"type":"Fn","_sourceFile":"fs:./base/test.host","_sourceLine":9,"name":"runTests","params":[{"name":"tests","type":"Meta","isOptional":true,"value":null}],"ccode":[["`","`ifnot","`tests",["`","`set","`tests"]]],"closure":["__duplicate_ref_obj_347"],"__this_ref":"__duplicate_ref_obj_349"},"__this_ref":"__duplicate_ref_obj_348"},"callDepth":1,"onExit":{"type":"Continuation","closure":["__duplicate_ref_obj_347"],"context":["__this_ref:__duplicate_ref_ary_358","__duplicate_ref_obj_347"],"callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }"},"onReturn":{"type":"Continuation","closure":["__duplicate_ref_obj_347"],"context":"__duplicate_ref_ary_358","callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }","source":"rootInit"},"onError":{"type":"Continuation","closure":["__duplicate_ref_obj_347"],"context":"__duplicate_ref_ary_358","callback":"__FUNCTION function processError(err){\r\n        top._isRunning = false;\r\n        if(onError)\r\n            onError(err);\r\n        else\r\n            console.error(err);\r\n    }"},"include":[],"_startTime":1510605930484,"_isRunning":false,"_parsedMs":5,"_lastEvaled":["`context","`names"],"callback":"__FUNCTION function (rslt){\r\n            if(rslt === undefined) rslt = null; // don't want to set _ to undefined because of scoping\r\n            bind(context,\"_\", rslt);\r\n            callback(rslt);\r\n        }","tests":[],"_":"__duplicate_ref_obj_348","addTest":"__duplicate_ref_obj_341","runTests":"__duplicate_ref_obj_349","_ranMs":1}],"isMacro":true},"runTests":"__duplicate_ref_obj_349","type":{"type":"Fn","_sourceFile":"fs:./base/types.host","_sourceLine":7,"name":"type","params":[{"name":"name","type":"Meta"},{"name":"args","type":"Meta","isRest":true,"isList":true}],"ccode":[["`","`var","`t",["`","`new"]],["`","`setr",["`t","`name"],["`","`ssym","`name"]],["`","`setr",["`t","`type"],"`Type"],["`","`bind","`context",["`","`ssym","`name"],"`t",1],["`","`push","`_knownTypes","`t"],["`","`each","`args","`a",["`","`cond",["`",["`","`AND",["`","`isList","`a"],["`","`OR",["`","`_eq",["`","`ssym",["`","`getr",["`a",0]]],"fields"],["`","`_eq",["`","`ssym",["`","`getr",["`a",1]]],"fields"]]],["`","`untick","`a"],["`","`shift","`a"],["`","`setr",["`t","`fields"],"`a"],["`","`continue"]]],["`","`set","`a",["`","`eval","`a"]],["`","`cond",["`",["`","`AND",["`","`isMeta","`a"],["`","`getr",["`a","`name"]]],["`","`setr",["`t",["`","`one",["`","`getr",["`a","`name"]]]],["`","`getr",["`a","`value"]]]],["`",true,["`","`setr",["`t","`values"],["`","`OR",["`","`getr",["`t","`values"]],["`","`list"]]],["`","`push",["`","`getr",["`t","`values"]],"`a"]]]],"`t"],"__this_ref":"__duplicate_ref_obj_366","closure":[{"_sourceFile":"fs:./base/types.host","exports":{"_source":"fs:./base/types.host","type":"__duplicate_ref_obj_366","__this_ref":"__duplicate_ref_obj_427"},"callDepth":3,"__this_ref":"__duplicate_ref_obj_426","onExit":{"type":"Continuation","closure":["__duplicate_ref_obj_426"],"context":["__this_ref:__duplicate_ref_ary_430","__duplicate_ref_obj_426"],"callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }"},"onReturn":{"type":"Continuation","closure":["__duplicate_ref_obj_426"],"context":"__duplicate_ref_ary_430","callback":"__FUNCTION function processCallback(rslt){\r\n        if(top._isRunning){\r\n            top._ranMs = Date.now() - top._startTime;\r\n            if(!top._silent)\r\n                console.log((top._parsedMs + top._ranMs) + \" ms - \" +\r\n                    (top._sourceFile || top._source || \"<anonymous>\") + \" parsed in \" + top._parsedMs + \" ms, ran in \" + top._ranMs + \" ms\");\r\n        }\r\n        top._isRunning = false;\r\n        callback(rslt);\r\n    }","source":"rootInit"},"onError":{"type":"Continuation","closure":["__duplicate_ref_obj_426"],"context":"__duplicate_ref_ary_430","callback":"__FUNCTION function processError(err){\r\n        top._isRunning = false;\r\n        if(onError)\r\n            onError(err);\r\n        else\r\n            console.error(err);\r\n    }"},"include":[],"_startTime":1510605930546,"_isRunning":false,"_parsedMs":59,"_lastEvaled":[],"callback":"__FUNCTION function (rslt){\r\n            if(rslt === undefined) rslt = null; // don't want to set _ to undefined because of scoping\r\n            bind(context,\"_\", rslt);\r\n            callback(rslt);\r\n        }","type":"__duplicate_ref_obj_366","_":"__duplicate_ref_obj_427","_ranMs":1}],"isMacro":true,"useRuntimeScope":true}}
 
 /***/ })
 /******/ ]);

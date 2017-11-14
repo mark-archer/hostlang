@@ -1,0 +1,17 @@
+
+fn load(paths& force=false)
+    each paths p
+        try
+            var mdl : require p force
+            names mdl
+            >> filter n : != "_" n.0
+            >> each n
+                set context.0.`n mdl.`n
+        catch(e)
+            error : list
+                + "ERROR loading " p
+                e
+    context.0
+
+set load.useRuntimeScope true
+export load

@@ -23,7 +23,7 @@ base = utils.fromJSON(base);
 console.log('hostlang');
 
 // makes sure the global window object is declared
-try{window} catch(e){window = {}}    
+try{window} catch(e){window = null}    
 
 // skip first two args: first is path to exe, second is path to this file
 var args = utils.skip(process.argv, 2);
@@ -296,29 +296,6 @@ var exists = fnjs("exists", function(expr, context, callback){
 exists.isMacro = true;
 exists.useRuntimeScope = true;
 core.exists = exists;
-
-// var value = fnjs("value", function(expr, context, callback){
-//     untick(expr);
-//     if(expr.length < 1 || expr.length > 2)
-//         return ccError(context, "val -- expects 1 or 2 arguments (a symbol name argument and an optional offset argument), given: " + expr.length);
-//
-//     var name = untick(expr[0]);
-//     var offset = expr[1];
-//
-//     if(!_.isNumber(offset))
-//         offset = 0;
-//     var scopes = context;
-//     for(var bi = scopes.length-(1+offset); bi >=0; bi--){
-//         var nvps = scopes[bi];
-//         if(nvps[name] !== undefined) {
-//             return callback(nvps[name]);
-//         }
-//     }
-//     return callback(null);
-// });
-// value.isMacro = true;
-// value.useRuntimeScope = true;
-// core.value = value;
 
 function set(expr, context, callback) {
     if(expr[0] === '`') expr.shift();
@@ -931,7 +908,7 @@ function evalSym(expr, context, callback){
         return callback(native[sym]);
 
     // look in window
-    if(window[sym])
+    if(window && window[sym])
         return callback(window[sym])   
     
     return ccError(context,"Couldn't resolve symbol: " + sym);
@@ -1456,7 +1433,7 @@ function contextInit(context, callback, onError) {
         context = [context];
     context = context || [{}];
     var root = _.first(context);
-    root.callDepth = root.callDepth || core.maxCallDepth;
+    root.callDepth = root.callDepth || 0;
     root.onExit = makeContinuation(context, callback);
     root.onReturn = makeContinuation(context, callback);
     root.onReturn.source = "rootInit";
@@ -1485,6 +1462,7 @@ function run(code, context, callback, onError) {
     // prevent concurrent runs against the same context
     context = contextInit(context, callback, onError);
     var top = _.first(context);
+    top.callDepth = 0;
     // if(top._isRunning){
     //     console.warn("context is already in use or was left in an error state from last run");
     //     //return ccError(context, "context is already in use");
@@ -1499,7 +1477,7 @@ function run(code, context, callback, onError) {
             top._ranMs = Date.now() - top._startTime;
             if(!top._silent)
                 console.log((top._parsedMs + top._ranMs) + " ms - " +
-                    (top._sourceFile || top._source || "<anonymous>") + " parsed in " + top._parsedMs + " ms, ran in " + top._ranMs + " ms");
+                    (top._sourceFile || "<anonymous>") + " parsed in " + top._parsedMs + " ms, ran in " + top._ranMs + " ms");
         }
         top._isRunning = false;
         callback(rslt);
@@ -1535,24 +1513,31 @@ function run(code, context, callback, onError) {
 }
 
 core.run = function(context, callback, code){
-    context = _.clone(context);
-    var bindings = {_source:'run'}
-    bindings.onCallback = makeContinuation(context, callback);
-    bindings.onError = getBinding(context,"onError");
-    bindings.onReturn = makeContinuation(context, callback);
-    bindings.onReturn.sourceFn = "run";
-    newScope(context, bindings);
     
+    // var bindings = {_source:'run'}
+    // bindings.onCallback = makeContinuation(context, callback);
+    // bindings.onError = getBinding(context,"onError");
+    // bindings.onReturn = makeContinuation(context, callback);
+    // bindings.onReturn.sourceFn = "run";
+    // newScope(context, bindings);
+    
+    // if(_.isString(code)){
+    //     return parseHost(code,context, function(code){
+    //         context.pop();
+    //         core.run(context, callback, code);
+    //     });
+    // }
+
+    // evalHostBlock(code, context, function(rslt){
+    //     ccCallback(context, rslt);
+    // });    
+
     if(_.isString(code)){
         return parseHost(code,context, function(code){
-            context.pop();
             core.run(context, callback, code);
         });
     }
-
-    evalHostBlock(code, context, function(rslt){
-        ccCallback(context, rslt);
-    });    
+    evalHostBlock(code, context, callback);    
 }
 
 core.GET = function(context, callback, path, options){
@@ -1598,39 +1583,25 @@ core.SAVE = function(context, callback, path, contents, options){
     }
 }
 
-var core_require = {}
-core.require = function(context, callback, path){
-    //context = _.clone(context);
-    if(core_require[path]){
-        if(core_require[path]._loading)
+var core_require_cache = {}
+core.require = function(context, callback, path, force){
+    if(core_require_cache[path] && !force){
+        if(core_require_cache[path]._loading)
             console.warn(path + " was required while it was still loading");
-        return callback(core_require[path]);
+        return callback(core_require_cache[path]);
     }  
     function afterGet(code){
         var newContext = {_sourceFile:path,exports:{_source:path,_loading:true}};
-        core_require[path] = newContext.exports;
+        core_require_cache[path] = newContext.exports;
         run(code, newContext, function(rslt){
-            delete core_require[path]._loading;
-            callback(core_require[path]);
+            delete core_require_cache[path]._loading;
+            callback(core_require_cache[path]);
         },function(err){
-            delete core_require[path];
+            delete core_require_cache[path];
             ccError(context,err)
         });
     }
-    core.GET(context, afterGet, path);  
-    // GET(path, null, function(rslt){
-    //     var newContext = {_source:path,exports:{_source:path,_loading:true}};
-    //     core_require[path] = newContext.exports;
-    //     run(rslt, newContext, function(rslt){
-    //         delete core_require[path]._loading;
-    //         callback(core_require[path]);
-    //     },function(err){
-    //         delete core_require[path];
-    //         ccError(context,err)
-    //     });
-    // },function(err){
-    //     ccError(context,err);
-    // });
+    core.GET(context, afterGet, path);      
 }
 
 

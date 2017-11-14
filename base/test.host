@@ -1,14 +1,27 @@
 
 var tests list!
 
-fnm addTest(name code)
+fnm addTest(name code&)
     ; todo create test
     ; todo add test to list
 export addTest
 
-fn runTests(tests?)
-    ifnot tests
-        set tests
 
-    ; todo
+fn runTests(tests? force=false)
+    if : not tests
+        GET "/host/tests" 
+        >> each testUrl
+            log testUrl
+            try
+                require testUrl force
+                + "Finished Test: " testUrl
+            catch(e)
+                list 
+                    + "ERROR running tests: " testUrl
+                    e
+                ;break!
+            >> log
+    else
+        error "runTests - implement code to run tests"
+
 export runTests

@@ -171,7 +171,7 @@ testRtnInEach!
 
 ;; if-elif-else
 var lst list!
-for (i -1 5)
+for (i -1 6)
 	if (< i 2)
 		if(== i 0)
 			"zero"

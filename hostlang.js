@@ -7,6 +7,8 @@ var parse = require('./parse.js');
 var proc = require('./proc.js');
 var tests = require('./tests.js')
 var base = require('./base.c.js')
+
+// unpack base JSON
 base = utils.fromJSON(base);
 
 //var reader = require('./reader.js');
@@ -957,7 +959,7 @@ function evalHost(expr, context, callback){
     var top = context[0];
     top.callDepth++;
     if(top.callDepth > core.maxCallDepth){
-        console.log('resetting stack');
+        console.error('resetting stack');
         return setTimeout(function(){top.callDepth = 0; evalHost(expr, context, callback);}, 0);
     }
 
@@ -1515,12 +1517,12 @@ function run(code, context, callback, onError) {
     // if it's a string, assume it's code that needs to be parsed first
     if(_.isString(code)){
         parseHost(code, context, function (rslt) {
-            setTimeout(function(){
+            //setTimeout(function(){
                 top._isRunning = false;
                 top._parsedMs = Date.now() - top._startTime;
                 //console.log(top._source + " parsed in " + top._parsedMs + " ms");
                 run(rslt, context, processCallback, processError);
-            },0);
+            //},0);
         });
 
         return top;

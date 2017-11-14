@@ -1,8 +1,9 @@
-//console.log("parse");
+console.log("parse");
 
 var _ = require('underscore');
 var utils = require('./utils.js');
 var types = require('./types.js');
+var proc = require('./proc.js');
 
 var nsym = utils.nsym;
 var nmeta = utils.nmeta;
@@ -1023,30 +1024,23 @@ function parseHost(expr, context, callback){
     }
 
     var iParser = 0;
-    context[0].callDepth = 1001;
-    function next(proceeding){
-        context[0].callDepth++;
-        //if(context[0].callDepth > parse.host.core.maxCallDepth)
-        if(context[0].callDepth > 1000)
-            return setTimeout(function(){context[0].callDepth = 0; next(proceeding)}, 0);
-
-        context[0].callDepth += 1;
-
+    var rtnCallback = callback;
+    function loopBody(proceeding, context, callback){
         // if we've reached the end of the code, return
         if(parseInfo.i >= parseInfo.code.length){
             while(parseInfo.stack.length){  // make sure we don't have unmatched open parens
                 var l = parseInfo.stack.pop();
                 if(l.explicit)
-                    return parse.host.ccError(context, "parser did not end on the root list - probably too many open parens '('");
+                    return ccError(context, "parser did not end on the root list - probably too many open parens '('");
             }
             root = implicitLogic(root);    // remove implicit empty lists and convert implicit lists of one item to atoms
-            return callback(root);
+            return rtnCallback(root);
         }
 
         if(!proceeding){
             iParser--;
             if(iParser < 0){
-                return parse.host.ccError(context, "no parsers are proceeding: \n" + errorLine());
+                return ccError(context, "no parsers are proceeding: \n" + errorLine());
             }
         } else{
             iParser = parse.parsers.length - 1;
@@ -1055,13 +1049,61 @@ function parseHost(expr, context, callback){
         var parser = parse.parsers[iParser];
         // todo: catch thrown errors
         if(_.isFunction(parser))
-            parser(parseInfo, context, next);
+            parser(parseInfo, context, callback);
         else{
-            parse.host.evalHost(['`',parser,parseInfo],context, next);
+            parse.host.evalHost(['`',parser,parseInfo],context, callback);
         }
-
     }
-    next(true);
+    var p = null;    
+    function interCall(proceeding){
+        // tell proc to start again (this is currently how to do a while(true) loop)
+        p.items[0] = proceeding;
+        p.itemIndex = 0;            
+    }        
+    p = proc.new(loopBody, [true], interCall, context, callback);
+    p.start(); 
+    return;
+
+    // var iParser = 0;
+    // context[0].callDepth = 1001;
+    // function next(proceeding){
+    //     context[0].callDepth++;
+    //     //if(context[0].callDepth > parse.host.core.maxCallDepth)
+    //     if(context[0].callDepth > 1000)
+    //         return setTimeout(function(){context[0].callDepth = 0; next(proceeding)}, 0);
+    //
+    //     context[0].callDepth += 1;
+    //
+    //     // if we've reached the end of the code, return
+    //     if(parseInfo.i >= parseInfo.code.length){
+    //         while(parseInfo.stack.length){  // make sure we don't have unmatched open parens
+    //             var l = parseInfo.stack.pop();
+    //             if(l.explicit)
+    //                 return parse.host.ccError(context, "parser did not end on the root list - probably too many open parens '('");
+    //         }
+    //         root = implicitLogic(root);    // remove implicit empty lists and convert implicit lists of one item to atoms
+    //         return callback(root);
+    //     }
+    //
+    //     if(!proceeding){
+    //         iParser--;
+    //         if(iParser < 0){
+    //             return parse.host.ccError(context, "no parsers are proceeding: \n" + errorLine());
+    //         }
+    //     } else{
+    //         iParser = parse.parsers.length - 1;
+    //     }
+    //
+    //     var parser = parse.parsers[iParser];
+    //     // todo: catch thrown errors
+    //     if(_.isFunction(parser))
+    //         parser(parseInfo, context, next);
+    //     else{
+    //         parse.host.evalHost(['`',parser,parseInfo],context, next);
+    //     }
+    //
+    // }
+    // next(true);
 }
 parse.parseHost = parseHost;
 parse.parse =  {

@@ -10,6 +10,8 @@ var nmeta = utils.nmeta;
 var isSym = utils.isSym;
 var ssym = utils.ssym;
 
+var untick = utils.untick;
+
 var parse = {};
 
 function ccError(context, err){
@@ -806,7 +808,25 @@ function parseBasicOps(pi, context, callback){
     function opFound(op) {
         word = word || maybeOp;
         pi.i += word.length;
-        pi.clist.push(nsym(op));
+
+        // if past second position treat as infix
+        if(pi.clist.length > 1){
+
+            // 1 + 2 * 3
+            // ===
+            // (* 3 (+ 1 2))
+
+            pi.endList() // end whatever the last expression is
+            var lexpr = pi.clist.pop(); // remove the last expression 
+            if(untick(lexpr).length < 2)
+                lexpr = untick(lexpr)[0];
+            pi.newList(); // start a new expression
+            pi.clist.push(nsym(op)) // make this op the function of the expression
+            pi.clist.push(lexpr) // make the last expression the first argument of the current one
+        } 
+        else {
+            pi.clist.push(nsym(op));
+        }        
         return callback(true);
     }
 

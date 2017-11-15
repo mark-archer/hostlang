@@ -1,0 +1,31 @@
+
+;; basic operators as infix
+1 && 2 === : && 1 2
+0 || 1 === : || 0 1
+1 == 1 === : == 1 1
+1 != 1 === : != 1 1
+1 >= 1 === : >= 1 1
+1 <= 1 === : <= 1 1
+1 > 1  === : > 1 1
+1 < 1  === : < 1 1
+1 + 1  === : + 1 1
+1 - 1  === : - 1 1
+1 * 1  === : * 1 1
+1 / 1  === : / 1 1
+
+
+;; test with positive if statement
+if(2 >= 1)
+    true
+else
+    false
+=== true
+
+;; test with negative if statement
+if(1 >= 2)
+    true
+else
+    false
+=== false
+    
+    

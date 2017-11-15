@@ -1,5 +1,19 @@
 
 ;; parse basic operators
+&& === AND
+|| === OR
+== === _eq
+!= === _ne
+>= === _gte
+<= === _lte
+>  === _gt
+<  === _lt
++  === add
+-  === subtract
+*  === multiply
+/  === divide
+
+;;; parse basic operators
 ' && || == != >= <= > < + - * /
 === : evalJs """
 [
@@ -18,7 +32,7 @@
     "`divide"
 ]
 """
-
+;;;
 
 ;; test + - * /
 + 1 2 3 === 6

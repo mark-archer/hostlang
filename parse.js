@@ -288,7 +288,7 @@ function parseQuotes(pi, context, callback) {
         var txt = '"';
         while(true){
             if(code.length <= pi.i)
-                return parse.host.ccError(context,'parseQuotes - did not find a matching terminator: (' + terminator + ')');
+                return parse.host.ccError(context,'parseQuotes - did not find end quote: (' + terminator + ')');
             if(code[pi.i] === '\\'){
                 txt += '\\' + code[pi.i+1];
                 pi.i+=2;

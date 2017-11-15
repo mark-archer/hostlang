@@ -27,5 +27,27 @@ if(1 >= 2)
 else
     false
 === false
-    
-    
+
+;; test chain of infix calls with if statement
+null
+if (1 - 1 == 0)
+    "one"   
+=== "one"
+
+;; test chain of infix calls with elif statement
+null
+if (1 + 1 == 0)
+    "one"   
+elif(1 - 1 == 0)
+    "two"
+else "three"
+=== "two"
+
+;; test chain of infix calls with else statement
+null
+if (1 + 1 == 0)
+    "one"   
+elif(1 - 1 == 1)
+    "two"
+else "three"
+=== "three"

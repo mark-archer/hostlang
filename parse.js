@@ -818,7 +818,9 @@ function parseBasicOps(pi, context, callback){
 
             pi.endList() // end whatever the last expression is
             var lexpr = pi.clist.pop(); // remove the last expression 
-            if(untick(lexpr).length < 2)
+            // convert implicity lists of 1 or 0 items to just the item or undefined
+            //if(!lexpr.explicit && lexpr.length < 1 || (lexpr[0] === '`' && lexpr.length < 2)) 
+            if(lexpr.length < 2 || (lexpr[0] === '`' && lexpr.length < 3)) 
                 lexpr = untick(lexpr)[0];
             pi.newList(); // start a new expression
             pi.clist.push(nsym(op)) // make this op the function of the expression

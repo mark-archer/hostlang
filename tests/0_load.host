@@ -1,3 +1,4 @@
+log "0_load.host" : copy context
 
 ; path to module we'll use for testing load functions
 var dummyModule "/hostlang/dummyModule.host"

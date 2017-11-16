@@ -13,26 +13,6 @@
 *  === multiply
 /  === divide
 
-;;; parse basic operators
-' && || == != >= <= > < + - * /
-=== : evalJs """
-[
-    "`",
-    "`AND",
-    "`OR",
-    "`_eq",
-    "`_ne",
-    "`_gte",
-    "`_lte",
-    "`_gt",
-    "`_lt",
-    "`add",
-    "`subtract",
-    "`multiply",
-    "`divide"
-]
-"""
-;;;
 
 ;; test + - * /
 + 1 2 3 === 6
@@ -42,8 +22,9 @@
 * 1 2 3 === 6
 / 100 10 5 === 2
 
-warn "test things like (add 1 null) === null"
-
+;; test things like (add 1 null) === 1
++ 1 null === 1 
++ 1 undefined === NaN
 
 ;; test &&
 && 1 1 === 1
@@ -120,7 +101,7 @@ warn "test things like (add 1 null) === null"
 <= 1 undefined === false
 >= 1 undefined === false
 
-; test that null is equal to null : todo shouldn't we test this with isNull
+; test that null is equal to null 
 == null null === true
 
 ; test that undefined is not equal to anything

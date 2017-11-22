@@ -287,9 +287,10 @@ function eqin(){
 utils.eqin = eqin;
 
 utils.list = function (){
-    var l = [];
-    _.each(arguments, function(a){l.push(a)});
-    return l;
+    //var l = [];
+    //_.each(arguments, function(a){l.push(a)});
+    //return l;
+    return _.toArray(arguments);
 };
 
 utils.one = function (a) {

@@ -5,7 +5,6 @@ var utils = require('./utils.js');
 var types = require('./types.js');
 var parse = require('./parse.js');
 var proc = require('./proc.js');
-var tests = require('./tests.js')
 var base = require('./base.c.js')
 
 // unpack base JSON
@@ -26,7 +25,7 @@ console.log('hostlang');
 try{window} catch(e){window = null}    
 
 // skip first two args: first is path to exe, second is path to this file
-var args = utils.skip(process.argv, 2);
+//var args = utils.skip(process.argv, 2);
 
 var log = utils.log;
 var copy = utils.copy;
@@ -72,60 +71,23 @@ copyToNative(parse);
 //copyToNative(serveJs);
 
 
+var utilsc = {}
+for(var n in utils){
+    if(utils.hasOwnProperty(n))
+        if(_.isFunction(utils[n]))
+            utilsc[n] = fnjs(n, utils[n]);
+        else
+            utilsc[n] = utils[n];
+}
+
+
 var core = {};
 core.core = core;
 core.utils = utils;
 core.maxCallDepth = 500;
 core.__dirname = __dirname;
 //core.reader = reader;
-core.tests = tests;
 
-core.AND = {
-    //type:Fn,
-    type:'Fn',
-    name:'AND',
-    params:[nmeta('args&')],
-    closure:[],
-    code: `
-each args a
-    evalOutside a
-    if(not _)
-        return false
-return (last _)
-`,
-    useRuntimeScope:true,
-    isMacro: true,
-    //,isInline: true
-};
-
-core.OR = {
-    //type:Fn,
-    type:'Fn',
-    name:'OR',
-    params:[nmeta('args&')],
-    closure:[],
-    code: `
-each args a
-    evalOutside a
-    if _
-        return _
-return (last _)
-`,
-    useRuntimeScope:true,
-    isMacro: true
-    //,isInline: true
-};
-
-
-core.list = {
-    type:Fn,
-    name:"list",
-    params:[
-        nmeta('items&')
-    ],
-    closure:[],
-    code: 'items'
-};
 
 utils.objectPath = fnjs(function(){
     var l = [];
@@ -148,7 +110,6 @@ core.assertEq = function(context, callback, a, b){
 
 
 function eachSync(items, fn, context, callback){
-
     if(!_.isArray(items))
         return ccError(context, "eachSync - items not a list");
 
@@ -169,7 +130,6 @@ function eachSync(items, fn, context, callback){
 core.eachSync = eachSync;
 
 function bind(context, name, value, offset){
-    //console.log('html');
     if(!_.isArray(context) || !context.length)
         throw "bind -- something's wrong, 'context' is invalid";
     if(!Int.isType(offset)) offset = 0;
@@ -211,13 +171,6 @@ function newScope(context, bindings){
     return bindings;
 }
 core.newScope = function(context, callback, bindings){
-    // if(!_.isObject(bindings))
-    //     bindings = {};
-    // if(!_.isArray(bindings)){
-    //     bindings= [bindings];
-    // }
-    // context.push.apply(context, bindings);
-    // callback(context);
     newScope(context, bindings)
     callback(_.last(context));
 }
@@ -229,14 +182,10 @@ core.exitScope = function(context, callback){
     callback(_.last(context));
 }
 function getClosure(context, offset){
-
-    //if(!isType(offset, Int)) offset = 0;
     if(!Int.isType(offset)) offset = 0;
-
     var scopes = _.clone(context);
     for(var i = 0; i < offset; i++)
         scopes.pop();
-
     return scopes;
 }
 function getBinding(context, name, offset){
@@ -309,7 +258,7 @@ function set(expr, context, callback) {
                 return callback(value);
             }
         }
-        return ccError(context,name + ' is not defined, so it cannot be set');
+        return ccError(context,name + ' is not defined, so it cannot be set. Did you mean to use "var"?');
     });
 }
 core.set = fnjs("set",set);
@@ -344,8 +293,8 @@ function acrJs(expr, context, callback){
     if(!root){
         var rootName = path.shift();
         return evalHost(rootName, context, function(rslt){
-            if(!_.isObject(rslt) && !_.isString(rslt))
-                return ccError(context, {msg:"acr: '" + rootName + "' is an invalid root object",value:rslt});
+            //if(!_.isObject(rslt) && !_.isString(rslt))
+            //    return ccError(context, {msg:"acr: '" + rootName + "' is an invalid root object",value:rslt});
             acrJs([path, value, rslt, rslt], context, callback);
         });
     }
@@ -431,7 +380,12 @@ function acrJs(expr, context, callback){
         }
         return callback(root);
     }
-    return callback(ref[nn]);
+    var rtnVal = ref[nn]
+    if(_.isFunction(rtnVal)){
+        rtnVal = fnjs(nn, rtnVal);
+        rtnVal.context = ref;
+    }        
+    return callback(rtnVal);
 }
 core.setr = {
     name:"setr",
@@ -885,6 +839,11 @@ function evalSym(expr, context, callback){
         }
     }
 
+    // special window keyword
+    if(sym === "window")
+        return callback(window);
+    
+
     // if we didn't resolve '_' by now return null for it (don't want to mess around with what it might mean outside of context)
     if(sym === '_') return callback(null);
 
@@ -900,17 +859,13 @@ function evalSym(expr, context, callback){
         return callback(core[sym]);
 
     // look in utils
-    if(utils[sym])
-        return callback(utils[sym]);
+    if(utilsc[sym])
+        return callback(utilsc[sym]);
 
     // look in native
     if(native[sym])
         return callback(native[sym]);
 
-    // look in window
-    if(window && window[sym])
-        return callback(window[sym])   
-    
     return ccError(context,"Couldn't resolve symbol: " + sym);
 
 }
@@ -1605,7 +1560,6 @@ core.require = function(context, callback, path, force){
 }
 
 
-
 module = module || {};
 module.exports = {
     core: core,
@@ -1634,77 +1588,82 @@ utils.host = host;
 types.host = host;
 parse.host = host;
 proc.host = host;
-//reader.host = host;
-//serveJs.host = host;
 
-//console.log(args)
+if(false){
+        
+    //reader.host = host;
+    //serveJs.host = host;
+
+    //console.log(args)
 
 
-// below should be moved to a CLI specific script
+    // below should be moved to a CLI specific script
 
-// // =========  repl logic below ====================
+    // // =========  repl logic below ====================
 
-// var errorCB = function(err){console.error("ERROR!"); console.error(err);};
-// var ctx = contextInit({}, console.log, errorCB);
-// var ctx0 = ctx[0];
-// ctx0._silent = true;
+    // var errorCB = function(err){console.error("ERROR!"); console.error(err);};
+    // var ctx = contextInit({}, console.log, errorCB);
+    // var ctx0 = ctx[0];
+    // ctx0._silent = true;
 
-// // host.repl = function(expr, context, callback){
-// //
-// // };
+    // // host.repl = function(expr, context, callback){
+    // //
+    // // };
 
-// // for certain args situations get out
-// if(args.length === 0 || args[0] === "--no-sandbox" /*for electron*/)
-//     return;
+    // // for certain args situations get out
+    // if(args.length === 0 || args[0] === "--no-sandbox" /*for electron*/)
+    //     return;
 
-// // -e means evaluate and return
-// if (args[0] === '-e'){
-//     run(args[1], ctx, console.log, errorCB);
-//     return;
-// }
-// // repl means just start the repl
-// else if(args[0] === 'repl'){
-//     run('"host ready"', ctx, console.log, errorCB)
-// }
-// // otherwise assume it's a file path
-// else{
-//     var returnAfter = false;
-//     var file = args.shift();
-//     if(file === "-f"){
-//         returnAfter = true;
-//         file = args.shift();
-//     }
+    // // -e means evaluate and return
+    // if (args[0] === '-e'){
+    //     run(args[1], ctx, console.log, errorCB);
+    //     return;
+    // }
+    // // repl means just start the repl
+    // else if(args[0] === 'repl'){
+    //     run('"host ready"', ctx, console.log, errorCB)
+    // }
+    // // otherwise assume it's a file path
+    // else{
+    //     var returnAfter = false;
+    //     var file = args.shift();
+    //     if(file === "-f"){
+    //         returnAfter = true;
+    //         file = args.shift();
+    //     }
 
-//     var fileArgs = args;
-//     fileArgs = _.map(fileArgs,function(a){
-//         if(a[0] !== '"' && a.includes('=')){
-//             var iEq = a.indexOf('=');
-//             var aName = a.substr(0,iEq);
-//             a = a.substring(iEq+1);
-//             ctx[aName] = a;
-//         }
-//         return a;
-//     });
+    //     var fileArgs = args;
+    //     fileArgs = _.map(fileArgs,function(a){
+    //         if(a[0] !== '"' && a.includes('=')){
+    //             var iEq = a.indexOf('=');
+    //             var aName = a.substr(0,iEq);
+    //             a = a.substring(iEq+1);
+    //             ctx[aName] = a;
+    //         }
+    //         return a;
+    //     });
 
-//     ctx0._args = fileArgs;
-//     reader.read([file, "utf8"], ctx, function(fileContents){
-//         ctx[0]._sourceFile = file;
-//         run(fileContents, ctx, console.log, errorCB)
-//     });
+    //     ctx0._args = fileArgs;
+    //     reader.read([file, "utf8"], ctx, function(fileContents){
+    //         ctx[0]._sourceFile = file;
+    //         run(fileContents, ctx, console.log, errorCB)
+    //     });
 
-//     if(returnAfter)
-//         return;
-// }
+    //     if(returnAfter)
+    //         return;
+    // }
 
-// const repl = require('repl');
-// function replEval(cmd, context, filename, callback) {
-//     var ppRslt = function(rslt){
-//         if(types.Fn.isType(rslt))
-//             rslt = "#Fn: " + (rslt.name || "<anon>") + " " + utils.dataToString(rslt.params,4);
-//         if(_.isObject(rslt) && !_.isFunction(rslt))
-//             rslt = utils.dataToString(rslt,4);
-//         callback(rslt);
-//     };
-//     run(cmd,ctx,ppRslt,errorCB);
-// }
-// repl.start({prompt: '<< ', eval: replEval});
+    // const repl = require('repl');
+    // function replEval(cmd, context, filename, callback) {
+    //     var ppRslt = function(rslt){
+    //         if(types.Fn.isType(rslt))
+    //             rslt = "#Fn: " + (rslt.name || "<anon>") + " " + utils.dataToString(rslt.params,4);
+    //         if(_.isObject(rslt) && !_.isFunction(rslt))
+    //             rslt = utils.dataToString(rslt,4);
+    //         callback(rslt);
+    //     };
+    //     run(cmd,ctx,ppRslt,errorCB);
+    // }
+    // repl.start({prompt: '<< ', eval: replEval});
+
+}

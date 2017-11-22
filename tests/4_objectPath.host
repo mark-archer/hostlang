@@ -87,13 +87,13 @@ parse "test.test!" === : evalJs """
 """
 
 
-
 ;; test all types of ObjectPath getting and setting
 var t new! , var tt new!
 set tt.test "fn"        ;setr simple
 set t.(tt.test) add     ;setr with nested getr
 set t.t.(tt.test) add
 t.t.fn === add          ;setr with nested getr in different loc
+return!
 t.fn 1 2 === 3          ;getr as fn
 tt.test === "fn"        ;getr simple
 t.(tt.test) === add     ;getr with nested getr
@@ -143,6 +143,16 @@ parse "set memo memoName.value"
     ]
 ]
 """
+
+;; test context reference for js functions
+"test".split!
+===:, "test"
+
+"test".split ""
+===:, "t" "e" "s" "t"
+
+"test".split "t"
+===:, "" "es" ""
 
 
 warn "unfinished tests"

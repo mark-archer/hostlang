@@ -298,9 +298,6 @@ utils.one = function (a) {
         throw "one -- requires a single argument which will be returned";
     return a;
 };
-// utils.atom = function (a){
-//     return a;
-// };
 
 utils.add = function (){
     var r = arguments[0];
@@ -444,73 +441,134 @@ utils.not = function(x){
 
 //====================== List manipulators ============================
 
-function listNotify(list, type, indexes, context, callback){
-    utils.host.core.listNotify.ccode(list, type, indexes, context, callback);
-}
+// function listNotify(list, type, indexes, context, callback){
+//     utils.host.core.listNotify.ccode(list, type, indexes, context, callback);
+// }
 
-utils.shift = function(context, callback, list){
-    var rslt = list.shift();
-    listNotify(list, "Remove", [0], context, function(){callback(rslt)});
-    //return rslt;
+// utils.shift = function(context, callback, list){
+//     var rslt = list.shift();
+//     listNotify(list, "Remove", [0], context, function(){callback(rslt)});
+//     //return rslt;
+// };
+
+// utils.unshift = function(context, callback, list, item){
+//     // var args = _.map(arguments,function(a){return a;});
+//     // var ary = args.shift();
+//     // Array.prototype.unshift.apply(ary, args);
+//     // return ary;
+//     list.unshift(item);
+//     listNotify(list, "Add", [0], context, function(){callback(list)});
+//     //return list;
+// };
+
+// utils.pop = function(context, callback, list, index){
+//     if(index !== undefined){
+//         return utils.removeAt(list, index);
+//     }
+//     var rslt = list.pop();
+//     listNotify(list, "Remove", [list.length], context, function(){callback(rslt)});
+//     //return rslt;
+// };
+
+// utils.push = function(context, callback, list, item){
+//     // var args = _.map(arguments,function(a){return a;});
+//     // var ary = args.shift();
+//     // Array.prototype.push.apply(ary, args);
+//     // return ary;
+//     if(!(list && list.push))
+//         throw ['invalid item passed as list:',list];
+//     list.push(item);
+//     listNotify(list, "Add", [list.length-1], context, function(){callback(list)});
+//     //return list;
+// };
+
+// utils.removeAt = function(context, callback, list, index){
+//     var rslt = list.splice(index,1)[0];
+//     listNotify(list, "Remove", [index], context, function(){callback(rslt)});
+//     //return rslt;
+// };
+
+// utils.insert = function(context, callback, list, item, index){
+//     list.splice(index,0,item);
+//     listNotify(list, "Add", [index], context, function(){callback(list)});
+//     //return list;
+// };
+
+// utils.remove = function(context, callback, list, item){
+//     var i = _.indexOf(list, item);
+//     if(i === -1)
+//         return list;
+//     list.splice(i,1);
+//     listNotify(list, "Remove", [i], context, function(){callback(list)});
+//     //return list;
+// };
+
+// utils.append = function(context, callback, list1, list2){
+//     var indexes = _.map(_.keys(list2), function(k){return k + list1.length});
+//     Array.prototype.push.apply(list1,list2);
+//     listNotify(list1, "Add", indexes, context, function(){callback(list1)});
+//     //return list1;
+// };
+
+utils.shift = function(list, cnt){
+    cnt = cnt || 1;
+    var rslt = list.splice(0,cnt);
+    if(rslt.length < 2)
+        rslt = rslt[0]
+    return rslt;
 };
 
-utils.unshift = function(context, callback, list, item){
-    // var args = _.map(arguments,function(a){return a;});
-    // var ary = args.shift();
-    // Array.prototype.unshift.apply(ary, args);
-    // return ary;
-    list.unshift(item);
-    listNotify(list, "Add", [0], context, function(){callback(list)});
-    //return list;
+utils.unshift = function(list, item1){ // ... more items
+    var args = _.toArray(arguments);
+    var ary = args.shift();
+    Array.prototype.unshift.apply(ary, args);
+    return ary;    
 };
 
-utils.pop = function(context, callback, list, index){
-    if(index !== undefined){
-        return utils.removeAt(list, index);
-    }
-    var rslt = list.pop();
-    listNotify(list, "Remove", [list.length], context, function(){callback(rslt)});
-    //return rslt;
+utils.pop = function(list, cnt){
+    cnt = cnt || 1;
+    var rslt = list.splice(list.length-cnt,cnt);
+    if(rslt.length < 2)
+        rslt = rslt[0]
+    return rslt;
 };
 
-utils.push = function(context, callback, list, item){
-    // var args = _.map(arguments,function(a){return a;});
-    // var ary = args.shift();
-    // Array.prototype.push.apply(ary, args);
-    // return ary;
-    if(!(list && list.push))
-        throw ['invalid item passed as list:',list];
-    list.push(item);
-    listNotify(list, "Add", [list.length-1], context, function(){callback(list)});
-    //return list;
+utils.push = function(){
+    var args = _.toArray(arguments);
+    var ary = args.shift();
+    Array.prototype.push.apply(ary, args);
+    return ary;    
+};
+utils.append = utils.push
+
+utils.removeAt = function(list, index){
+    return list.splice(index,1)[0];        
 };
 
-utils.removeAt = function(context, callback, list, index){
-    var rslt = list.splice(index,1)[0];
-    listNotify(list, "Remove", [index], context, function(){callback(rslt)});
-    //return rslt;
-};
-
-utils.insert = function(context, callback, list, item, index){
+utils.insert = function(list, item, index){
     list.splice(index,0,item);
-    listNotify(list, "Add", [index], context, function(){callback(list)});
-    //return list;
+    return list;
+};
+utils.insertAt = utils.insert;
+
+utils.remove = function(list, item){
+    for(var i = list.length-1;i>=0;i--){
+        if(list[i] === item) // maybe - this should be _.equal?
+            list.splice(i,1);
+    }
+    return list;
 };
 
-utils.remove = function(context, callback, list, item){
-    var i = _.indexOf(list, item);
-    if(i === -1)
-        return list;
-    list.splice(i,1);
-    listNotify(list, "Remove", [i], context, function(){callback(list)});
-    //return list;
-};
-
-utils.append = function(context, callback, list1, list2){
-    var indexes = _.map(_.keys(list2), function(k){return k + list1.length});
-    Array.prototype.push.apply(list1,list2);
-    listNotify(list1, "Add", indexes, context, function(){callback(list1)});
-    //return list1;
+utils.append = function(list){ // ... items or lists
+    var args = _.toArray(arguments);    
+    for(var i = 1; i<args.length; i++){
+        var item = args[i];
+        if(_.isArray(item))
+            Array.prototype.push.apply(list,item);    
+        else
+            list.push(item);
+    }    
+    return list;
 };
 
 //====================== /List manipulators ============================

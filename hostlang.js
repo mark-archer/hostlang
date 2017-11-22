@@ -386,56 +386,6 @@ core.getr = {
     isInline: true
 };
 
-// core.subscriptions = {"`ListChanges":[]};
-// core.subscribe = fnjs("subscribe", function(expr, context, callback){
-//     untick(expr);
-//     var objPath = expr[0];
-//     var f = expr[1];
-//
-//     // get object ref
-//     var refPath = _.clone(objPath);
-//     var field = refPath[2].pop();
-//     field = untick(field);
-//     evalHost(refPath, context, function (objRef) {
-//
-//         // eval f (in case it hasn't already been)
-//         evalHost(f, context, function(f){
-//
-//             // set subscription (shard by propName, hopefully gives faster look-ups)
-//             core.subscriptions[field] = core.subscriptions[field] || [];
-//             var newSub = {object:objRef, field:field, handler:f};
-//             core.subscriptions[field].push(newSub);
-//
-//             // return subscription in case caller wants to do some additional manipulation
-//             callback(newSub);
-//         });
-//     });
-// });
-// core.subscribe.useRuntimeScope = true;
-// core.subscribe.isMacro = true;
-// core.unsubscribe = fnjs("unsubscribe", function(expr, context, callback){
-//     var sub = expr[0];
-//     var i = core.subscriptions[sub.field].indexOf(sub);
-//     if(i < 0)
-//         return ccError(context, ["subscription not found", sub]);
-//     utils.removeAt(core.subscriptions[sub.field],i);
-//     callback(sub);
-// });
-// core.notify = fnjs("notify", function(obj, field, oldValue, newValue, context, callback){
-//     var handlers = _.filter(core.subscriptions[field], function(s){return s.object === obj});
-//     function doHandler(s, context, callback){
-//         evalHost(['`', s.handler, newValue, oldValue, field, obj] , context, callback);
-//     }
-//     eachSync(handlers, doHandler, context, callback);
-// });
-// core.listNotify = fnjs("listNotify", function(list, type, indexes, context, callback){
-//     var handlers = _.filter(core.subscriptions["`ListChanges"], function(s){return s.object === list});
-//     function doHandler(s, context, callback){
-//         evalHost(['`', s.handler, indexes, type, list] , context, callback);
-//     }
-//     eachSync(handlers, doHandler, context, callback);
-// });
-
 native.fnjs = fnjs;
 function fn(expr, context, callback) {
 

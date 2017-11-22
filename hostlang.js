@@ -38,38 +38,49 @@ var Expression = types.Expression;
 
 var parseHost = parse.parseHost;
 
-var native = {};
-native.trace = function () {
+//var native = {};
+
+// // copy native modules to native namespace
+// function copyToNative(obj){
+//     for (var n in obj) 
+//         if(obj.hasOwnProperty(n)) 
+//             native[n] = obj[n];
+// }
+// copyToNative(utils);
+// copyToNative(types);
+// copyToNative(parse);
+
+var core = {};
+function copyToCore(obj){
+    for(var n in obj){
+        if(obj.hasOwnProperty(n)){
+            if(core[n] === obj[n]) continue; // don't copy if it's the same thing and already there
+            if(core[n] && core[n].ccode === obj[n])  continue; // don't copy if the "compiled" code of this and already there
+            if(core[n] && core[n] != obj[n].ccode) // warn if overwritting
+                console.error("overwritting core field '" + n + "'", [core[n],"to", obj[n]]);
+            if(_.isFunction(obj[n])) // if this is a js function the compile it
+                core[n] = fnjs(n, obj[n]);
+            else
+                core[n] = obj[n];
+        }
+    }
+}
+copyToCore(utils);
+copyToCore(types);
+copyToCore(parse);
+copyToCore(base);
+
+core.core = core;
+core.utils = utils;
+core.maxCallDepth = 500;
+core.__dirname = __dirname;
+
+core.trace = function () {
     var args = _.map(arguments, function(a){return a;});
     if(args.length < 2)
         args = args[0];
     console.trace(args)
 };
-
-// copy native modules to native namespace
-function copyToNative(obj){
-    for (var n in obj) 
-        if(obj.hasOwnProperty(n)) 
-            native[n] = obj[n];
-}
-copyToNative(utils);
-copyToNative(types);
-copyToNative(parse);
-
-var utilsc = {}
-for(var n in utils){
-    if(utils.hasOwnProperty(n))
-        if(_.isFunction(utils[n]))
-            utilsc[n] = fnjs(n, utils[n]);
-        else
-            utilsc[n] = utils[n];
-}
-
-var core = {};
-core.core = core;
-core.utils = utils;
-core.maxCallDepth = 500;
-core.__dirname = __dirname;
 
 utils.objectPath = fnjs(function(){
     var l = [];
@@ -386,7 +397,6 @@ core.getr = {
     isInline: true
 };
 
-native.fnjs = fnjs;
 function fn(expr, context, callback) {
 
     var name, params, return_type, ccode;
@@ -772,23 +782,11 @@ function evalSym(expr, context, callback){
 
     // if we didn't resolve 'this' by now return null for it (don't want to mess around with what it might mean outside of context)
     if(sym === 'this') return callback(null);
-
-    // look in base    
-    if(base[sym])
-        return callback(base[sym]);
-
+    
     // look in core
     if(core[sym])
         return callback(core[sym]);
-
-    // look in utils
-    if(utilsc[sym])
-        return callback(utilsc[sym]);
-
-    // look in native
-    if(native[sym])
-        return callback(native[sym]);
-
+    
     return ccError(context,"Couldn't resolve symbol: " + sym);
 
 }
@@ -1264,7 +1262,7 @@ function whileJs(expr, context, callback){
 core.while = fnjs("while",whileJs);
 core.while.isMacro = true;
 
-function sleep(expr, context, callback){
+core.sleep = function(expr, context, callback){
     // sleep(ms=0)
     untick(expr);
     var ms = expr.shift() || 0;
@@ -1272,7 +1270,7 @@ function sleep(expr, context, callback){
         callback(getBinding(context,'_'));
     }, ms);
 }
-function interval(context, callback, interval_ms, f){
+core.interval = function(context, callback, interval_ms, f){
     context = _.clone(context);
     var hndl = setInterval(function(){
         evalHost(['`', f], _.clone(context), _.noop);
@@ -1280,25 +1278,45 @@ function interval(context, callback, interval_ms, f){
     callback(hndl);
 }
 
-native.Fn = Fn;
-native.Meta = Meta;
-native.issym = isSym;
-native.ssym = ssym;
-native.ismeta = isMeta;
-native.tick = tick;
-native.untick = untick;
-native.exportJsfn = exportJsfn;
-native.acrJs = acrJs;
-native.evalJs = evalJs;
-native.evalHostBlock = evalHostBlock;
-native.evalHostBlockWrapper = evalHostBlockWrapper;
-native.bind = bind;
-native.getBinding = getBinding;
-native.sleep = sleep;
-native.interval = interval;
-native.tryCatchJs = tryCatchJs;
-native.eachJs = eachJs;
-native.callContinuation = callContinuation;
+// native.Fn = Fn;
+// native.Meta = Meta;
+// native.issym = isSym;
+// native.ssym = ssym;
+// native.ismeta = isMeta;
+// native.tick = tick;
+// native.untick = untick;
+// native.exportJsfn = exportJsfn;
+// native.acrJs = acrJs;
+// native.evalJs = evalJs;
+// native.evalHostBlock = evalHostBlock;
+// native.evalHostBlockWrapper = evalHostBlockWrapper;
+// native.bind = bind;
+// native.getBinding = getBinding;
+// native.sleep = sleep;
+// native.interval = interval;
+// native.tryCatchJs = tryCatchJs;
+// native.eachJs = eachJs;
+// native.callContinuation = callContinuation;
+
+//core.Fn = Fn;
+//core.Meta = Meta;
+//core.issym = isSym;
+//core.ssym = ssym;
+//core.ismeta = isMeta;
+//core.tick = tick;
+//core.untick = untick;
+core.exportJsfn = exportJsfn;
+core.acrJs = acrJs;
+core.evalJs = evalJs;
+core.evalHostBlock = evalHostBlock;
+core.evalHostBlockWrapper = evalHostBlockWrapper;
+core.bind = bind;
+//core.getBinding = getBinding;
+//core.sleep = sleep;
+//core.interval = interval;
+core.tryCatchJs = tryCatchJs;
+core.eachJs = eachJs;
+core.callContinuation = callContinuation;
 
 
 //================================================= EXPORTS ============================================================

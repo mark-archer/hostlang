@@ -226,14 +226,16 @@ types.isList = fnjs("isList",function(item){
 });
 List.isType = types.isList;
 
-types.isObject = fnjs("isObject",function(expr, context, callback){
-    var item = untick(expr)[0];
+types.isObject = fnjs("isObject",function(/*expr, context, callback*/ item){
+    // var item = untick(expr)[0];
+    // if(isMeta(item)){
+    //     item = item.value;
+    // }
+    // callback(_.isObject(item) && !_.isArray(item));
 
-    if(isMeta(item)){
-        item = item.value;
-    }
-
-    callback(_.isObject(item) && !_.isArray(item));
+    if(isMeta(item))
+        item = item.value
+    return _.isObject(item) && !_.isArray(item)
 });
 NativeObject.isType = types.isObject;
 
@@ -315,55 +317,6 @@ types.new = function(expr, context, callback){
 types.isFunction = function(f){
     return _.isFunction(f) || eqObjects(f.type, Fn) || eqObjects(f.type, Fnjs);
 };
-
-//types.type = function(){} // see types.host for defintion 
-var typeCode = `
-;fnm type(name args&)
-; new type object
-var t new!
-set t.name : ssym name
-set t.type Type
-
-; bind to context
-bind context (ssym name) t 1
-
-; add to known types
-push _knownTypes t
-
-; processes addtional args
-each args a
-    ; if it's the 'fields' arg just set the list
-    if(&& (isList a) (|| (== (ssym a.0) "fields") (== (ssym a.1) "fields")))
-        untick a ; remove tick if it's there
-        shift a  ; remove 'fields' symbol
-        set t.fields a
-        continue!
-
-    ; eval it
-    set a : eval a
-
-    ; if it's named set it by name
-    if(&& (isMeta a) a.name)
-        set t.(one a.name) a.value
-    else
-        ; otherwise add it to the list of unnamed values
-        ; maybe -- throw error
-        set t.values (OR t.values list!)
-        push t.values a
-t
-`
-types.type = {
-    type:'Fn',
-    params:[
-        nmeta("name"),
-        nmeta("args&")
-    ],
-    code:typeCode,
-    //closure:[types],
-    useRuntimeScope: true,
-    isMacro:true,
-    isInline: true
-}
 
 
 module = module || {};

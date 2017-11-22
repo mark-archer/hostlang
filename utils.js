@@ -3,47 +3,19 @@
 var _ = _ || require('underscore');
 var uuid = require('uuid');
 
-var system_id = '00000000-0000-0000-0000-000000000000';
-var type_type_id = '00000000-0000-0000-0000-000000000001';
-var type_group_id = '00000000-0000-0000-0000-000000000002';
-var type_user_id = '00000000-0000-0000-0000-000000000003';
-var type_groupMember_id = '00000000-0000-0000-0000-000000000004';
-var type_authToken_id = '00000000-0000-0000-0000-000000000005';
+var utils = {}
 
-var type_fn_id = '00000000-0000-0000-0000-000000000006';
-var type_fn_js_id = '00000000-0000-0000-0000-000000000007';
-var type_script_id = '00000000-0000-0000-0000-000000000008';
-var type_any_id = '00000000-0000-0000-0000-00000000000a';
-var type_json_id = '00000000-0000-0000-0000-00000000000b';
-var type_error_id = '00000000-0000-0000-0000-00000000000e';
-var type_test_id = '00000000-0000-0000-0000-00000000000f';
-
-
-var utils = {
-    system_id :         '00000000-0000-0000-0000-000000000000',
-    type_type_id :      '00000000-0000-0000-0000-000000000001',
-    type_group_id :     '00000000-0000-0000-0000-000000000002',
-    type_user_id :      '00000000-0000-0000-0000-000000000003',
-    type_groupMember_id:'00000000-0000-0000-0000-000000000004',
-    type_authToken_id:  '00000000-0000-0000-0000-000000000005',
-    type_fn_id :        '00000000-0000-0000-0000-000000000006',
-    type_fn_js_id :     '00000000-0000-0000-0000-000000000007',
-    type_script_id :    '00000000-0000-0000-0000-000000000008',
-    type_any_id :       '00000000-0000-0000-0000-00000000000a',
-    type_json_id :      '00000000-0000-0000-0000-00000000000b',
-    type_symbol_id :    '00000000-0000-0000-0000-00000000000c',
-    type_error_id :     '00000000-0000-0000-0000-00000000000e',
-    type_test_id :      '00000000-0000-0000-0000-00000000000f',
-    type_atom_id :      '00000000-0000-0000-0000-00000000001a',
-    type_task_id :      '00000000-0000-0000-0000-00000000001b'
-};
-
-// add all underscore functions todo: this should probably be more selective
+// add all underscore functions, then remove the ones Host has it's own take on
 for(var n in _) utils[n] = _[n];
 delete utils.bind;
 delete utils.map;
 delete utils.range;
 delete utils.reduce;
+delete utils.isObject;
+delete utils.isFunction;
+delete utils.filter;
+delete utils.isError;
+
 
 utils.names = function(obj){
     if(arguments.length > 1) throw "names expects 1 argument, given " + arguments.length;
@@ -70,7 +42,7 @@ utils.values = function(obj){
 
 var newid = uuid.v1;
 utils.newid = newid;
-utils.Id = newid;
+//utils.Id = newid;
 
 // function isid(sid){
 //     if(!sid) return false;
@@ -755,9 +727,9 @@ utils.ssym = function(sym){
 
 utils.Math = Math;
 
-utils.endsWith = function(s, end){
-    return s.endsWith(end);
-};
+// utils.endsWith = function(s, end){
+//     return s.endsWith(end);
+// };
 
 utils.reverse = function(ary){
     return _.clone(ary).reverse();

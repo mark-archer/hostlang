@@ -94,13 +94,6 @@ eval _
         "`system_id",
         "`type_type_id"
     ] """
-eval _
-=== : evalJs """
-    [
-        "00000000-0000-0000-0000-000000000000",
-        "00000000-0000-0000-0000-000000000001"
-    ]
-    """
 
 
 ;; tick and quote by themselves should be returned as is

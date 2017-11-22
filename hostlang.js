@@ -10,7 +10,7 @@ var base = require('./base.c.js')
 // unpack base JSON
 base = utils.fromJSON(base);
 
-console.log('hostlang');
+console.log('hostlang - v0.0.10');
 
 // makes sure the global window object is declared
 try{window} catch(e){window = null}    

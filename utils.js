@@ -441,75 +441,6 @@ utils.not = function(x){
 
 //====================== List manipulators ============================
 
-// function listNotify(list, type, indexes, context, callback){
-//     utils.host.core.listNotify.ccode(list, type, indexes, context, callback);
-// }
-
-// utils.shift = function(context, callback, list){
-//     var rslt = list.shift();
-//     listNotify(list, "Remove", [0], context, function(){callback(rslt)});
-//     //return rslt;
-// };
-
-// utils.unshift = function(context, callback, list, item){
-//     // var args = _.map(arguments,function(a){return a;});
-//     // var ary = args.shift();
-//     // Array.prototype.unshift.apply(ary, args);
-//     // return ary;
-//     list.unshift(item);
-//     listNotify(list, "Add", [0], context, function(){callback(list)});
-//     //return list;
-// };
-
-// utils.pop = function(context, callback, list, index){
-//     if(index !== undefined){
-//         return utils.removeAt(list, index);
-//     }
-//     var rslt = list.pop();
-//     listNotify(list, "Remove", [list.length], context, function(){callback(rslt)});
-//     //return rslt;
-// };
-
-// utils.push = function(context, callback, list, item){
-//     // var args = _.map(arguments,function(a){return a;});
-//     // var ary = args.shift();
-//     // Array.prototype.push.apply(ary, args);
-//     // return ary;
-//     if(!(list && list.push))
-//         throw ['invalid item passed as list:',list];
-//     list.push(item);
-//     listNotify(list, "Add", [list.length-1], context, function(){callback(list)});
-//     //return list;
-// };
-
-// utils.removeAt = function(context, callback, list, index){
-//     var rslt = list.splice(index,1)[0];
-//     listNotify(list, "Remove", [index], context, function(){callback(rslt)});
-//     //return rslt;
-// };
-
-// utils.insert = function(context, callback, list, item, index){
-//     list.splice(index,0,item);
-//     listNotify(list, "Add", [index], context, function(){callback(list)});
-//     //return list;
-// };
-
-// utils.remove = function(context, callback, list, item){
-//     var i = _.indexOf(list, item);
-//     if(i === -1)
-//         return list;
-//     list.splice(i,1);
-//     listNotify(list, "Remove", [i], context, function(){callback(list)});
-//     //return list;
-// };
-
-// utils.append = function(context, callback, list1, list2){
-//     var indexes = _.map(_.keys(list2), function(k){return k + list1.length});
-//     Array.prototype.push.apply(list1,list2);
-//     listNotify(list1, "Add", indexes, context, function(){callback(list1)});
-//     //return list1;
-// };
-
 utils.shift = function(list, cnt){
     cnt = cnt || 1;
     var rslt = list.splice(0,cnt);
@@ -719,10 +650,7 @@ utils.eqObjects = function(obj1, obj2){
 };
 
 utils.isSym = function(sym){
-    return _.isString(sym) && sym.length > 1 && sym[0] === '`'
-    // if (_.isString(sym) && sym.length > 1 && sym[0] === '`')
-    //     return true;
-    // return false;
+    return _.isString(sym) && sym.length > 1 && sym[0] === '`'    
 };
 
 utils.nsym = function (name){
@@ -856,8 +784,6 @@ utils.take = function(ary, n){
 };
 
 //============================= exports ===============================================================================
-//var console = {};
-//utils.console = console;
 module = module || {};
 module.exports = utils;
 

@@ -10,22 +10,10 @@ var base = require('./base.c.js')
 // unpack base JSON
 base = utils.fromJSON(base);
 
-//var reader = require('./reader.js');
-//var serveJs = require('./http/serve.js');
-
-
-//var packageFile = JSON.parse(fs.readFileSync(reader.hostDir + '/package.json','utf8'));
-//console.log('hostlang - version ' + packageFile.version);
-//reader.currentDir = process.cwd();
-//console.log("cd is:" + reader.currentDir);
-
 console.log('hostlang');
 
 // makes sure the global window object is declared
 try{window} catch(e){window = null}    
-
-// skip first two args: first is path to exe, second is path to this file
-//var args = utils.skip(process.argv, 2);
 
 var log = utils.log;
 var copy = utils.copy;
@@ -67,9 +55,6 @@ function copyToNative(obj){
 copyToNative(utils);
 copyToNative(types);
 copyToNative(parse);
-//copyToNative(reader);
-//copyToNative(serveJs);
-
 
 var utilsc = {}
 for(var n in utils){
@@ -80,14 +65,11 @@ for(var n in utils){
             utilsc[n] = utils[n];
 }
 
-
 var core = {};
 core.core = core;
 core.utils = utils;
 core.maxCallDepth = 500;
 core.__dirname = __dirname;
-//core.reader = reader;
-
 
 utils.objectPath = fnjs(function(){
     var l = [];

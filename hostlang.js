@@ -317,20 +317,12 @@ function acrJs(expr, context, callback){
         var ctx = _.clone(context); ctx.pop(); // prevents naming collisions (e.g. path)
         var nnCopy = copy(nn);
         return evalHost(nn, ctx, function(rslt){
-            //if(_.isArray(rslt)){
-            //    rslt = _.last(rslt);
-            //    console.log(nnCopy);
-            //}
-            //if(isMeta(rslt))
-            //    rslt = rslt.value;
-
             if(_.isArray(rslt) && !Expression.isType(rslt))
                 return ccError(context,["acr -- path part evaluated to an array", nnCopy, rslt]);
             path.unshift(rslt);
             acrJs([path, value, root, ref], context, callback);
         });
     }
-
 
     // if not string, convert to string
     if(!_.isString(nn))
@@ -354,30 +346,30 @@ function acrJs(expr, context, callback){
     }
 
     if(value !== undefined){
-        var oldListLength = _.isArray(ref) && ref.length;
-        var oldValue = ref[nn];
+        //var oldListLength = _.isArray(ref) && ref.length;
+        //var oldValue = ref[nn];
         ref[nn] = value;
 
         // if the value changed call subscriptions
-        if(oldValue !== value) {
-            return core.notify.ccode(ref, nn, oldValue, value, context, function(){
-                var index = Number(nn);
-                if(_.isArray(ref) && !isNaN(index)){
-                    if(oldListLength < ref.length){
-                        var indexes = [];
-                        for(var i = oldListLength; i<ref.length; i++) indexes.push(i);
-                        return core.listNotify.ccode(ref, "Add", indexes, context, function () {
-                            callback(root);
-                        });
-                    }
-                    else
-                        return core.listNotify.ccode(ref, "Update", [index], context, function () {
-                            callback(root);
-                        });
-                }
-                callback(root);
-            });
-        }
+        // if(oldValue !== value) {
+        //     return core.notify.ccode(ref, nn, oldValue, value, context, function(){
+        //         var index = Number(nn);
+        //         if(_.isArray(ref) && !isNaN(index)){
+        //             if(oldListLength < ref.length){
+        //                 var indexes = [];
+        //                 for(var i = oldListLength; i<ref.length; i++) indexes.push(i);
+        //                 return core.listNotify.ccode(ref, "Add", indexes, context, function () {
+        //                     callback(root);
+        //                 });
+        //             }
+        //             else
+        //                 return core.listNotify.ccode(ref, "Update", [index], context, function () {
+        //                     callback(root);
+        //                 });
+        //         }
+        //         callback(root);
+        //     });
+        // }
         return callback(root);
     }
     var rtnVal = ref[nn]

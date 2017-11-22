@@ -259,8 +259,7 @@ core.delete = core.rm;
 
 function acrJs(expr, context, callback){
     //console.log('acr');
-    if(expr[0] ===  '`') expr.shift();
-    //if(expr[0] ==  'acr') expr.shift();
+    if(expr[0] ===  '`') expr.shift();    
     var path, value, root, ref;
     path = expr[0];
     value = expr[1];

@@ -29,6 +29,7 @@
   "homepage": "https://github.com/mark-archer/hostlang#readme",
   "dependencies": {
     "cookies": "^0.7.0",
+    "lodash": "^4.17.4",
     "underscore": "^1.8.3",
     "uuid": "^3.0.1"
   }

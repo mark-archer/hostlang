@@ -118,3 +118,15 @@ not null === true
 not undefined === true
 
 
+;; test same (vs equal)
+var ary list!
+for (i 10)
+    ary.push i
+same ary : range 10
+=== true
+== ary : range 10
+=== false
+ary ~= : range 10
+=== true
+ary ~= : range 11
+=== false

@@ -94,7 +94,7 @@ utils.objectPath.isMacro = true;
 
 
 core.assertEq = function(context, callback, a, b){
-    var rslt = utils._eqValues(a,b);
+    var rslt = utils.same(a,b);
     if(!rslt)
         return ccError(context, ["Not equal", a, b]);
     //console.log("assertEq", a,b);

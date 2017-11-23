@@ -6,16 +6,20 @@ var uuid = require('uuid');
 var utils = {}
 
 // add all underscore functions, then remove the ones Host has it's own take on
-for(var n in _) utils[n] = _[n];
-delete utils.bind;
-delete utils.map;
-delete utils.range;
-delete utils.reduce;
-delete utils.isObject;
-delete utils.isFunction;
-delete utils.filter;
-delete utils.isError;
-
+//for(var n in _) utils[n] = _[n];
+// delete utils.bind;
+// delete utils.map;
+// delete utils.range;
+// delete utils.reduce;
+// delete utils.isObject;
+// delete utils.isFunction;
+// delete utils.filter;
+// delete utils.isError;
+var mapFromUS = ["uniq", "flatten", "compact", "clone"]
+for(var i=0;i<mapFromUS.length;i++){
+    var n = mapFromUS[i]
+    utils[n] = _[n]
+}
 
 utils.names = function(obj){
     if(arguments.length > 1) throw "names expects 1 argument, given " + arguments.length;
@@ -363,9 +367,9 @@ utils['=='] = function (){
 };
 utils['_eq'] = utils['=='];
 utils['EQ'] = utils['=='];
-utils['_eqValues'] = function(a,b){
-    return _.isEqual(a,b)
-};
+
+utils['same'] = _.isEqual;
+utils['~='] = utils['same']
 
 utils['!='] = function (a, b){
     if(arguments.length !== 2) throw "_ne expects 2 arguments, given " + arguments.length;

@@ -839,6 +839,7 @@ function parseBasicOps(pi, context, callback){
     if(maybeOp === '!=') return opFound('_ne');
     if(word === '>=') return opFound('_gte');
     if(word === '<=') return opFound('_lte');
+    if(word === '~=') return opFound('same')
 
     // > < + - * /
     if(word === '>') return opFound('_gt');

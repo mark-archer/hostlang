@@ -15,6 +15,10 @@ var types = {};
 function ccError(context, err){
     types.host.ccError(context,err);
 }
+function evalHost(expr, context, callback){
+    types.host.evalHost(expr, context, callback);
+}
+
 
 // prime types
 var Meta = {id:"Meta",name:"Meta"}; Meta.type = Meta; types.Meta = Meta;
@@ -40,6 +44,35 @@ var Int = {id:"Int",name:"Int",type:Primitive}; types.Int = Int;
 Int.isType = function (value) {
     return _.isNumber(value) && Math.round(value) === value;
 };
+// Int.toInt = function(context, callback, value){
+//     getType([value],context,function(valueType){
+//         if(valueType && valueType.toInt)
+//             evalHost(['`',valueType.toInt,value],context,function(valueAsInt){
+//                 callback(valueAsInt);
+//             });
+//         else
+//             callback(_.toInteger(value));
+//     });
+// }
+
+types.to = function(context,callback,value,type){    
+    var fnName = "to" + type.name;
+    if(value && value[fnName]){
+        return evalHost(['`',value[fnName],value],context,callback);
+    }
+    getType([value],context,function(valueType){
+        if(valueType[fnName])
+            return evalHost(['`',valueType[fnName],value],context,callback);
+        return evalHost(['`',nsym(fnName),value],context,callback);
+    });
+}
+//Int.toInt = _.toInteger
+types.toInt = function(value) {
+    return Math.floor(Number(value) || 0);
+}
+// Int.toInt = function(context,callback,value){
+//     types.to(context,callback,value,Int);
+// }
 
 // object types
 var Expression = {id:"Expression", name:"Expression", type:Type}; types.Expression = Expression;
@@ -69,7 +102,7 @@ types.isSym = utils.isSym;
 // register types
 types.Types = [Meta];
 for(var n in types){
-    if(!types.hasOwnProperty(n)) continue;
+    if(!types.hasOwnProperty(n) || !types[n]) continue;
     var t = types[n].type;
     if(t === Type || t === Primitive)
         types.Types.push(types[n]);

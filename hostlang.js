@@ -1262,6 +1262,48 @@ function whileJs(expr, context, callback){
 core.while = fnjs("while",whileJs);
 core.while.isMacro = true;
 
+function orderJs(expr, context, callback){
+    untick(expr)
+    var items = expr.shift();
+    var iterName = untick(expr.shift());
+    var loopBody = expr;
+
+    evalHost(iterName, context, function(iterName){
+        evalHost(items, context, function(items){
+            
+            var bindings = {_source:"order"};
+            //bindings.onBreak = makeContinuation(context,callback);
+            newScope(context,bindings);
+        
+            function loop(item, context, callback) {
+                bind(context,iterName,item);
+                bindings.onContinue = makeContinuation(context, callback);
+                evalHostBlock(copy(loopBody),context,callback);
+            }
+            eachSync(items,loop,context,function (itemOrders) {
+                var itemsWithOrders = _.map(itemOrders,function(odr, i){
+                    return {
+                        item:items[i],
+                        order:odr
+                    }
+                });
+                var sortedItemsWithOrders = _.sortBy(itemsWithOrders,"order");
+                var sortedVals = _.pluck(sortedItemsWithOrders,"item");
+                exitScope(context);
+                callback(sortedVals);
+            });            
+        });    
+
+    });    
+}
+core.order = fnjs("order",orderJs);
+core.order.isMacro = true;
+core.order.useRuntimeScope = true;
+
+core.toInt = function toInteger(value) {
+    return Math.floor(Number(value) || 0);
+}
+
 core.sleep = function(expr, context, callback){
     // sleep(ms=0)
     untick(expr);

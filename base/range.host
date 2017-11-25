@@ -8,17 +8,7 @@ fn range(start stop? step?)
     		' push nums i
     return nums
 
-;;;
-fn range(start stop? step?)
-    var nums list!
-    var args : unshift _args `i
-    apply for (list args (' ` push nums i))
-    return nums
-;;;
-
 export range
-
-;return!
 
 range 1 === (, 0)
 

@@ -510,7 +510,7 @@ utils.isHTML = isHTML;
 
 function copy(obj, originals, copies){
     // if it's a primative or something special just return its reference
-    if(!_.isObject(obj) || _.isFunction(obj) || isHTML(obj)) //|| ko.isObservable(obj))
+    if(!_.isObject(obj) || _.isFunction(obj) || _.isRegExp(obj) || isHTML(obj)) //|| ko.isObservable(obj))
         return obj;
 
     // if it's a date

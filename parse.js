@@ -878,13 +878,12 @@ function parseRegEx(pi, context, callback){
     // skip over leading "re/"
     pi.pop(3);
 
-    var escapeNext = false;
     var reStr = "";
-    while(!escapeNext && pi.peek() != "/"){
+    while(pi.peek() != "/"){
         escapeNext = false;
         reStr += pi.pop();
         if(reStr[reStr.length - 1] == "\\")
-            escapeNext = true;
+            reStr += pi.pop();
     }
 
     // skip over ending "/"

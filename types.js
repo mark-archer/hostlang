@@ -67,12 +67,12 @@ types.isSymbol = utils.isSym;
 types.isSym = utils.isSym;
 
 // register types
-types._knownTypes = [Meta];
+types.Types = [Meta];
 for(var n in types){
     if(!types.hasOwnProperty(n)) continue;
     var t = types[n].type;
     if(t === Type || t === Primitive)
-        types._knownTypes.push(types[n]);
+        types.Types.push(types[n]);
 }
 
 function getType(expr, context, callback) {
@@ -88,9 +88,9 @@ function getType(expr, context, callback) {
     function lookupType(item) {
         types.host.evalHost(item,context, function(item){
             if(!_.isObject(item)){
-                for(var i = 0; i < types._knownTypes.length; i++){
-                    if(item === types._knownTypes[i].id){
-                        item = types._knownTypes[i];
+                for(var i = 0; i < types.Types.length; i++){
+                    if(item === types.Types[i].id){
+                        item = types.Types[i];
                         return callback(item);
                     }
                 }
@@ -306,7 +306,7 @@ types.new = function(expr, context, callback){
 
     // register new types
     if(eqObjects(o.type, Type) || eqObjects(o.type, Primitive))
-        types._knownTypes.push(o);
+        types.Types.push(o);
 
     if(objType && objType.new)
         return types.host.evalHost(['`', objType.new, o], context, callback);

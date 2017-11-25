@@ -14,7 +14,7 @@ fnm type(name args&)
     bind context (ssym name) t 1
 
     ; add to known types
-    push _knownTypes t
+    push Types t
 
     ; processes addtional args
     each args a

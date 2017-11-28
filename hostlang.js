@@ -6,6 +6,7 @@ var types = require('./types.js');
 var parse = require('./parse.js');
 var proc = require('./proc.js');
 var base = require('./base.c.js')
+var compile = require('./compile.js')
 
 // unpack base JSON
 base = utils.fromJSON(base);
@@ -38,18 +39,6 @@ var Expression = types.Expression;
 
 var parseHost = parse.parseHost;
 
-//var native = {};
-
-// // copy native modules to native namespace
-// function copyToNative(obj){
-//     for (var n in obj) 
-//         if(obj.hasOwnProperty(n)) 
-//             native[n] = obj[n];
-// }
-// copyToNative(utils);
-// copyToNative(types);
-// copyToNative(parse);
-
 var core = {};
 function copyToCore(obj){
     for(var n in obj){
@@ -69,6 +58,7 @@ copyToCore(utils);
 copyToCore(types);
 copyToCore(parse);
 copyToCore(base);
+copyToCore(compile);
 
 core.core = core;
 core.utils = utils;
@@ -101,26 +91,8 @@ core.assertEq = function(context, callback, a, b){
     callback(a);
 }
 
-
-function eachSync(items, fn, context, callback){
-    if(!_.isArray(items))
-        return ccError(context, "eachSync - items not a list");
-
-    // short circuit on lengths zero and one
-    if(items.length === 0)
-        return callback([]);
-    if(items.length === 1)
-        return fn(items[0], context, function (rslt) {callback([rslt])});
-
-    var rslts = [];
-    function interCall(rslt){
-        rslts.push(rslt);
-    }
-    proc.new(fn, items, interCall, context, function(rslt){
-        callback(rslts);
-    }).start();    
-}
-core.eachSync = eachSync;
+var eachSync = proc.eachSync
+core.eachSync = proc.eachSync
 
 function bind(context, name, value, offset){
     if(!_.isArray(context) || !context.length)
@@ -727,8 +699,8 @@ core.apply = {
     isInline: true
 };
 
-function evalJs(code){
-    return eval('(function(){return ' + code.trim() + ';})()');
+function evalJs(code){    
+    return eval('(function(_){return ' + code.trim() + ';})()');
 }
 function evalSym(expr, context, callback){
     var symbol = expr;
@@ -1340,22 +1312,13 @@ core.interval = function(context, callback, interval_ms, f){
 // native.eachJs = eachJs;
 // native.callContinuation = callContinuation;
 
-//core.Fn = Fn;
-//core.Meta = Meta;
-//core.issym = isSym;
-//core.ssym = ssym;
-//core.ismeta = isMeta;
-//core.tick = tick;
-//core.untick = untick;
 core.exportJsfn = exportJsfn;
 core.acrJs = acrJs;
 core.evalJs = evalJs;
+core.js = evalJs;
 core.evalHostBlock = evalHostBlock;
 core.evalHostBlockWrapper = evalHostBlockWrapper;
 core.bind = bind;
-//core.getBinding = getBinding;
-//core.sleep = sleep;
-//core.interval = interval;
 core.tryCatchJs = tryCatchJs;
 core.eachJs = eachJs;
 core.callContinuation = callContinuation;
@@ -1571,6 +1534,7 @@ utils.host = host;
 types.host = host;
 parse.host = host;
 proc.host = host;
+compile.host = host;
 
 if(false){
         

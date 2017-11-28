@@ -76,5 +76,25 @@ function procNext(p){
     fn.apply(null, args);
 }
 
+function eachSync(items, fn, context, callback){
+    if(!_.isArray(items))
+        return ccError(context, "eachSync - items not a list");
+
+    // short circuit on lengths zero and one
+    if(items.length === 0)
+        return callback([]);
+    if(items.length === 1)
+        return fn(items[0], context, function (rslt) {callback([rslt])});
+
+    var rslts = [];
+    function interCall(rslt){
+        rslts.push(rslt);
+    }
+    proc.new(fn, items, interCall, context, function(rslt){
+        callback(rslts);
+    }).start();    
+}
+proc.eachSync = eachSync
+
 module = module || {};
 module.exports = proc;

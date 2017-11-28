@@ -629,6 +629,16 @@ utils.isSym = function(sym){
     return _.isString(sym) && sym.length > 1 && sym[0] === '`'    
 };
 
+utils.isExpr = function(item){
+    return _.isArray(item) && item[0] === '`';
+};
+
+utils.isMeta = function(item){
+    return item && item.type 
+    && (item.type === "Meta" || item.type.name === "Meta") 
+    && item.name !== "Meta"
+}
+
 utils.nsym = function (name){
     //console.log('nsym');
     if(!_.isString(name))

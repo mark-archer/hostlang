@@ -1,0 +1,9 @@
+
+
+; simple, primitive, atomic expression
+compile 1 === 1
+
+
+; single function call with primitive arguments 
+compile: log 1
+=== : js "_ = log(1)"

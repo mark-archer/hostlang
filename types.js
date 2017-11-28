@@ -70,6 +70,8 @@ types.to = function(context,callback,value,type){
 types.toInt = function(value) {
     return Math.floor(Number(value) || 0);
 }
+types.isInt = Int.isType;
+types.toNum = Number;
 // Int.toInt = function(context,callback,value){
 //     types.to(context,callback,value,Int);
 // }

@@ -682,8 +682,6 @@ function applyHost(expr, context, callback){
             typeApply(expr, context, callback);
         });
     });
-
-
 }
 core.applyHost = applyHost;
 core.apply = {

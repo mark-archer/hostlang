@@ -4,6 +4,16 @@
 compile 1 === 1
 
 
-; single function call with primitive arguments 
+; single js function call with primitive arguments 
 compile: log 1
-=== : js "_ = log(1)"
+_.toString! 
+=== "function (){ctx._ = fn.apply(fnContext,items); return ctx._;}"
+
+
+; match an object
+;;;
+` log 1
+==~ : list ` (new name~"log" type~"Fnjs") 1
+new name~"log" type~"Fnjs"
+new num~: 1 + 1 ^ name~: "Mark" + " Archer"
+;;;

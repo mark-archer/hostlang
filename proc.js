@@ -28,12 +28,12 @@ proc.new = function(workerFn, items, interCall, context, callback){
 
     p.start = function(){
         procsReady.push(p);
-        procLoop();
+        procStart();
     }    
     return p;
 }
 
-function procLoop(){
+function procStart(){
     if(procing) return;
     procing = true;
 
@@ -67,7 +67,7 @@ function procNext(p){
                 
             procsReady.push(p);
             if(!procing)
-                 setTimeout(procLoop,0);
+                 setTimeout(procStart,0);
         }
     ]
     

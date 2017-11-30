@@ -1,25 +1,117 @@
 
 var atom : js "ko.observable"
 export atom
+
+var selfClosing <<
+    ssyms 
+        area 
+        base 
+        br 
+        col 
+        command 
+        embed 
+        hr 
+        img 
+        input 
+        keygen 
+        link 
+        menuitem 
+        meta 
+        param 
+        source 
+        track 
+        wbr 
+    >> skip 1
+    >> each t : untick t
+
+fnm htmlTag(tag)
+    var selfClosing : '
+        area 
+        base 
+        br 
+        col 
+        command 
+        embed 
+        hr 
+        img 
+        input 
+        keygen 
+        link 
+        menuitem 
+        meta 
+        param 
+        source 
+        track 
+        wbr 
    
 
-fnm html(tags)
+fnm html(tags&)    
+    
+    ; remove leadin '`' in list if it's there
     set tags : untick tags
-    ifnot(isList tags)
-        set tags :, tags
+
+    ; first item in the list will be parent of the rest of the items in the list if it's not a list itself
+    var parent  
+        deque tags
+        >> untick
     
     each tags t
-        set t : untick t        
         if(isList t)
-            apply html t
+            apply html t            
+        elif(isSym t)
+            untick t
+            + "" _ ">/" _ ">"
+        else
+            t
     >>> set tags
 
-    var parent : shift tags    
-    reduce tags t m=""
-        log "m" m
-        m + t "blah"
-    + "<" parent ">" _ "</" parent ">"
+    reduce tags t m=""        
+        m + t
+    >>> var innerTags
+
+    if(isList parent)
+        apply html parent
+        >> + innerTags
+    else
+        + "" parent ">" _ "/" parent ">"
+        
     
 set html.useRuntimeScope true
 set html.closure null
 export html
+
+;return!
+
+;;; TESTS ;;;
+
+html h1 
+=== "h1>/h1>"
+
+html 
+    h1 "test"
+=== "h1>test/h1>"
+
+html
+    h1 h2
+=== "h1>h2>/h2>/h1>"
+
+html
+    h1 h2 "test"
+=== "h1>h2>/h2>test/h1>"
+
+html 
+    h1 h2        
+    h3 h4 h5
+        h6 h7
+        h8 h9 "test"
+    label "Hi"
+    span "span"
+    my-tag    
+=== "h1>h2>/h2>/h1>h3>h4>/h4>h5>/h5>h6>h7>/h7>/h6>h8>h9>/h9>test/h8>/h3>label>Hi/label>span>span/span>my-tag>/my-tag>"
+
+html
+    h1 "h1 text"
+        h2 "h2 inside h1"
+        "more text inside h1"
+    h2 "h2 ouside h1"
+=== "h1>h1 texth2>h2 inside h1/h2>more text inside h1/h1>h2>h2 ouside h1/h2>"

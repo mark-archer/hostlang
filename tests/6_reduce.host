@@ -1,5 +1,6 @@
 
 
+
 ; reduce a list of numbers by adding them
 var lst :, 1 2 3
 >> reduce n m
@@ -12,3 +13,23 @@ var lst :, "1" "2" "3"
 >> reduce n m="0"
     m + n
 === "0123"
+
+
+; reduce a list of strings by adding them with a starting value of "0"
+var lst :, "1" "2" "3"
+>> reduce n m=0
+    m + n
+=== "0123"
+
+
+; reduce a list of strings by adding them with a starting value of "0"
+var lst :, "1" "2" "3"
+>> reduce n m=false
+    m + n
+=== "false123"
+
+
+; reducing an empty list just returns the intial memo value
+reduce (,) t m="0"
+    m + t
+=== "0"

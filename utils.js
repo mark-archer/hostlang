@@ -424,6 +424,7 @@ utils.shift = function(list, cnt){
         rslt = rslt[0]
     return rslt;
 };
+utils.deque = utils.shift;
 
 utils.unshift = function(list, item1){ // ... more items
     var args = _.toArray(arguments);
@@ -431,6 +432,7 @@ utils.unshift = function(list, item1){ // ... more items
     Array.prototype.unshift.apply(ary, args);
     return ary;    
 };
+utils.enque = utils.unshift;
 
 utils.pop = function(list, cnt){
     cnt = cnt || 1;

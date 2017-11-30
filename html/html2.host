@@ -2,78 +2,65 @@
 var atom : js "ko.observable"
 export atom
 
-var selfClosing <<
-    ssyms 
-        area 
-        base 
-        br 
-        col 
-        command 
-        embed 
-        hr 
-        img 
-        input 
-        keygen 
-        link 
-        menuitem 
-        meta 
-        param 
-        source 
-        track 
-        wbr 
-    >> skip 1
-    >> each t : untick t
+var selfClosing : ssyms 
+    area 
+    base 
+    br 
+    col 
+    command 
+    embed 
+    hr 
+    img 
+    input 
+    keygen 
+    link 
+    menuitem 
+    meta 
+    param 
+    source 
+    track 
+    wbr     
 
 fnm htmlTag(tag)
-    var selfClosing : '
-        area 
-        base 
-        br 
-        col 
-        command 
-        embed 
-        hr 
-        img 
-        input 
-        keygen 
-        link 
-        menuitem 
-        meta 
-        param 
-        source 
-        track 
-        wbr 
+    set tag : untick tag
+    if(in tag.toLowerCase! selfClosing)
+        + "<" tag "/>"
+    else
+        + "<" tag "></" tag ">"
+export htmlTag
    
 
 fnm html(tags&)    
     
-    ; remove leadin '`' in list if it's there
+    ; remove leading '`' in list if it's there
     set tags : untick tags
 
-    ; first item in the list will be parent of the rest of the items in the list if it's not a list itself
-    var parent  
+    ; first item in the list is treated specially, it will be parent of the rest of the items in the list if it's not a list itself
+    var firstTag <<
         deque tags
         >> untick
-    
-    each tags t
+
+    ; short circuit for single tag (make sure selfClosing tags are handled correctly)
+    if(tags.length == 0 && (not(isList firstTag)))
+        return : apply htmlTag :, firstTag
+
+    ; process the rest of the tags (they will either be siblings or children of the first tag)
+    reduce tags t m=""
         if(isList t)
             apply html t            
-        elif(isSym t)
-            untick t
-            + "" _ ">/" _ ">"
+        elif(isSym t)            
+            apply htmlTag :, t
         else
             t
-    >>> set tags
-
-    reduce tags t m=""        
-        m + t
+        m + _
     >>> var innerTags
 
-    if(isList parent)
-        apply html parent
+    ; firstTag parent or sibbling logic
+    if(isList firstTag)
+        apply html firstTag
         >> + innerTags
     else
-        + "" parent ">" _ "/" parent ">"
+        + "<" firstTag ">" _ "</" firstTag ">"
         
     
 set html.useRuntimeScope true
@@ -85,19 +72,19 @@ export html
 ;;; TESTS ;;;
 
 html h1 
-=== "h1>/h1>"
+=== "<h1></h1>"
 
 html 
     h1 "test"
-=== "h1>test/h1>"
+=== "<h1>test</h1>"
 
 html
     h1 h2
-=== "h1>h2>/h2>/h1>"
+=== "<h1><h2></h2></h1>"
 
 html
     h1 h2 "test"
-=== "h1>h2>/h2>test/h1>"
+=== "<h1><h2></h2>test</h1>"
 
 html 
     h1 h2        
@@ -107,11 +94,26 @@ html
     label "Hi"
     span "span"
     my-tag    
-=== "h1>h2>/h2>/h1>h3>h4>/h4>h5>/h5>h6>h7>/h7>/h6>h8>h9>/h9>test/h8>/h3>label>Hi/label>span>span/span>my-tag>/my-tag>"
+=== "<h1><h2></h2></h1><h3><h4></h4><h5></h5><h6><h7></h7></h6><h8><h9></h9>test</h8></h3><label>Hi</label><span>span</span><my-tag></my-tag>"
 
 html
     h1 "h1 text"
         h2 "h2 inside h1"
         "more text inside h1"
     h2 "h2 ouside h1"
-=== "h1>h1 texth2>h2 inside h1/h2>more text inside h1/h1>h2>h2 ouside h1/h2>"
+=== "<h1>h1 text<h2>h2 inside h1</h2>more text inside h1</h1><h2>h2 ouside h1</h2>"
+
+html
+    h1 "heading"
+    input
+=== "<h1>heading</h1><input/>"
+
+html input 
+=== "<input/>"
+
+html 
+    div
+        "enter something"
+        br
+        input
+=== "<div>enter something<br/><input/></div>"

@@ -3,10 +3,17 @@
 ;; reduce: aggregates a list
 fnm reduce (``items iterName memoName loopBody&)
 
+	log "memoName" memoName
+
 	; create variable for capturing the result of each loop iteration
 	var memo null
-	if(isType memoName Meta)
+	if(isMeta memoName)
 		set memo memoName.value
+
+	log 
+		"memoName"
+		isMeta memoName
+		memo
 
 	; create loop body as function
 	unshift loopBody (` iterName memoName)
@@ -28,7 +35,7 @@ fnm reduce (``items iterName memoName loopBody&)
 	each items i
 		set memo : loop i memo
 	memo
-
+set reduce.useRuntimeScope true
 export reduce
 
 

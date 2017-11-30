@@ -57,12 +57,12 @@ export html
     ^ input label button br
     ^ table tr td thead tbody tfoot
     ^ ul ol li
->> without `
+>> skip 1
 >> each tag
     set tag : untick tag
     var fnTmpl : fnm(args&)
     set fnTmpl.name tag
-    set fnTmpl.ccode : list
+    set fnTmpl.ccode : list		
         ` 'unshift 'args : tick : quote tag
         ' apply html args
     set fnTmpl.closure null

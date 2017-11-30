@@ -1,0 +1,25 @@
+
+var atom : js "ko.observable"
+export atom
+   
+
+fnm html(tags)
+    set tags : untick tags
+    ifnot(isList tags)
+        set tags :, tags
+    
+    each tags t
+        set t : untick t        
+        if(isList t)
+            apply html t
+    >>> set tags
+
+    var parent : shift tags    
+    reduce tags t m=""
+        log "m" m
+        m + t "blah"
+    + "<" parent ">" _ "</" parent ">"
+    
+set html.useRuntimeScope true
+set html.closure null
+export html

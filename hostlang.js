@@ -47,8 +47,11 @@ function copyToCore(obj){
             if(core[n] && core[n].ccode === obj[n])  continue; // don't copy if the "compiled" code of this and already there
             if(core[n] && core[n] != obj[n].ccode) // warn if overwritting
                 console.error("overwritting core field '" + n + "'", [core[n],"to", obj[n]]);
-            if(_.isFunction(obj[n])) // if this is a js function the compile it
+            if(_.isFunction(obj[n])) {// if this is a js function the compile it
                 core[n] = fnjs(n, obj[n]);
+                if(obj[n].isMacro)
+                    core[n].isMacro = obj[n].isMacro;
+            }
             else
                 core[n] = obj[n];
         }

@@ -630,6 +630,7 @@ utils.eqObjects = function(obj1, obj2){
 utils.isSym = function(sym){
     return _.isString(sym) && sym.length > 1 && sym[0] === '`'    
 };
+//utils.isSym.isMacro = true;
 
 utils.isExpr = function(item){
     return _.isArray(item) && item[0] === '`';
@@ -639,6 +640,10 @@ utils.isMeta = function(item){
     return item && item.type 
     && (item.type === "Meta" || item.type.name === "Meta") 
     && item.name !== "Meta"
+}
+
+utils.isString = function(item){
+    return _.isString(item);
 }
 
 utils.nsym = function (name){

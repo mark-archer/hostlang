@@ -21,18 +21,20 @@ var selfClosing : ssyms
     track 
     wbr     
 
-fnm htmlTag(tag)
+fnm htmlTag(tag attrText="")
     set tag : untick tag
+    if attrText
+        set attrText : " " + attrText
     if(in tag.toLowerCase! selfClosing)
-        + "<" tag "/>"
+        + "<" tag attrText "/>"
     else
-        + "<" tag "></" tag ">"
+        + "<" tag attrText "></" tag ">"
 export htmlTag
-   
+
 
 fnm html(tags&)    
     
-    ; remove leading '`' in list if it's there
+    ; remove leading '`' in list if it's there    
     set tags : untick tags
 
     ; first item in the list is treated specially, it will be parent of the rest of the items in the list if it's not a list itself
@@ -40,27 +42,59 @@ fnm html(tags&)
         deque tags
         >> untick
 
-    ; short circuit for single tag (make sure selfClosing tags are handled correctly)
+    ; handel special binding keyword
+    var bindText ""
+    if(firstTag == "bind")
+        reduce tags b m=""
+            var value b.value
+            if (isList value)
+                m + b.name ":$component.bindHost(" (toDataString value) "), "
+            elif (isSym value)
+                m + b.name ":$component.bindHost('" value "'), "
+            elif (isString value)
+                m + b.name ":'" value "', "
+            else
+                m + b.name ":" value ", "
+        return : _.substr 0 (_.length - 2)        
+    
+    ; short circuit for single tag (this ensures selfClosing tags are handled correctly)
     if(tags.length == 0 && (not(isList firstTag)))
         return : apply htmlTag :, firstTag
 
     ; process the rest of the tags (they will either be siblings or children of the first tag)
+    var attrText ""
     reduce tags t m=""
         if(isList t)
-            apply html t            
-        elif(isSym t)            
-            apply htmlTag :, t
+            untick t            
+            if("bind" == (untick t.0))
+                set bindText : bindText + : apply html t
+                ""
+            else 
+                apply html t
+        elif (isMeta t)
+            set attrText : attrText + " " t.name "=\"" t.value "\""
+            ""; return blank for tags
+        elif(isSym t)
+            set t : untick t
+            if(isSym t)
+                eval t                        
+            else
+                apply htmlTag :, t
+                ;htmlTag `t ;TODO this should work but it doesn't
         else
             t
         m + _
     >>> var innerTags
+
+    if bindText
+        set attrText : attrText + " data-bind=\"" bindText "\""
 
     ; firstTag parent or sibbling logic
     if(isList firstTag)
         apply html firstTag
         >> + innerTags
     else
-        + "<" firstTag ">" _ "</" firstTag ">"
+        + "<" firstTag attrText ">" innerTags "</" firstTag ">"        
         
     
 set html.useRuntimeScope true
@@ -117,3 +151,24 @@ html
         br
         input
 === "<div>enter something<br/><input/></div>"
+
+var name "My Name"
+html
+    h1 `name
+=== "<h1>My Name</h1>"
+
+html
+    span "test" style="color:red" tabindex=-1
+=== """<span style="color:red" tabindex="-1">test</span>"""
+
+var name "My Name"
+html
+    h1 `name
+    span
+        style="display:none"
+        bind            
+            text="hi"
+            text2=name
+            visible=true
+            click=(fn()(log "hi"))
+=== """<h1>My Name</h1><span style="display:none" data-bind="text:'hi', text2:$component.bindHost('`name'), visible:true, click:$component.bindHost(["`","`fn",["`"],["`","`log","hi"]])"></span>"""

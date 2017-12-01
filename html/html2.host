@@ -2,6 +2,31 @@
 var atom : js "ko.observable"
 export atom
 
+var atoms : js "ko.observableArray"
+export atoms
+
+type Kom
+    fields
+        name[String]
+        view        
+export Kom
+
+fnm kom(args&)
+    var nk : new Kom
+    each args a
+        if(isMeta a)
+            set nk.(one a.name) <<
+                newScope nk            
+                eval a.value
+        else    
+            set nk.value : nk.value || (,)
+            nk.value.push <<
+                newScope nk
+                eval a.value
+    nk
+set kom.useRuntimeScope true
+export kom
+
 var selfClosing : ssyms 
     area 
     base 

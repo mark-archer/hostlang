@@ -747,8 +747,7 @@ function evalSym(expr, context, callback){
 
     // special window keyword
     if(sym === "window")
-        return callback(window);
-    
+        return callback(window);    
 
     // if we didn't resolve '_' by now return null for it (don't want to mess around with what it might mean outside of context)
     if(sym === '_') return callback(null);
@@ -759,6 +758,13 @@ function evalSym(expr, context, callback){
     // look in core
     if(core[sym])
         return callback(core[sym]);
+
+    // // look in Types
+    // var Types = types.Types;
+    // for(var i = Types.length - 1; i>=0; i--){
+    //     if(Types[i].name == sym)
+    //         return callback(Types[i]);
+    // }        
     
     return ccError(context,"Couldn't resolve symbol: " + sym);
 
@@ -1292,26 +1298,6 @@ core.interval = function(context, callback, interval_ms, f){
     }, interval_ms);
     callback(hndl);
 }
-
-// native.Fn = Fn;
-// native.Meta = Meta;
-// native.issym = isSym;
-// native.ssym = ssym;
-// native.ismeta = isMeta;
-// native.tick = tick;
-// native.untick = untick;
-// native.exportJsfn = exportJsfn;
-// native.acrJs = acrJs;
-// native.evalJs = evalJs;
-// native.evalHostBlock = evalHostBlock;
-// native.evalHostBlockWrapper = evalHostBlockWrapper;
-// native.bind = bind;
-// native.getBinding = getBinding;
-// native.sleep = sleep;
-// native.interval = interval;
-// native.tryCatchJs = tryCatchJs;
-// native.eachJs = eachJs;
-// native.callContinuation = callContinuation;
 
 core.exportJsfn = exportJsfn;
 core.acrJs = acrJs;

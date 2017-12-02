@@ -13,6 +13,10 @@ export Kom
 
 fnm kom(args&)
     var nk : new Kom
+    set nk.context << 
+        var ctx : clone context
+        >> pop 2
+        ctx
     each args a
         if(isMeta a)
             set nk.(one a.name) <<
@@ -22,7 +26,7 @@ fnm kom(args&)
             set nk.value : nk.value || (,)
             nk.value.push <<
                 newScope nk
-                eval a.value
+                eval a.value    
     nk
 set kom.useRuntimeScope true
 export kom

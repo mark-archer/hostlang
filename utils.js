@@ -512,7 +512,11 @@ utils.isHTML = isHTML;
 
 function copy(obj, originals, copies){
     // if it's a primative or something special just return its reference
-    if(!_.isObject(obj) || _.isFunction(obj) || _.isRegExp(obj) || isHTML(obj)) //|| ko.isObservable(obj))
+    var ko = window.ko;
+    if(ko && ko.isObservable(obj))
+        return ko.observable(copy(obj())); // create a new observable with a copy of the contents of this observable
+
+    if(!_.isObject(obj) || _.isFunction(obj) || _.isRegExp(obj) || isHTML(obj))
         return obj;
 
     // if it's a date

@@ -263,17 +263,17 @@ For lists we also use dot notation to access items with their zero based indexes
     ; get the length of the list
     lst.length
 
-    ; get the first index 2
+    ; get the first index of 2
     lst.indexOf 2
 
 Lists also have some syntactic sugar for accessing items offset from the back of the list.
 Just like you can use positive numbers to get items offset from the front with 0 for the first item, 1 for the second, etc.  
-You can use negative numers to access items offset from the back of the list.  Use -1 for the last item, -2 for the second-to-last, etc.
+You can use negative numbers to access items offset from the back of the list.  Use -1 for the last item, -2 for the second-to-last, etc.
 
     ; get the last item in a list
     lst.-1
 
-    ; get the second-to-last
+    ; get the second-to-last item
     lst.-2
 
         

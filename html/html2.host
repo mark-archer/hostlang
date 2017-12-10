@@ -1,5 +1,10 @@
 
-var atom : js "ko.observable"
+var atom : js """function(value, persistId){
+    if(persistId === undefined)
+        return obs(value);
+    else
+        return obsPersist(value, persistId);
+}"""
 export atom
 
 var atoms : js "ko.observableArray"

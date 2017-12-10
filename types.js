@@ -39,6 +39,9 @@ NativeDate.isType = function (item) {
     // check for number that represents a date
     return false;
 };
+for(var n in {"now":0, "parse":0, "UTC":0}){    
+    NativeDate[n] = Date[n];
+}
 
 var Int = {id:"Int",name:"Int",type:Primitive}; types.Int = Int;
 Int.isType = function (value) {

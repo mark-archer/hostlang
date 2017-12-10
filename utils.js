@@ -5,6 +5,11 @@ var uuid = require('uuid');
 
 var utils = {}
 
+var ko = null;
+try{var ko = window.ko;} 
+catch (err){}
+
+
 // add all underscore functions, then remove the ones Host has it's own take on
 //for(var n in _) utils[n] = _[n];
 // delete utils.bind;
@@ -511,8 +516,7 @@ function isHTML(obj){
 utils.isHTML = isHTML;
 
 function copy(obj, originals, copies){
-    // if it's a primative or something special just return its reference
-    var ko = window.ko;
+    // if it's a primative or something special just return its reference    
     if(ko && ko.isObservable(obj))
         return ko.observable(copy(obj())); // create a new observable with a copy of the contents of this observable
 

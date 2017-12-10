@@ -238,6 +238,44 @@ The first alternative is to use variables.  I think this is best because the flo
 
 Piping is just a nice-to-have feature in Host and you're free to not use them but we hope you agree that it's an improvement over explicit varilables and function call nesting.  
 
+##### Property Accessors
+Host uses the same notation to access object fields and items in a list. In both cases Host uses dot notation that anyone familar with C syntax will be very used to. 
+
+For objects this is pretty straight forward.  
+
+    ; create a new object with the field name set to the value of "Mark"
+    var aPerson : new name="Mark"
+
+    ; get the value of the name field like this
+    aPerson.name
+
+    ; set the value of the name field like this
+    set aPerson.name "Devon"
+
+For lists we also use dot notation to access items with their zero based indexes
+
+    ; create a list with 3 numbers
+    var lst : list 1 2 3
+
+    ; get the first item
+    lst.0 
+    
+    ; get the length of the list
+    lst.length
+
+    ; get the first index 2
+    lst.indexOf 2
+
+Lists also have some syntactic sugar for accessing items offset from the back of the list.
+Just like you can use positive numbers to get items offset from the front with 0 for the first item, 1 for the second, etc.  
+You can use negative numers to access items offset from the back of the list.  Use -1 for the last item, -2 for the second-to-last, etc.
+
+    ; get the last item in a list
+    lst.-1
+
+    ; get the second-to-last
+    lst.-2
+
         
 ##### Examples (in no particular order)
     ; for i from 0 to 2

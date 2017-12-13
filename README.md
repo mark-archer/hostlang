@@ -276,6 +276,24 @@ You can use negative numbers to access items offset from the back of the list.  
     ; get the second-to-last item
     lst.-2
 
+Sometimes there can be confusion when parsing numbers in a sequence of accessors.  To make things more explicit just wrap names in double quotes.
+
+    ; say we have an object with a field named "12ab".  
+    anObject.12ab 
+    ; This will be parsed as (getr ("anObject" 12 "ab")) 
+    
+    anObject."12ab" 
+    ; this will be parsed as (getr ("anObject" "12ab"))
+
+This is true for names in Host in general.  Standard names need to start with an alpha character or underscore (a-z, A-Z, _) 
+and should only contain alphanumeric characters, underscores, and hypens (a-z, A-Z, 0-9, _, -)
+but virtually any characters can be used in names by wrapping the name in double quotes
+
+    ; declare a variable with a non-standard name
+    var "a name with spaces and crazy characters ☺ set to the value 1" 1
+
+    ; access the value of that variable (the backtick is required to tell Host this is a symbol and not a string)
+    "`a name with spaces and crazy characters ☺ set to the value 1"
         
 ##### Examples (in no particular order)
     ; for i from 0 to 2

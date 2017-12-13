@@ -260,14 +260,17 @@ function parseNumber(pi, context, callback){
 
 
     // numbers in standard form: 1, 2, 3.1415, -4
-    if(!num)
-        num = maybeNumber.match(/^-?[0-9]+\.?[0-9]*/);
+    if(!num) {
+        num = maybeNumber.match(/^-?[0-9]+\.?[0-9]*/);        
+    }
 
     // if we don't have value at this point we didn't find a number
     if(!num)
         return callback();
 
     num = num[0];
+    //if(num.endsWith("."))
+    //    num = num.substring(0,num.length-1);
     pi.i+= num.length;
     pi.clist.push(Number(num));
     callback(true);
@@ -382,7 +385,8 @@ function parseObjectPath(pi, context, callback){
         return callback(true);
     }
 
-    if(code[pi.i].match(/[\s\)!\]]/) && pi.clist.isObjectPath){
+    // check for the end of the list
+    if(pi.clist.isObjectPath && code[pi.i].match(/[\s\)!\]]/)){
         var path = pi.clist;
         pi.endList(); // end path list
 
@@ -396,97 +400,23 @@ function parseObjectPath(pi, context, callback){
 
         // if it's getr also end call
         if(pi.clist.isGetr){
-            pi.endList(); // end getr
-
-            /*
-             // if getr inside objectPath move up one to allow t.(tt.name) vs. t.(one tt.name)
-             var clistParent = pi.getParent(pi.clist);
-             //var gtr = _.last(pi.clist);
-             if(clistParent.isObjectPath && !pi.clist.isBang){
-             //console.log("move up", gtr);
-             var gtr = pi.clist.pop(); // remove getr from enclosing list
-             pi.endList(); // end list enclosing getr
-             clistParent.pop(); // remove list enclosing getr from parent
-             clistParent.push(gtr); // push getr onto enclosing lists parent
-             }
-             */
+            pi.endList(); // end getr            
         }
 
         // don't report proceeding because we don't want to reset the active parser
+    }    
+
+    // special check for 'number.' path parts (this could be consumed by number parser if we don't grab it first)
+    if(pi.clist.isObjectPath){
+        var numDot = pi.code.substr(pi.i,100).match(/^\d+\./);
+        if(numDot){
+            numDot = numDot[0]; // get match
+            pi.i += numDot.length; // move index forward past next dot
+            numDot = numDot.substring(0,numDot.length-1);
+            pi.clist.push(numDot);   
+            return callback(true);
+        }        
     }
-
-    // if getr end list
-    //if(code[pi.i].match(/[\s\)!\]]/) && pi.clist.isGetr){
-    //    pi.endList();
-    //}
-
-
-    /*
-     if(code[pi.i] === '.') {
-     if(pi.clist.type !== "ObjectPath"){
-     var pathStart = pi.clist.pop(); // the last item parsed must be the start of the acr path
-     pi.newList(); // start object path
-     pi.clist.type = "ObjectPath";
-     pi.clist.pop(); // remove backtick
-     //pi.clist.push(nsym("objectPath"));
-     pi.clist.push(pathStart);
-     }
-     pi.i++; // jump over the '.'
-     return callback(true);
-     }
-
-     var terminators = /[\(\)\s:^|;\[\]!]/;
-     if(pi.clist.type === "ObjectPath" && code[pi.i].match(terminators)){
-     pi.endList();
-     if(pi.clist.length === 3 && pi.clist[1] === nsym("set")) {
-     pi.clist[1] = nsym("setr");
-     }
-     //else if (pi.clist.length === 3 && pi.clist[2] === nsym("set") ){
-     //    pi.clist[2] = nsym("setr");
-     //}
-     else {
-     var opath = pi.clist.pop();
-     pi.newList();
-     pi.clist.push(nsym('getr'));
-     pi.clist.push(opath);
-     pi.endList();
-     }
-     }
-     */
-
-    /*
-     if(code[pi.i] === '.'){
-     if(!pi.clist.isObjectPath){
-     var acrPathStart = pi.clist.pop(); // the last item parsed must be the start of the acr path
-     var canBeSetter = pi.clist.length === 1; // has to be the first item in the list to be a setter
-     if(!canBeSetter)
-     pi.newList(); // start acr
-     pi.clist.isAcr = true;
-     pi.clist.canBeSetter = canBeSetter;
-     if(canBeSetter)
-     pi.clist.push(nsym('setr')); // acr fn as first item
-     else
-     pi.clist.push(nsym('getr')); // acr fn as first item
-
-     pi.newList(); // start acr path
-     pi.clist.pop(); // remove backtick
-     pi.clist.isObjectPath = true;
-     pi.clist.push(acrPathStart);
-     }
-     pi.i++; // jump over the '.'
-     return callback(true);
-     }
-
-     if(code[pi.i].match(/[\s\)]/) && pi.clist.isObjectPath){
-     pi.endList(); // end path list
-     // if (acr ?path) is not first item in parent list, end acr (so no value arg)
-     if(pi.clist.isAcr && !pi.clist.canBeSetter){
-     pi[1] = nsym('getr');
-     pi.endList();
-     }
-     // don't report proceeding because we don't want to reset the active parser
-     }
-     */
 
     return callback();
 

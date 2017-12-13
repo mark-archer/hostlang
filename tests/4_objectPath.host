@@ -37,7 +37,7 @@ list
                     "`getr",
                     [
                         "`context",
-                        0,
+                        "0",
                         "`callDepth"
                     ]
                 ]
@@ -93,7 +93,6 @@ set tt.test "fn"        ;setr simple
 set t.(tt.test) add     ;setr with nested getr
 set t.t.(tt.test) add
 t.t.fn === add          ;setr with nested getr in different loc
-return!
 t.fn 1 2 === 3          ;getr as fn
 tt.test === "fn"        ;getr simple
 t.(tt.test) === add     ;getr with nested getr
@@ -155,51 +154,14 @@ parse "set memo memoName.value"
 ===:, "" "es" ""
 
 
-warn "unfinished tests"
-return _
-
-parse "core.num: 1 2"
-=== : evalJs """
-[
-    "`",
-    [
-        "`",
-        "`setr",
-        [
-            "`core",
-            "`num"
-        ],
-        [
-            "`",
-            1,
-            2
-        ]
-    ]
-]
-"""
-
-;;;
-parse "
-(load assert)
-.assertEq
-"
-=== : evalJs """
-[
-    "`",
-    [
-        "`",
-        "`getr",
-        [
-            [
-                "`",
-                "`load",
-                "`assert"
-            ],
-            "`assertEq"
-        ]
-    ]
-]
-"""
-;;;
+;; make sure a chain of indexes works (and doesn't get interprited as lst.(1.1))
+var lst : list (list 1 2 3) (list 1 2 3)
+lst.1.1
+=== 2
 
 
+;; test accessing an non-standard field names
+var obj new!
+set obj."12ab".a."34cd".1 1
+obj."12ab".a."34cd".1
+=== 1

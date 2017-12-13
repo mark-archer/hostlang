@@ -158,3 +158,9 @@ warn "0_symbol -- ticked rest param shouldn't require two ticks"
 }
 """
 
+;; test non-standard names
+; declare a variable with a non-standard name
+var "a name with spaces and crazy characters ☺ set to the value 1" 1
+; access the value of that variable
+"`a name with spaces and crazy characters ☺ set to the value 1"
+=== 1

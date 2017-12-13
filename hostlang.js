@@ -313,30 +313,7 @@ function acrJs(expr, context, callback){
     }
 
     if(value !== undefined){
-        //var oldListLength = _.isArray(ref) && ref.length;
-        //var oldValue = ref[nn];
-        ref[nn] = value;
-
-        // if the value changed call subscriptions
-        // if(oldValue !== value) {
-        //     return core.notify.ccode(ref, nn, oldValue, value, context, function(){
-        //         var index = Number(nn);
-        //         if(_.isArray(ref) && !isNaN(index)){
-        //             if(oldListLength < ref.length){
-        //                 var indexes = [];
-        //                 for(var i = oldListLength; i<ref.length; i++) indexes.push(i);
-        //                 return core.listNotify.ccode(ref, "Add", indexes, context, function () {
-        //                     callback(root);
-        //                 });
-        //             }
-        //             else
-        //                 return core.listNotify.ccode(ref, "Update", [index], context, function () {
-        //                     callback(root);
-        //                 });
-        //         }
-        //         callback(root);
-        //     });
-        // }
+        ref[nn] = value;        
         return callback(root);
     }
     var rtnVal = ref[nn]

@@ -49,8 +49,14 @@ utils.values = function(obj){
     return []
 };
 
-var newid = uuid.v1;
-utils.newid = newid;
+//var newid = uuid.v1;
+//utils.newid = newid;
+utils.newid = function(shard){
+    shard = shard || 'data';
+    if(!shard.match(/^[a-zA-Z0-9]+$/))
+        throw "newid - invalid shard: " + shard + "\nonly alphanumeric characters allowed"
+    return shard + ":" + Date.now() + ":" + uuid.v4();
+};
 //utils.Id = newid;
 
 // function isid(sid){

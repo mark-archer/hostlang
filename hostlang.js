@@ -44,7 +44,7 @@ function copyToCore(obj){
     for(var n in obj){
         if(obj.hasOwnProperty(n)){
             if(core[n] === obj[n]) continue; // don't copy if it's the same thing and already there
-            if(core[n] && core[n].ccode === obj[n])  continue; // don't copy if the "compiled" code of this and already there
+            if(core[n] && core[n].ccode === obj[n])  continue; // don't copy if the "compiled" code of this and already there            
             if(core[n] && core[n] != obj[n].ccode) // warn if overwritting
                 console.error("overwritting core field '" + n + "'", [core[n],"to", obj[n]]);
             if(_.isFunction(obj[n])) {// if this is a js function the compile it

@@ -93,9 +93,11 @@ var Continuation = {id:"Continuation", name:"Continuation",type:Type}; types.Con
 var Html = {id:"Html", name:"Html", type:Type}; types.Html = Html;
 Html.isType = utils.isHTML;
 
-function isMeta(item){
-    return item && eqObjects(item.type, Meta) && !eqObjects(item, Meta);
-}
+// function isMeta(item){
+//     return item && eqObjects(item.type, Meta) && !eqObjects(item, Meta);
+// }
+// types.isMeta = isMeta;
+var isMeta = utils.isMeta;
 types.isMeta = isMeta;
 function metaValue(item){
     return isMeta(item) && item.value || item; // metaValue of a non-meta is the item itself

@@ -259,7 +259,7 @@ function acrJs(expr, context, callback){
 
     if(path[0] === '`') path.shift();
 
-    if(!root){
+    if(root === undefined){
         var rootName = path.shift();
         return evalHost(rootName, context, function(rslt){
             //if(!_.isObject(rslt) && !_.isString(rslt))

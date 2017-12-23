@@ -165,3 +165,9 @@ var obj new!
 set obj."12ab".a."34cd".1 1
 obj."12ab".a."34cd".1
 === 1
+
+
+;; test to paths with falsy roots still work
+""
+_.length
+=== 0

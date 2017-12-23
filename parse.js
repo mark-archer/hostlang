@@ -779,7 +779,16 @@ function parseBasicOps(pi, context, callback){
     if(word === '-') return opFound('subtract');
     if(word === '*') return opFound('multiply');
     if(word === '/') return opFound('divide');
+    
+    // = -> set
+    if(word === '=') return opFound('set');
 
+    // allow : name=val ; name = val without spaces
+    var n2 = pi.peek(2);
+    if(n2[0] === "=" && n2[1] !== "=") {
+        word = "=";
+        return opFound("set");
+    } 
     //if(word === '=') return opFound('set');
 
     // not found
@@ -830,42 +839,6 @@ function parseRegEx(pi, context, callback){
 
     callback(true);
 }
-// function parseTilde(pi, context, callback){
-//     // convert (` ~ name value) to {type:Meta,name:name,value:value}
-//     if(pi.clist[1] === "`nvp" && pi.clist.length === 4){
-//         pi.endList();
-//         //var tildeList = pi.clist.pop();
-//         //var name = tildeList[2];
-//         //var value = tildeList[3];
-//         //pi.clist.push({type:'Meta',name:ssym(name),value:value})
-//         //pi.clist.push(tildeList);
-//     }
-    
-//     // if no tilde we're done
-//     if(pi.peek(1) !== "~")
-//         return callback();
-    
-//     // move code index past tilde
-//     pi.i++; 
-
-//     // tilde always pops last item off, creates new list
-//     if(pi.clist.length < 2)
-//         throw "parseTilde - tilde found in leading position, it's expected to follow the name";
-
-//     var name = pi.clist.pop();
-//     pi.newList()
-//     pi.clist.push("`nvp");
-//     pi.clist.push(name);
-//     return callback(true);    
-
-//     // pi.clist.push("~");        
-//     // // if it is inline, swap 1 and 2
-//     // if(pi.clist.length > 2){
-//     //     pi.clist[2] = pi.clist[1];
-//     //     pi.clist[1] = "~";        
-//     // }
-//     //return callback(true);    
-// }
 
 parse.terminators = /[\(\)\s\.:^|;"\[\]!]/;
 parse.parsers = [

@@ -34,14 +34,14 @@ export reduce
 
 ;; reduce: simple
 var lst (, 1 2 3)
-reduce lst i s=0
+reduce lst i s~0
 	+ i s
 === 6
 
 
 ;; reduce: with continue
 var lst (, 1 2 3)
-reduce lst i s=0
+reduce lst i s~0
 	if (== i 2)
 		continue : + s 10
 	+ i s
@@ -50,7 +50,7 @@ reduce lst i s=0
 
 ;; reduce: with break
 var lst (, 1 2 3)
-reduce lst i s=0
+reduce lst i s~0
 	if (== i 2)
 		break : + s 10
 	+ i s

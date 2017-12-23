@@ -59,7 +59,7 @@ set _.test 0
 
 
 ;; path with complex names
-var "complex name" (new test="boom!")
+var "complex name" (new test~"boom!")
 context.0."complex name".test === "boom!"
 
 warn "4_acr.host -- colon doesn't work with setr without space"

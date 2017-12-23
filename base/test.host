@@ -7,7 +7,7 @@ fnm addTest(name code&)
 export addTest
 
 
-fn runTests(tests? force=false)
+fn runTests(tests? force~false)
     if(not tests)
         GET "/host/tests" 
         >>> set tests

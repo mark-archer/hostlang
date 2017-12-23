@@ -1,7 +1,7 @@
 
 ;;; names ;;;
 ; -- for object
-new test1=1 test2=2
+new test1~1 test2~2
 >> names === (, "test1" "test2")
 
 ; -- for array
@@ -11,7 +11,7 @@ new test1=1 test2=2
 
 ;;; values ;;;
 ; -- for object
-new test1=1 test2=2
+new test1~1 test2~2
 >> values === (, 1 2)
 
 ; -- for array

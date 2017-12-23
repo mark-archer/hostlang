@@ -1,11 +1,11 @@
 
 ;; test tryCatch with error thrown
-fn tcTest(i=0)
+fn tcTest(i~0)
 	try
 		error "error thrown"
 tcTest 1
 ===  "error thrown"
-fn tcTest(i=0)
+fn tcTest(i~0)
 	try
 		foo
 	add i 1
@@ -14,9 +14,9 @@ tcTest 1
 
 
 ;; test tryCatch with catchCode
-fn tcTest(i=0)
+fn tcTest(i~0)
 	try
-		[name="catchCode" value=((err) (one "caught error!"))]
+		[name~"catchCode" value~((err) (one "caught error!"))]
 		foo
 tcTest 1
 === "caught error!"
@@ -41,7 +41,7 @@ testTC!
 
 
 ;; test try catch outside execution of fn
-fn ccTest (i=0)
+fn ccTest (i~0)
 	fn ccTest2 (i)
 		error (add i 1)
 		return i

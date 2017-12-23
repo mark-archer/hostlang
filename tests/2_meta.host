@@ -46,8 +46,8 @@ name?
 """
 
 
-;; meta: name[Type]=value
-i[Int]=1
+;; meta: name[Type]~value
+i[Int]~1
 === : eval: evalJs """
 {
     isList: false,
@@ -81,7 +81,7 @@ i[]
 
 
 ;; meta: just value
-[value=1]
+[value~1]
 === : evalJs """
 {
     type: "Meta",
@@ -91,7 +91,7 @@ i[]
 
 
 ;; meta: just name and value
-i=1
+i~1
 === : evalJs """
 {
     type: "Meta",
@@ -102,7 +102,7 @@ i=1
 
 
 ;; meta: with type as list
-i[*Int]=1
+i[*Int]~1
 === : eval: evalJs """
 {
     isList: true,
@@ -115,7 +115,7 @@ i[*Int]=1
 
 
 ;; meta: with tick
-`i=add
+`i~add
 === : eval: evalJs """
 {
     isTick: true,
@@ -126,7 +126,7 @@ i[*Int]=1
 """
 
 ;; meta: with quote
-'i=add
+'i~add
 === : eval: evalJs """
 {
     isQuote: true,
@@ -175,7 +175,7 @@ f[Fn()[Bool]]
 
 
 ;; test complex value
-l=(list 1 2 3)
+l~(list 1 2 3)
 ===: evalJs """
 {
     "name": "l",

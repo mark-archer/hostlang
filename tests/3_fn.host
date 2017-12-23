@@ -58,7 +58,7 @@ _ "Blair"
 
 
 ;; fn: optional param, calling fn by name
-fn hi(name="there"): add "hi " name "!"
+fn hi(name~"there"): add "hi " name "!"
 _ "Blair"
 === "hi Blair!"
 hi!
@@ -80,7 +80,7 @@ list incI! incI! incI!
 
 
 ;; fn: return type
-fn testRtnType()[Int] ; enclose=false
+fn testRtnType()[Int] ; enclose~false
 	1
 _.return_type === [Int]
 

@@ -790,6 +790,18 @@ utils.take = function(ary, n){
     return ary.slice(0, n);
 };
 
+var nvp = utils.fnjs(function(name, value){
+    return {
+        type:'Meta',
+        name:utils.ssym(name),
+        value:value
+    }
+})
+nvp.isMacro = true;
+utils['nvp'] = nvp;
+utils['~'] = nvp;
+
+
 //============================= exports ===============================================================================
 module = module || {};
 module.exports = utils;

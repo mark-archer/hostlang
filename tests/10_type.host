@@ -32,7 +32,7 @@ list
 
 
 isType 1 Meta === false
-isType 1 test=1 === true
+isType 1 test~1 === true
 
 
 ;; is type should error out on 1 arg
@@ -44,11 +44,11 @@ catch(e)
 
 
 ;; test creating a new type
-type TestType p=1 1 2
+type TestType p~1 1 2
 	fields
 		fname[String]
 		lname[String]
-	f[Fn]=:fnp noop()null
+	f[Fn]~:fnp noop()null
 (evalJs "function(TestType){delete TestType.f._sourceFile; delete TestType.f._sourceLine;}") TestType
 set TestType.type "Type"
 ===: evalJs """

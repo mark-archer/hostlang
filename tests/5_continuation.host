@@ -1,6 +1,6 @@
 
 ;; test return inside a declared function
-fn ccTest (i=0)
+fn ccTest (i~0)
 	fn ccTest2 (i)
 		return (add i 1)
 		foo

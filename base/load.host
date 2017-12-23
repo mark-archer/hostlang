@@ -1,5 +1,5 @@
 
-fn load(paths& force=false)
+fn load(paths& force~false)
     each paths p
         try
             var mdl : require p force

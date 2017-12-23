@@ -178,7 +178,6 @@ _.length
 _.toFixed 2
 === "0.00"
 
-
 ;; test paths with falsy parts
 var a : new test~"" zero~0
 a.test.length

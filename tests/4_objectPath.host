@@ -167,7 +167,13 @@ obj."12ab".a."34cd".1
 === 1
 
 
-;; test to paths with falsy roots still work
+;; test to paths with falsy roots
 ""
 _.length
+=== 0
+
+
+;; test paths with falsy parts
+var a : new test~""
+a.test.length
 === 0

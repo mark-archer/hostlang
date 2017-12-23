@@ -168,12 +168,21 @@ obj."12ab".a."34cd".1
 
 
 ;; test to paths with falsy roots
+; length of empty string
 ""
 _.length
 === 0
 
+; zero to fixed
+0
+_.toFixed 2
+=== "0.00"
+
 
 ;; test paths with falsy parts
-var a : new test~""
+var a : new test~"" zero~0
 a.test.length
 === 0
+a.zero.toFixed 2
+=== "0.00"
+

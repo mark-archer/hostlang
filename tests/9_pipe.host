@@ -76,3 +76,7 @@ list
 ;; pipe second vs pipe first
 "2" >>> add "1" "3" === "123"
 "1" >> add "2" "3" === "123"
+
+;; pipe into function that is looked up with getr
+2 >> Math.pow 2 
+=== 4

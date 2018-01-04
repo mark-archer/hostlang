@@ -528,65 +528,46 @@ function parseMetaList(pi, context, callback){
     return callback();
 }
 function parsePipe(pi, context, callback){
-
-    if(pi.pipeNext && pi.clist.length == 2){
-        pi.clist.push(nsym('_'));
-        delete pi.pipeNext;
+    
+    if(pi.clist.pipeNext && pi.clist.length >= 2 && pi.peek() !== "."){ // if next value is dot things will be done differently
+        //pi.clist.push(nsym('_'));
+        pi.clist.splice(2,0,nsym('_'))
+        delete pi.clist.pipeNext;
     }
 
-    if(pi.pipeThird && pi.clist.length == 3){
-        pi.clist.push(nsym('_'));
-        delete pi.pipeThird;
+    if(pi.clist.pipeThird && pi.clist.length >= 3){
+        //pi.clist.push(nsym('_'));
+        pi.clist.splice(3,0,nsym('_'))
+        delete pi.clist.pipeThird;
     }
 
     var word = pi.peekWord();
 
-    // if(pi.code[pi.i] === ","){
-    //     pi.i += 1;
-    //     pi.pipeNext = true;
-    //     var indent = pi.clist.indent;
-    //     pi.endList();
-    //     pi.newList();
-    //     pi.clist.indent = indent;
-    //     //pi.clist.push(nsym("pipe"));
-    //     return callback(true);
-    // }
-
+    // >>> ; pipe to second arg
     if(pi.code.substr(pi.i,3) === '>>>'){
         pi.i += 3;
-        pi.pipeThird = true;
+        //pi.pipeThird = true;
         var indent = pi.clist.indent;
         pi.endList();
         pi.newList();
-        pi.clist.indent = indent;
+        pi.clist.pipeThird = true;
+        pi.clist.indent = indent;        
         return callback(true);
     }
 
+    // >> ; pipe to first arg
     if(pi.code.substr(pi.i,2) === '>>'){
         pi.i += 2;
-        pi.pipeNext = true;
+        //pi.pipeNext = true;
         var indent = pi.clist.indent;
         pi.endList();
         pi.newList();
         pi.clist.indent = indent;
+        pi.clist.pipeNext = true;
         return callback(true);
-    }
+    }    
 
-
-    // 2 >> add 2 === (2, (pipe add 2)) === add _ 2
-    //if(pi.peekWord() === ">>"){
-    // if(pi.code.substr(pi.i,2) === '>>' && pi[pi.i + 2] !== '>'){
-    //     pi.i += 2;
-    //     //pi.pipeNext = true;
-    //     var indent = pi.clist.indent;
-    //     pi.endList();
-    //     pi.newList();
-    //     pi.clist.indent = indent;
-    //     pi.clist.push(nsym("pipe"));
-    //     return callback(true);
-    // }
-
-    // evalBlock <<
+    // << ; evalBlock
     if(word === '<<'){
         pi.i += word.length;
         if(pi.clist.length != 1){
@@ -598,7 +579,7 @@ function parsePipe(pi, context, callback){
     }
 
 
-    // assertEq ===
+    // === ; assertEq
     if(pi.code.substr(pi.i,3) === '==='){
         pi.i += 3;
         if(pi.clist.length != 1){

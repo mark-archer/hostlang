@@ -185,3 +185,7 @@ a.test.length
 a.zero.toFixed 2
 === "0.00"
 
+
+;; tests colon terminator for object path
+parse "set o.1: + 1"
+===: parse "set o.1 : + 1"    

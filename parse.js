@@ -386,7 +386,7 @@ function parseObjectPath(pi, context, callback){
     }
 
     // check for the end of the list
-    if(pi.clist.isObjectPath && code[pi.i].match(/[\s\)!\]]/)){
+    if(pi.clist.isObjectPath && code[pi.i].match(/[\s\)!\]\:]/)){
         var path = pi.clist;
         pi.endList(); // end path list
 

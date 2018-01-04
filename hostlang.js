@@ -47,7 +47,7 @@ function copyToCore(obj){
             if(core[n] && core[n].ccode === obj[n])  continue; // don't copy if the "compiled" code of this is already there            
             if(core[n] && core[n] != obj[n].ccode) // warn if overwritting
                 console.error("overwritting core field '" + n + "'", [core[n],"to", obj[n]]);
-            if(_.isFunction(obj[n])) {// if this is a js function the compile it
+            if(_.isFunction(obj[n])) {// if this is a js function then compile it
                 core[n] = fnjs(n, obj[n]);
                 if(obj[n].isMacro)
                     core[n].isMacro = obj[n].isMacro;
@@ -72,7 +72,8 @@ core.trace = function () {
     var args = _.map(arguments, function(a){return a;});
     if(args.length < 2)
         args = args[0];
-    console.trace(args)
+    console.trace(args);
+    return args;
 };
 
 utils.objectPath = fnjs(function(){
@@ -382,13 +383,7 @@ function fn(expr, context, callback) {
     f.params = params;
     f.ccode = ccode;
     f.closure = getClosure(context,offset);
-    //if(isMacro) f.isMacro = true;
-    //if(code && ccode.length > 0) throw "both ccode and code were passed in to fn, only one or the other is allowed";
-    //if(code) {
-    //    delete f.ccode;
-    //    f.code = code;
-    //}
-
+    
     if(return_type){
         evalHost(return_type, context, function(return_type){
             f.return_type = return_type;
@@ -407,9 +402,8 @@ core.fnm = fnjs("fnm",function(expr, context, callback){
     });
 });
 core.fnm.isMacro = true;
-core.fnp = fnjs("fnm",function(expr, context, callback){
+core.fnp = fnjs("fnp",function(expr, context, callback){
     fn(expr, context, function(f){
-        //f.isMacro = true;
         f.closure = null;
         callback(f);
     });

@@ -55,7 +55,7 @@ var selfClosing : ssyms
     track 
     wbr     
 
-fnm htmlTag(tag attrText="")
+fnm htmlTag(tag attrText~"")
     set tag : untick tag
     if attrText
         set attrText : " " + attrText
@@ -79,7 +79,7 @@ fnm html(tags&)
     ; handel special binding keyword
     var bindText ""
     if(firstTag == "bind")
-        reduce tags b m=""
+        reduce tags b m~""
             var value b.value
             if (isList value)
                 m + b.name ":$component.bindHost(" (toDataString value) "), "
@@ -97,7 +97,7 @@ fnm html(tags&)
 
     ; process the rest of the tags (they will either be siblings or children of the first tag)
     var attrText ""
-    reduce tags t m=""
+    reduce tags t m~""
         if(isList t)
             untick t            
             if("bind" == (untick t.0))
@@ -192,17 +192,17 @@ html
 === "<h1>My Name</h1>"
 
 html
-    span "test" style="color:red" tabindex=-1
+    span "test" style~"color:red" tabindex~-1
 === """<span style="color:red" tabindex="-1">test</span>"""
 
 var name "My Name"
 html
     h1 `name
     span
-        style="display:none"
+        style~"display:none"
         bind            
-            text="hi"
-            text2=name
-            visible=true
-            click=(fn()(log "hi"))
+            text~"hi"
+            text2~name
+            visible~true
+            click~(fn()(log "hi"))
 === """<h1>My Name</h1><span style="display:none" data-bind="text:'hi', text2:$component.bindHost('`name'), visible:true, click:$component.bindHost(["`","`fn",["`"],["`","`log","hi"]])"></span>"""

@@ -305,7 +305,7 @@ function acrJs(expr, context, callback){
 
     if(path.length !== 0){
         var newRef = ref[nn];
-        if(newRef === undefined || newRef === null){// && !_.isString(newRef)){
+        if(newRef === undefined || newRef === null){
             if(!value)
                 return callback(null);
             newRef = {};

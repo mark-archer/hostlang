@@ -632,7 +632,8 @@ function parseCatch(pi, context, callback){
 
     return callback();
 }
-function parseIfElifElse(pi, context, callback){
+console.log('parse ifelse')
+function parseIfElifElse(pi, context, callback){    
 
     var l = pi.clist;
     var lp = pi.getParent(pi.clist) || false;
@@ -688,6 +689,13 @@ function parseIfElifElse(pi, context, callback){
         }
         if(!lp.isIf)
             return ccError(context, "else -- found in unexpected location");
+
+        if(pi.clist.ifPart){ // it's an inline else statement e.g: if true 1 else 0
+            var indent = pi.clist.indent;
+            pi.endList();
+            pi.newList();
+            pi.clist.indent = indent;
+        } 
         pi.clist.ifPart = "else";
         pi.clist.push(true);
         return callback(true);

@@ -421,7 +421,6 @@ function parseObjectPath(pi, context, callback){
     return callback();
 
 }
-console.log('parse meta list')
 function parseMetaList(pi, context, callback){
     
     // we want the special bang! operator to be applied before we grab the type or value so if it's there just get out
@@ -725,6 +724,7 @@ function parseIfElifElse(pi, context, callback){
 
     return callback();
 }
+console.log('parse basic ops')
 function parseBasicOps(pi, context, callback){
 
     //var maybeOp = pi.code.substr(pi.i,2);
@@ -741,6 +741,15 @@ function parseBasicOps(pi, context, callback){
         // if past second position treat as infix
         if(pi.clist.length > 1){
 
+            // first check for getr; o.i = 1
+            if(pi.clist.length == 2 && pi.clist[1].length && pi.clist[1][1] === nsym('getr')){
+                var aGetr = pi.clist.pop();                
+                pi.clist[1] = nsym('setr');
+                pi.clist[2] = aGetr[2];                
+                pi.clist.isSetr = true;
+                return callback(true);
+            }            
+
             // 1 + 2 * 3
             // ===
             // (* 3 (+ 1 2))
@@ -756,6 +765,8 @@ function parseBasicOps(pi, context, callback){
             pi.clist.indent = indent; // it's still at the same level 
             pi.clist.push(nsym(op)) // make this op the function of the expression
             pi.clist.push(lexpr) // make the last expression the first argument of the current one
+
+            
         } 
         else {
             pi.clist.push(nsym(op));
@@ -781,15 +792,12 @@ function parseBasicOps(pi, context, callback){
     if(word === '/') return opFound('divide');
     
     // = -> set
-    if(word === '=') return opFound('set');
-
-    // allow : name=val ; name = val without spaces
     var n2 = pi.peek(2);
-    if(n2[0] === "=" && n2[1] !== "=") {
-        word = "=";
-        return opFound("set");
-    } 
-    //if(word === '=') return opFound('set');
+    if(n2[0] === "=" && n2[1] !== "=") // allow : name=val ; name = val without spaces
+        word = "=";        
+    if(word === '=') {        
+        return opFound('set');
+    }    
 
     // not found
     return callback();

@@ -189,3 +189,17 @@ a.zero.toFixed 2
 ;; tests colon terminator for object path
 parse "set o.1: + 1"
 ===: parse "set o.1 : + 1"    
+
+
+;; test infix setr
+var o : new i~1
+o.i = 2
+o.j.k = 3
+===: js """
+{
+    "i": 2,
+    "j": {
+        "k": 3
+    }
+}
+"""

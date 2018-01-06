@@ -316,6 +316,8 @@ function acrJs(expr, context, callback){
     }
 
     if(value !== undefined){
+        if(!_.isObject(ref))
+            return ccError(context, "setr - cannot set a value to the primative: " + ref);
         ref[nn] = value;        
         return callback(root);
     }
@@ -326,6 +328,7 @@ function acrJs(expr, context, callback){
     }        
     return callback(rtnVal);
 }
+console.log('acrJs');
 core.setr = {
     name:"setr",
     type:Fn,

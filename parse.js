@@ -724,7 +724,6 @@ function parseIfElifElse(pi, context, callback){
 
     return callback();
 }
-console.log('parse basic ops')
 function parseBasicOps(pi, context, callback){
 
     //var maybeOp = pi.code.substr(pi.i,2);

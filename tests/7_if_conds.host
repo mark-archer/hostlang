@@ -56,7 +56,6 @@ cond
 === "i is one"
 
 
-
 ;; cond -- inside function
 fn checkI(i)
 	cond
@@ -146,6 +145,7 @@ fn doLst()
 list
 	doLst!
 	doLst!
+; 1/6/18 - I guess if this doesn't error out we're happy?
 
 
 ;; make sure cond return isn't interfering with fn return
@@ -169,7 +169,7 @@ testRtnInEach!
 === (' 1 2 3)
 
 
-;; if-elif-else
+;; if-elif-else with nesting
 var lst list!
 for (i -1 6)
 	if (< i 2)
@@ -212,3 +212,70 @@ fn walk(path)
 add 1 1
 """
 apply evalBlock _ === 2
+
+
+;; check inline if-else works
+; inline else
+if true "1" else "2"
+=== "1"
+
+if false "1" else "2"
+=== "2"
+
+
+; inline elif - if true
+if true "1" elif true "2" 
+=== "1"
+
+; inline elif - elif true
+if false "1" elif true "2" 
+=== "2"
+
+; inline elif - drop through
+"3"
+if false "1" elif false "2" 
+=== "3"
+
+; inline elif + else - if true
+if true "1" elif true "2" else "3"
+=== "1"
+
+; inline elif + else - elif true
+if false "1" elif true "2" else "3"
+=== "2"
+
+; inline elif + else - else true
+if false "1" elif false "2" else "3"
+=== "3"
+
+
+;; test nested inline-if statements
+; if-if branch
+if true
+	if true 1 else 0
+else
+	-1
+=== 1
+
+; if-else branch
+if true
+	if false 1 else 0
+else
+	-1
+=== 0
+
+; if-elif(not) branch
+-2
+if true
+	if false 1 elif false 0
+else
+	-1
+=== -2
+
+; else branch
+-2
+if false
+	if false 1 elif false 0
+else
+	-1
+=== -1

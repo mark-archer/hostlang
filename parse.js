@@ -674,6 +674,12 @@ function parseIfElifElse(pi, context, callback){
         }
         if(!lp.isIf)
             return ccError(context, "elif -- found in unexpected location");
+        if(pi.clist.ifPart){ // it's an inline else statement e.g: if true "1" elif true "2"
+            var indent = pi.clist.indent;
+            pi.endList();
+            pi.newList();
+            pi.clist.indent = indent;
+        } 
         pi.clist.ifPart = "elif";
         return callback(true);
     }

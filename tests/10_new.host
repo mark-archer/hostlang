@@ -1,0 +1,64 @@
+
+; test no args
+new!
+=== : js "{}"
+
+; test unnamed args
+new 1
+===: js "{values:[1]}"
+
+; test named args
+new name~1
+===: js "{name:1}"
+
+; test named and unnamed functions
+var obj : new 
+    fnp f()"Hello World"
+    fnp()"test"
+obj.f.ccode.0 === "Hello World"
+obj.values.0.ccode.0 === "test"
+
+; test function definition as part of new
+var obj : new f~:fnp()"Hello World"
+obj.f.ccode.0 === "Hello World"
+
+
+; test named and unnamed mixed
+var obj : new
+    name ~ "mark"
+    "blah"
+    1
+    num ~ 1
+===: js """
+{
+    "name": "mark",
+    "num": 1,
+    "values": [
+        "blah",
+        1
+    ]
+}
+"""
+
+; test non-list "values" field
+var obj : new values~1 1
+===: js """
+{
+    "values": [
+        1,
+        1
+    ]
+}
+"""
+
+; test list "values" field
+var obj : new values~(, 1 2) 3
+===: js """
+{
+    "values": [
+        1,
+        2,
+        3
+    ]
+}
+"""

@@ -93,6 +93,11 @@ var Continuation = {id:"Continuation", name:"Continuation",type:Type}; types.Con
 var Html = {id:"Html", name:"Html", type:Type}; types.Html = Html;
 Html.isType = utils.isHTML;
 
+function isFn(f){
+    return _.isFunction(f) || eqObjects(f.type, Fn) || eqObjects(f.type, Fnjs);
+};
+types.isFn = isFn
+
 // function isMeta(item){
 //     return item && eqObjects(item.type, Meta) && !eqObjects(item, Meta);
 // }
@@ -284,10 +289,9 @@ function isNvp (obj){
 }
 types.isNvp = isNvp;
 
+console.log('fn new')
 types.new = function(expr, context, callback){
     var o = {}; // object to be returned
-
-    //console.log('new');
 
     // get the list of arguments so we can process it
     var args = expr; //_.map(arguments, function(a){return a});
@@ -305,8 +309,8 @@ types.new = function(expr, context, callback){
         if(_.isArray(maybeType.fields)) // get it's list of fields for processing
             fields = _.clone(maybeType.fields);
     }
-    // first process named arguments
-    args = _.filter(args, function(a){
+    // first process named arguments 
+    args = _.filter(args, function(a){        
         if(isNvp(a)) {
             // var f = _.find(fields, function(f){return f.name === a.name});
             // if(f && f.list && !_.isArray()){}
@@ -317,32 +321,37 @@ types.new = function(expr, context, callback){
         }
         return true;
     });
-    // deal with any fields that haven't been set and unnamed arguments
+    // deal with any fields that haven't been set 
     if(fields.length) {
-        _.each(args, function(a){
-            var f = fields.shift();
-            if(f && f.name)
-                o[f.name] = a;
-            else {
-                o.values = o.values || [];
-                o.values.push(a);
-            }
-        });
         _.each(fields, function(f){
-            // todo: deal with optionals, list/atom, and default values
-            //o[f.name] = f.default;
-            o[f.name] = f.value;
-        })
+            if(args.length){
+                var fVal = args.shift();
+                o[f.name] = fVal;
+            }
+            else { 
+                // no values so set to default if there is one
+                o[f.name] = f.value;
+            }
+
+        })        
+    } 
+    // deal with any remaining arguments
+    if (args.length) { 
+        _.each(args, function(a){
+            if(isFn(a) && a.name){
+                // if it's a named function, set with name
+                o[a.name] = a;
+            }
+            else {
+                // otherwise put it in the special "values" field
+                o.values = o.values || [];
+                if(!_.isArray(o.values))
+                    o.values = [o.values];
+                o.values.push(a);
+                // maybe - set them by their index; I think this is more problamatic than the special "values" field but leaving it here as an idea
+            }
+        })        
     }
-
-    // // deal with named arguments that haven't been set
-    // _.each(args, function(a){
-    //     if(a.name){
-    //         o[a.name] = a;
-    //     }
-    // });
-
-    //if(!o.id) o.id = utils.Id();
 
     // register new types
     if(eqObjects(o.type, Type) || eqObjects(o.type, Primitive))
@@ -353,11 +362,6 @@ types.new = function(expr, context, callback){
     else
         callback(o);
 };
-
-types.isFunction = function(f){
-    return _.isFunction(f) || eqObjects(f.type, Fn) || eqObjects(f.type, Fnjs);
-};
-
 
 module = module || {};
 module.exports = types;

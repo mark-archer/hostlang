@@ -632,7 +632,6 @@ function parseCatch(pi, context, callback){
 
     return callback();
 }
-console.log('parse ifelse')
 function parseIfElifElse(pi, context, callback){    
 
     var l = pi.clist;
@@ -722,6 +721,7 @@ function parseIfElifElse(pi, context, callback){
 
     return callback();
 }
+console.log('parse basic ops')
 function parseBasicOps(pi, context, callback){
 
     //var maybeOp = pi.code.substr(pi.i,2);
@@ -744,11 +744,13 @@ function parseBasicOps(pi, context, callback){
 
             pi.endList() // end whatever the last expression is
             var lexpr = pi.clist.pop(); // remove the last expression 
+            var indent = lexpr.indent;
             // convert implicity lists of 1 or 0 items to just the item or undefined
             //if(!lexpr.explicit && lexpr.length < 1 || (lexpr[0] === '`' && lexpr.length < 2)) 
             if(lexpr.length < 2 || (lexpr[0] === '`' && lexpr.length < 3)) 
                 lexpr = untick(lexpr)[0];
             pi.newList(); // start a new expression
+            pi.clist.indent = indent; // it's still at the same level 
             pi.clist.push(nsym(op)) // make this op the function of the expression
             pi.clist.push(lexpr) // make the last expression the first argument of the current one
         } 

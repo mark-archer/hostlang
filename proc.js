@@ -12,6 +12,10 @@ var procCBs = {};
 var procsReady = [];
 var procing = false;
 
+function ccError(context, err){
+    proc.host.ccError(context,err);
+}
+
 
 proc.new = function(workerFn, items, interCall, context, callback){
     var pid = utils.newid();
@@ -72,8 +76,14 @@ function procNext(p){
     ]
     
     p.context[0].callDepth = 0; // if we're using proc we're automatically resetting the callDepth
-    //fn.apply(p.self || null, args);
-    fn.apply(null, args);
+    
+    try{
+        //fn.apply(p.self || null, args);
+        fn.apply(null, args);
+    } catch(err){
+        //throw ['error in proc', err]
+        ccError(p.context,err);
+    }    
 }
 
 function eachSync(items, fn, context, callback){

@@ -1308,7 +1308,7 @@ function contextInit(context, callback, onError) {
     return context;
 }
 
-function parseHostWrapper(expr, context, callback, onError){
+function parseHostWrapper(expr, context, callback, onError){    
     context = contextInit(context, callback, onError);
     parseHost(expr, context, callback);
 }
@@ -1375,24 +1375,6 @@ function run(code, context, callback, onError) {
 
 core.run = function(context, callback, code){
     
-    // var bindings = {_source:'run'}
-    // bindings.onCallback = makeContinuation(context, callback);
-    // bindings.onError = getBinding(context,"onError");
-    // bindings.onReturn = makeContinuation(context, callback);
-    // bindings.onReturn.sourceFn = "run";
-    // newScope(context, bindings);
-    
-    // if(_.isString(code)){
-    //     return parseHost(code,context, function(code){
-    //         context.pop();
-    //         core.run(context, callback, code);
-    //     });
-    // }
-
-    // evalHostBlock(code, context, function(rslt){
-    //     ccCallback(context, rslt);
-    // });    
-
     if(_.isString(code)){
         return parseHost(code,context, function(code){
             core.run(context, callback, code);

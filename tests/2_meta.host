@@ -194,6 +194,14 @@ new num ~ toInt!
 ===: new num ~ (toInt)
 
 
+;; test enforcing item proceeding '~' is a string
+try
+    parse "1 ~ 1"
+catch(err)
+    "error"
+=== "error"
+
+
 return _
 
 ;; todo test function with param types specified

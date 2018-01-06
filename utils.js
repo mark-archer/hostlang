@@ -678,7 +678,7 @@ utils.nmeta = function (name,value,value_type,args_list){
 
     // if name is already meta, just use that as meta
     //if(isMeta(name)){
-    if(_.isObject(name)){
+    if(_.isObject(name) && !_.isArray(name)){
         meta = name;
         meta.name = meta.name || undefined;
     }
@@ -719,6 +719,9 @@ utils.nmeta = function (name,value,value_type,args_list){
         }
 
         meta.name = name;
+    } 
+    else if(name){
+        throw "meta - name must be a string"
     }
 
     // set value if passed in

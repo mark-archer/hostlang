@@ -421,8 +421,12 @@ function parseObjectPath(pi, context, callback){
     return callback();
 
 }
+console.log('parse meta list')
 function parseMetaList(pi, context, callback){
-    //console.log("parseMeta");
+    
+    // we want the special bang! operator to be applied before we grab the type or value so if it's there just get out
+    if(pi.code[pi.i] === "!")
+        return callback(false);
 
     var alist = pi.clist;
     for(var i = alist.length-2; i>=0; i--){
@@ -721,7 +725,6 @@ function parseIfElifElse(pi, context, callback){
 
     return callback();
 }
-console.log('parse basic ops')
 function parseBasicOps(pi, context, callback){
 
     //var maybeOp = pi.code.substr(pi.i,2);

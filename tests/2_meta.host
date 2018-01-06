@@ -189,6 +189,11 @@ l~(list 1 2 3)
 """
 
 
+;; test bang is applied correctly to meta value
+new num ~ toInt!
+===: new num ~ (toInt)
+
+
 return _
 
 ;; todo test function with param types specified

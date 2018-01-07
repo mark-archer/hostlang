@@ -518,7 +518,7 @@ function applyFn_JS(expr, context, callback){
         if(!ccode.includes('function'))
             ccode = 'function(){ return ' + ccode + ';}';
         try{
-            f.ccode = eval('(' + ccode + ')');
+            f.ccode = eval('"use strict";(' + ccode + ')');
         } catch(err){
             return ccError(context, err.toString());
         }
@@ -677,7 +677,7 @@ core.apply = {
 };
 
 function evalJs(code){    
-    return eval('(function(_){return ' + code.trim() + ';})()');
+    return eval('"use strict";(function(_){return ' + code.trim() + ';})()');
 }
 function evalSym(expr, context, callback){
     var symbol = expr;

@@ -29,3 +29,11 @@ list
 ===:,
     "Hey You!"
     "Hi Joe!"
+
+
+;; make sure js is using strict mode
+try
+    js "test = 1"
+catch(err)
+    err
+=== "ReferenceError: test is not defined"

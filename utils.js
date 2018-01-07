@@ -194,7 +194,7 @@ function fromJSON(obj){
                 return new RegExp(m[1], m[2] || "");
             }
             if(obj.match(/^__FUNCTION /)){
-                return eval('(' + obj.substring(11) + ')');
+                return eval('"use strict";(' + obj.substring(11) + ')');
             }
             if(obj.match(/^__HTML /)){
                 return $(obj.substring(7))[0];

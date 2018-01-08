@@ -481,7 +481,12 @@ function mapArgs(aFn, args, context, callback){
             else {
                 // if no arg available and types don't match and param isn't optional, throw error
                 //return ccError(context,{msg:'invalid value specified for param',param:p,value:a,fn:aFn});
-                return ccError(context, `Error calling Fn '${aFn.name || "<anonymous>"}' - no valid value available for '${p.name}' parameter`)
+                //return ccError(context, `Error calling Fn '${aFn.name || "<anonymous>"}' - no valid value available for '${p.name}' parameter`)
+                return ccError(context, [
+                    `Error calling Fn '${aFn.name || "<anonymous>"}'`, 
+                    `'${p.name}' parameter - no valid value available`,
+                    `line ${context[0]._lastEvaled._sourceLine || "<unknown>"}, file '${context[0]._lastEvaled._sourceFile || "<anonymous>"}'`
+                ]);
             }
         }
 

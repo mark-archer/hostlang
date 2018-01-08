@@ -95,7 +95,7 @@ fnp sayHi(name) : + "Hi " name
 try
     sayHi!
 catch(err)
-    err
-=== "Error calling Fn 'sayHi' - no valid value available for 'name' parameter"
+    + err.0 ": " err.1
+=== "Error calling Fn 'sayHi: 'name' parameter - no valid value available",
 sayHi "test"
 === "Hi test"

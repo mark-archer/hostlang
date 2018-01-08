@@ -478,8 +478,11 @@ function mapArgs(aFn, args, context, callback){
             else if(p.value !== undefined || p.isOptional){
                 bindArg(ip, p.value);
             }
-            else // if no arg available and types don't match and param isn't optional, throw error
-                return ccError(context,{msg:'invalid value specified for param',param:p,value:a,fn:aFn});
+            else {
+                // if no arg available and types don't match and param isn't optional, throw error
+                //return ccError(context,{msg:'invalid value specified for param',param:p,value:a,fn:aFn});
+                return ccError(context, `Error calling Fn '${aFn.name || "<anonymous>"}' - no valid value available for '${p.name}' parameter`)
+            }
         }
 
         if(args.length > 0)
@@ -501,6 +504,7 @@ function mapArgs(aFn, args, context, callback){
         eachSync(iArgs,evalTickedArgs,context, callback);
     });
 }
+console.log('applyFn_JS');
 function applyFn_JS(expr, context, callback){
     var f = expr.shift();
 
@@ -510,7 +514,8 @@ function applyFn_JS(expr, context, callback){
         expr[0] = f;
     }
 
-    if(!eqObjects(f.type,Fnjs)) throw "evalFn_JS called with invalid function";
+    if(!eqObjects(f.type,Fnjs)) 
+        throw "evalFn_JS called with invalid function";
 
     // if there isn't compiled code we need to do that first
     if(!_.isFunction(f.ccode)){
@@ -523,6 +528,14 @@ function applyFn_JS(expr, context, callback){
             return ccError(context, err.toString());
         }
     }
+
+    // // unwrap metas for normal function applications
+    // if(!f.isMacro)
+    //     expr = _.map(expr, function(arg){
+    //         if(isMeta(arg))
+    //             return arg.value
+    //         return arg;
+    //     });
 
     // best case -- if it looks like it's in correct host form, just call it
     if(f.hostForm || f.code.trim().split('\n')[0].includes("(expr, context, callback)")){

@@ -88,3 +88,14 @@ _.return_type === [Int]
 ;; fnjs: test async version
 var f : evalJs "function(context, callback, a1){callback(a1); return 'sync'}"
 f "async" === "async"
+
+
+;; test errors when no value provided for required parameter
+fnp sayHi(name) : + "Hi " name
+try
+    sayHi!
+catch(err)
+    err
+=== "Error calling Fn 'sayHi' - no valid value available for 'name' parameter"
+sayHi "test"
+=== "Hi test"

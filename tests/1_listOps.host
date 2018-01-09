@@ -123,3 +123,28 @@ list
     list 
         "Finished Test: /hostlang/tests/1_list.host"
         "Finished Test: /hostlang/tests/10_type.host"
+
+;; join
+var ary :, 1 2 3
+join ary ", "
+=== "1, 2, 3"
+
+
+;; skip
+var ary :, 1 2 3
+skip ary 1 
+===:, 2 3
+
+
+;; take
+var ary :, 1 2 3
+take ary 2 
+===:, 1 2
+
+
+;; check that ops don't modify in place
+var ary :, 1 2 3 4
+ary >> skip 1 >> take 2
+===:, 2 3
+ary ===:, 1 2 3 4
+

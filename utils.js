@@ -778,20 +778,27 @@ utils.sort = function(ary){
 };
 
 utils.slice = function(ary, start, end){
+    ary = _.clone(ary);
     start = start || 0;
     end = end || ary.length;
     return ary.slice(start, end);
 };
 
 utils.skip = function(ary, n){
+    ary = _.clone(ary);
     n = n || 1;
     return ary.slice(n);
 };
 
 utils.take = function(ary, n){
+    ary = _.clone(ary);
     n = n || 1;
     return ary.slice(0, n);
 };
+
+utils.join = function(ary, seperator){
+    return ary.join(seperator || "");
+}
 
 var nvp = utils.fnjs(function(name, value){
     return {

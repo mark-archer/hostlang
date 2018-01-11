@@ -407,7 +407,14 @@ core.fnm = fnjs("fnm",function(expr, context, callback){
 core.fnm.isMacro = true;
 core.fnp = fnjs("fnp",function(expr, context, callback){
     fn(expr, context, function(f){
+        f.isPure = true;
         f.closure = null;
+        // if it's a named, pure function, make sure it can reference itself
+        if(f.name){
+            var ns = {};
+            ns[f.name] = f;
+            f.closure = [ns];
+        }
         callback(f);
     });
 });
@@ -622,13 +629,22 @@ function applyFn_host(expr, context, callback){
 
         var fnScopes = _.clone(f.closure) || [];
         if(!f.useRuntimeScope)
-            context = fnScopes;
+            context = fnScopes;        
         // // maybe -- when "useRuntimeScope" do this...
         // else if(_.isArray(f.closure) && f.closure.length){
         //     context = _.clone(context);
         //     Array.prototype.push.apply(context, f.closure)
         // }
+
+        // // if it's a named, pure function, make sure it can reference itself (for recursion)
+        // if(f.isPure && f.name){
+        //     var ns = {};
+        //     ns[f.name] = f;
+        //     newScope(context, ns);
+        // }
+
         newScope(context,bindings);
+        
 
         // execute function
         var code = copy(f.ccode); // copy code, we don't want to mess up fn which is a template for all calls

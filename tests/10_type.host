@@ -48,7 +48,7 @@ type TestType p~1 1 2
 	fields
 		fname[String]
 		lname[String]
-	f[Fn]~:fnp noop()null
+	f[Fn]~:fnp()null
 (evalJs "function(TestType){delete TestType.f._sourceFile; delete TestType.f._sourceLine;}") TestType
 set TestType.type "Type"
 ===: evalJs """
@@ -75,13 +75,13 @@ set TestType.type "Type"
         }
     ],
     "f": {
-        "type": "Fn",
-        "name": "noop",
+        "type": "Fn",        
         "params": [],
         "ccode": [
             null
         ],
-        "closure": null
+        "closure": null,
+        "isPure": true
     }
 }
 """

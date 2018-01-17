@@ -128,3 +128,24 @@ var obj : new values~(, 1 2) 3
     }
 }
 """
+
+; big example
+var obj : {
+    name "mark"
+    lst : , 1 2 3
+    obj : {
+        subname "archer"
+        spouse "Blair"
+    bigList : , 1 2 3 4 5 6 
+    names : ,
+        "Mark"
+        "Markus"
+        "Aralious"
+        "Compadre"
+        "Amigo"
+        "Archer"
+        "Sanchez"
+        "Arbolious"
+	createDT date! 
+>> names
+===:, "name" "lst" "obj" "bigList" "names" "createDT"

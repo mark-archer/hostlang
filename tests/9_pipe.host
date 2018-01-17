@@ -80,3 +80,11 @@ list
 ;; pipe into function that is looked up with getr
 "1" >> utils.add 2 3 === "123"
 "1" >>> utils.add 2 3 === "213"
+
+
+;; make sure error occurs if piping to third position but no second value is specified
+try
+    parse "1 >>> push"
+catch (err)
+    "error"
+=== "error"

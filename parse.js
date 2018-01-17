@@ -796,7 +796,12 @@ function parseBasicOps(pi, context, callback){
         word = "=";        
     if(word === '=') {        
         return opFound('set');
-    }    
+    }
+
+    // { -> new2
+    var word = pi.peek(1);
+    if(word === "{")
+        return opFound('new2');
 
     // not found
     return callback();

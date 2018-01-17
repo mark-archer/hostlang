@@ -1,0 +1,14 @@
+
+
+fnm new2(args&)
+    var o new!
+    ; todo first arg can be type
+    each args a
+        ifnot(isList a)
+            error "new2 expects lists"        
+        untick a        
+        var name a.0
+        var val a.1             
+        o.`name = : eval val        
+    o
+export new2

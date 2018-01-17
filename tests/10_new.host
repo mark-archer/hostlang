@@ -62,3 +62,69 @@ var obj : new values~(, 1 2) 3
     ]
 }
 """
+
+
+;;; new2 - "{" ;;;
+{! === new!
+
+; name-value pair
+{ : num 1
+===: js "{num:1}"
+
+; name-expr
+{ : num : 1 + 1
+===: js "{num:2}"
+
+; complex
+{
+    n1 1
+    n2 : 1 + 1
+    name "mark"
+    obj : new2
+        n3 3
+        name2 "archer"
+    lst :, 1    
+===: js """
+{
+    "n1": 1,
+    "n2": 2,
+    "name": "mark",
+    "obj": {
+        "n3": 3,
+        "name2": "archer"
+    },
+    "lst": [1]
+}
+"""
+
+; objects and lists
+{
+    lst :,
+        1
+        , 1 2 3 
+    obj : {
+        n1 1
+        n2 2
+        name "test"
+        obj : {
+            name "test2"
+===: js """
+{
+    "lst": [
+        1,
+        [
+            1,
+            2,
+            3
+        ]
+    ],
+    "obj": {
+        "n1": 1,
+        "n2": 2,
+        "name": "test",
+        "obj": {
+            "name": "test2"
+        }
+    }
+}
+"""

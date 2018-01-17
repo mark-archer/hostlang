@@ -149,3 +149,10 @@ var obj : {
 	createDT date! 
 >> names
 ===:, "name" "lst" "obj" "bigList" "names" "createDT"
+
+; make sure lists of too many items throw an error
+try
+    {: name "mark" "archer"
+catch(err)
+    "error"
+=== "error"

@@ -111,7 +111,7 @@ function bind(context, name, value, offset){
 core.var = fnjs(function(expr, context, callback){
     untick(expr);
     if(expr.length < 1 || expr.length > 2)
-        return ccError(context, ["var -- unexpected number of arguments", expr]);
+        return ccError(context, ["var - unexpected number of arguments. Expected 1 or 2, given " + expr.length, expr]);
     var name = ssym(expr[0]);
     var value = expr[1];
     if(value === undefined) value = null;

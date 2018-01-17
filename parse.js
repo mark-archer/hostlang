@@ -533,13 +533,11 @@ function parseMetaList(pi, context, callback){
 function parsePipe(pi, context, callback){
     
     if(pi.clist.pipeNext && pi.clist.length >= 2 && pi.peek() !== "."){ // if next value is dot things will be done differently
-        //pi.clist.push(nsym('_'));
         pi.clist.splice(2,0,nsym('_'))
         delete pi.clist.pipeNext;
     }
 
     if(pi.clist.pipeThird && pi.clist.length >= 3){
-        //pi.clist.push(nsym('_'));
         pi.clist.splice(3,0,nsym('_'))
         delete pi.clist.pipeThird;
     }
@@ -549,19 +547,17 @@ function parsePipe(pi, context, callback){
     // >>> ; pipe to second arg
     if(pi.code.substr(pi.i,3) === '>>>'){
         pi.i += 3;
-        //pi.pipeThird = true;
         var indent = pi.clist.indent;
         pi.endList();
         pi.newList();
         pi.clist.pipeThird = true;
         pi.clist.indent = indent;        
         return callback(true);
-    }
+    }    
 
     // >> ; pipe to first arg
     if(pi.code.substr(pi.i,2) === '>>'){
         pi.i += 2;
-        //pi.pipeNext = true;
         var indent = pi.clist.indent;
         pi.endList();
         pi.newList();
@@ -580,7 +576,6 @@ function parsePipe(pi, context, callback){
         pi.clist.push(nsym('evalBlock'));
         return callback(true);
     }
-
 
     // === ; assertEq
     if(pi.code.substr(pi.i,3) === '==='){
@@ -926,14 +921,15 @@ function parseHost(expr, context, callback){
 
     };
 
+    console.log('endList');
     parseInfo.endList = function(){
-        var isCaret = parseInfo.clist.isCaret;
-        //if(parseInfo.clist.length == 3 && parseInfo.clist[1] === nsym('setr'))
-        //    parseInfo.clist[1] = nsym('getr');
-
+        if(parseInfo.clist.pipeThird)
+            throw "Piped into the third spot in a list but the list only had 1 item";            
+        var isCaret = parseInfo.clist.isCaret;        
         parseInfo.clist = parseInfo.stack.pop();
         if(!parseInfo.clist)
-            return ccError(context, "clist is undefined - probably too many close parens ')'");
+            //return ccError(context, "clist is undefined - probably too many close parens ')'");
+            throw "clist is undefined - probably too many close parens ')'";
         if(isCaret){
             var carets = parseInfo.clist.pop();
             if(carets[0] === '`')
@@ -963,38 +959,22 @@ function parseHost(expr, context, callback){
         if(!_.isArray(expr))
             return expr;
         // filter out empty lists
-        /*
-         expr = _.filter(expr, function(i){
-         return !(_.isArray(i) && i.length === 1 && !i.explicit);
-         });
-         */
         for(var i = expr.length-1;i>=0;i--){
             var item = expr[i];
             if(_.isArray(item) && item.length === 1 && !item.explicit){
                 expr.splice(i,1);
-                //utils.removeAt(expr, i);
             }
         }
 
         for(var i = 0; i < expr.length; i++){
             var subEx = expr[i];
-
             // convert implicit lists with one item to atoms
             if(_.isArray(subEx) && subEx.length == 2 && subEx[0] === '`' && !subEx.explicit)
                 subEx = subEx[1];
 
             expr[i] = implicitLogic(subEx);
         }
-        return expr;
-        /*
-         return _.map(expr, function(i){
-         // convert implicit lists with one item to atoms
-         if(_.isArray(i) && i.length == 2 && i[0] === '`' && !i.explicit)
-         i = i[1];
-         // recurse
-         return implicitLogic(i);
-         });
-         */
+        return expr;        
     }
 
     var iParser = 0;
@@ -1007,7 +987,7 @@ function parseHost(expr, context, callback){
                 if(l.explicit)
                     return ccError(context, "parser did not end on the root list - probably too many open parens '('");
             }
-            root = implicitLogic(root);    // remove implicit empty lists and convert implicit lists of one item to atoms
+            root = implicitLogic(root); // remove implicit empty lists and convert implicit lists of one item to atoms
             return rtnCallback(root);
         }
 

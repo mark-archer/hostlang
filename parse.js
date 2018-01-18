@@ -736,7 +736,7 @@ function parseBasicOps(pi, context, callback){
         if(pi.clist.length > 1){
 
             // first check for getr; o.i = 1
-            if(pi.clist.length == 2 && pi.clist[1].length && pi.clist[1][1] === nsym('getr')){
+            if(word === '=' && pi.clist.length == 2 && pi.clist[1].length && pi.clist[1][1] === nsym('getr')){
                 var aGetr = pi.clist.pop();                
                 pi.clist[1] = nsym('setr');
                 pi.clist[2] = aGetr[2];                
@@ -921,7 +921,6 @@ function parseHost(expr, context, callback){
 
     };
 
-    console.log('endList');
     parseInfo.endList = function(){
         if(parseInfo.clist.pipeThird)
             throw "Piped into the third spot in a list but the list only had 1 item";            

@@ -130,3 +130,11 @@ ary ~= : range 10
 === true
 ary ~= : range 11
 === false
+
+
+;; test infix add vs infix setr
+var lst :, 4 3 2
+lst.length + 1
+=== 4
+lst.length = 2
+===:, 4 3

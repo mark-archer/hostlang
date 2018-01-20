@@ -19,8 +19,7 @@ function ccError(context, err){
 }
 
 function parseTabs(pi, context, callback){
-    //console.log("parseTabs");
-
+    
     // initialize tabs parser
     if(pi.indent === undefined){
         pi.newList();
@@ -134,8 +133,7 @@ function parseList(pi, context, callback){
     if(c === ':'){
         pi.i++;
         pi.newList();
-        pi.clist.indent = pi.indent+1;
-        //pi.clist.isColon = true;
+        pi.clist.indent = pi.indent+1;        
         return callback(true);
     }
 
@@ -157,8 +155,7 @@ function parseList(pi, context, callback){
         pi.newList(true);
         pi.clist.isBang = true;
         pi.clist.push(item);
-        pi.endList();
-        //var elist = pi.clist.pop();
+        pi.endList();        
         return callback(true);
     }
 
@@ -355,6 +352,12 @@ function parseComments(pi, context, callback){
     if(iEnd < i) iEnd = code.length;
     comment = code.substring(i, iEnd);
     pi.i += comment.length; // don't remove line terminator
+
+    // get rid of indented list produced by indented comment
+    if(pi.clist.length === 1 && pi.clist[0] === "`"){
+        //pi.endList()
+        //pi.clist.pop();
+    }
     return callback(true);
 }
 function parseObjectPath(pi, context, callback){
@@ -950,28 +953,31 @@ function parseHost(expr, context, callback){
     };
 
     function implicitLogic(expr){
+        // if it's a meta, do it for it's value (? maybe do it for all properties on the meta)
         if(types.isMeta(expr)){
             if(expr.value !== undefined)
                 expr.value = implicitLogic(expr.value);
             return expr;
         }
+        // if it's not a list were done
         if(!_.isArray(expr))
             return expr;
+
+        // for each item in the list
+        for(var i = expr.length - 1; i >= 0 ; i--){
+            var subEx = expr[i];
+            // convert implicit lists with one item to atoms
+            if(_.isArray(subEx) && subEx.length === 2 && subEx[0] === '`' && !subEx.explicit)
+                subEx = subEx[1];            
+            expr[i] = implicitLogic(subEx);
+        }
+
         // filter out empty lists
         for(var i = expr.length-1;i>=0;i--){
             var item = expr[i];
             if(_.isArray(item) && item.length === 1 && !item.explicit){
                 expr.splice(i,1);
             }
-        }
-
-        for(var i = 0; i < expr.length; i++){
-            var subEx = expr[i];
-            // convert implicit lists with one item to atoms
-            if(_.isArray(subEx) && subEx.length == 2 && subEx[0] === '`' && !subEx.explicit)
-                subEx = subEx[1];
-
-            expr[i] = implicitLogic(subEx);
         }
         return expr;        
     }

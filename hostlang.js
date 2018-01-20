@@ -419,6 +419,7 @@ core.fnp = fnjs("fnp",function(expr, context, callback){
     });
 });
 core.fnp.isMacro = true;
+core.fp = core.fnp;
 
 function mapArgs(aFn, args, context, callback){
     var isMacro = !!aFn.isMacro;

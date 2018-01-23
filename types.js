@@ -24,6 +24,10 @@ function evalHost(expr, context, callback){
 var Meta = {id:"Meta",name:"Meta"}; Meta.type = Meta; types.Meta = Meta;
 var Type = {id:"Type",name:"Type"}; Type.type = Type; types.Type = Type;
 var Primitive = {id:"Primitive",name:"Primitive"}; Primitive.type = Primitive; types.Primitive = Primitive;
+types.isPrimative = function(item){
+    return !_.isObject(item) && item !== null;
+}
+types.isPrim = types.isPrimative;
 
 // primative types
 var Symbol = {id:"Symbol", name:"Symbol",type:Primitive}; types.Symbol = Symbol;

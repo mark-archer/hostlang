@@ -88,7 +88,7 @@ function procNext(p){
 
 function eachSync(items, fn, context, callback){
     if(!_.isArray(items))
-        return ccError(context, "eachSync - items not a list");
+        return ccError(context, "proc.eachSync - items not a list");
 
     // short circuit on lengths zero and one
     if(items.length === 0)

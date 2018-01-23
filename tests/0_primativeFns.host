@@ -27,3 +27,41 @@ if(exists i)
 if(exists ii)
     "ii exists"
 === "i exists"
+
+
+; isPrimative
+list
+    , "null" :   isPrim null
+    , "bool" :   isPrim false
+    , "number" : isPrim 1
+    , "string" : isPrim ""
+    , "object" : isPrim new!
+    , "list" :   isPrim list!
+===: js """
+[
+    [
+        "null",
+        false
+    ],
+    [
+        "bool",
+        true
+    ],
+    [
+        "number",
+        true
+    ],
+    [
+        "string",
+        true
+    ],
+    [
+        "object",
+        false
+    ],
+    [
+        "list",
+        false
+    ]
+]
+"""

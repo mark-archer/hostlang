@@ -156,3 +156,9 @@ try
 catch(err)
     "error"
 === "error"
+
+
+; make sure new2 works with variables
+var bType "test"
+{: type bType
+===: js "{type:'test'}"

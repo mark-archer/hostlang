@@ -20,7 +20,7 @@ catch (err){}
 // delete utils.isFunction;
 // delete utils.filter;
 // delete utils.isError;
-var mapFromUS = ["uniq", "flatten", "compact", "clone"]
+var mapFromUS = ["uniq", "flatten", "compact", "clone", "union"]
 for(var i=0;i<mapFromUS.length;i++){
     var n = mapFromUS[i]
     utils[n] = _[n]

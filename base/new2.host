@@ -13,4 +13,5 @@ fnm new2(args&)
         var val a.1             
         o.`name = : eval val        
     o
+new2.useRuntimeScope = true
 export new2

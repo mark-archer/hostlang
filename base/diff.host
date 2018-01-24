@@ -98,3 +98,16 @@ export diff
     }
 }
 """    
+
+
+; test several diffs
+diff
+    new a~1 b~2 c~3
+    new a~1 b~3     d~4
+===: js """
+{
+    "b": "diff",
+    "c": "diff",
+    "d": "diff"
+}
+"""

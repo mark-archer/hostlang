@@ -25,6 +25,10 @@ for(var i=0;i<mapFromUS.length;i++){
     var n = mapFromUS[i]
     utils[n] = _[n]
 }
+utils.ld = {};
+for(var n of _.keys(_)){
+    utils.ld[n] = _[n]
+}
 
 utils.names = function(obj){
     if(arguments.length > 1) throw "names expects 1 argument, given " + arguments.length;

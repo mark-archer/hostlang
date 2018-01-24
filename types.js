@@ -275,13 +275,7 @@ types.isList = fnjs("isList",function(item){
 });
 List.isType = types.isList;
 
-types.isObject = fnjs("isObject",function(/*expr, context, callback*/ item){
-    // var item = untick(expr)[0];
-    // if(isMeta(item)){
-    //     item = item.value;
-    // }
-    // callback(_.isObject(item) && !_.isArray(item));
-
+types.isObject = fnjs("isObject",function(item){    
     if(isMeta(item))
         item = item.value
     return _.isObject(item) && !_.isArray(item)

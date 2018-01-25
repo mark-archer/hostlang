@@ -1,3 +1,5 @@
+"use strict";
+
 //console.log('reader')
 
 var fs = require('fs');

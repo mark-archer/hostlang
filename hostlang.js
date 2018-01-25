@@ -1,4 +1,4 @@
-//var fs = require('fs');
+"use strict";
 
 var _ = require('underscore');
 var utils = require('./utils.js');
@@ -14,7 +14,7 @@ base = utils.fromJSON(base);
 console.log('hostlang - v0.0.10');
 
 // makes sure the global window object is declared
-try{window} catch(e){window = null}    
+//try{window} catch(e){window = null}    
 
 var log = utils.log;
 var copy = utils.copy;

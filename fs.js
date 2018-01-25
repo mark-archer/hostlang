@@ -1,3 +1,4 @@
+"use strict";
 
 // var utils = require('../utils.js');
 // var fnjs = utils.fnjs;
@@ -63,7 +64,7 @@ hostFs.readFile = function(context, callback, path, options){
     //console.log("path+options",path,options)'
     if(!options){
         options =  "utf8";
-        raw = false;
+        //raw = false;
     }
     fs.readFile(path, options, function (err, contents) {
         if(err) return ccError(context, err);

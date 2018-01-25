@@ -1,3 +1,5 @@
+"use strict";
+
 console.log('compile');
 var _ = require('underscore')
 var utils = require('./utils.js');

@@ -1,3 +1,5 @@
+"use strict";
+
 //console.log('utils');
 
 var _ = _ || require('underscore');

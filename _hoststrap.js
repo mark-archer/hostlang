@@ -1,3 +1,5 @@
+"use strict";
+
 var host = require('./hostlang.js');
 console.log('_hoststrap.js');
 host.run(`

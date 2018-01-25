@@ -1,3 +1,5 @@
+"use strict";
+
 console.log("parse");
 
 var _ = require('underscore');
@@ -830,7 +832,7 @@ function parseRegEx(pi, context, callback){
 
     var reStr = "";
     while(pi.peek() != "/"){
-        escapeNext = false;
+        //escapeNext = false;
         reStr += pi.pop();
         if(reStr[reStr.length - 1] == "\\")
             reStr += pi.pop();

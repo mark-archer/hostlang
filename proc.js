@@ -1,3 +1,5 @@
+"use strict";
+
 console.log('proc');
 
 var _ = require('underscore');

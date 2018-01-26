@@ -405,6 +405,7 @@ core.fnm = fnjs("fnm",function(expr, context, callback){
     });
 });
 core.fnm.isMacro = true;
+core.fm = core.fnm;
 core.fnp = fnjs("fnp",function(expr, context, callback){
     fn(expr, context, function(f){
         f.isPure = true;

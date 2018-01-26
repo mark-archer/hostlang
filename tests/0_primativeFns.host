@@ -37,7 +37,7 @@ list
     , "string" : isPrim ""
     , "object" : isPrim new!
     , "list" :   isPrim list!
-===: js """
+===: js "*
 [
     [
         "null",
@@ -64,4 +64,4 @@ list
         false
     ]
 ]
-"""
+*"

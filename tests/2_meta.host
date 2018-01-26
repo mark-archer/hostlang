@@ -1,54 +1,54 @@
 ;; special symbols
 ?name
-=== : evalJs """
+=== : evalJs "*
 {
     "type": "Meta",
     "isPattern": true,
     "name": "name"
-}"""
+}*"
 
 *Type
-=== : eval: evalJs """
+=== : eval: evalJs "*
 {
     "type": "Meta",
     "isList": true,
     "value_type": "`Type"
 }
-"""
+*"
 
 name*
-=== : evalJs """
+=== : evalJs "*
 {
     "type": "Meta",
     "isList": true,
     "name": "name"
 }
-"""
+*"
 
 name&
-=== : evalJs """
+=== : evalJs "*
 {
     "name": "name",
     "type": "Meta",
     "isRest": true,
     isList: true
 }
-"""
+*"
 
 name?
-=== : evalJs """
+=== : evalJs "*
 {
     "type": "Meta",
     "isOptional": true,
     "value": null,
     "name": "name"
 }
-"""
+*"
 
 
 ;; meta: name[Type]~value
 i[Int]~1
-=== : eval: evalJs """
+=== : eval: evalJs "*
 {
     isList: false,
     type: "Meta",
@@ -56,54 +56,54 @@ i[Int]~1
     value_type: "`Int",
     value: 1
 }
-"""
+*"
 
 
 ;; meta: just name
 i[]
-=== : evalJs """
+=== : evalJs "*
 {
     type: "Meta",
     name: "i"
 }
-"""
+*"
 
 
 ;; meta: just type
 [Int]
-=== : eval: evalJs """
+=== : eval: evalJs "*
 {
     isList: false,
     type: "Meta",
     value_type: "`Int"
 }
-"""
+*"
 
 
 ;; meta: just value
 [value~1]
-=== : evalJs """
+=== : evalJs "*
 {
     type: "Meta",
     value: 1
 }
-"""
+*"
 
 
 ;; meta: just name and value
 i~1
-=== : evalJs """
+=== : evalJs "*
 {
     type: "Meta",
     name: "i",
     value: 1
 }
-"""
+*"
 
 
 ;; meta: with type as list
 i[*Int]~1
-=== : eval: evalJs """
+=== : eval: evalJs "*
 {
     isList: true,
     type: "Meta",
@@ -111,35 +111,35 @@ i[*Int]~1
     value_type: "`Int",
     value: 1
 }
-"""
+*"
 
 
 ;; meta: with tick
 `i~add
-=== : eval: evalJs """
+=== : eval: evalJs "*
 {
     isTick: true,
     type: "Meta",
     name: "i",
     value: "`add"
 }
-"""
+*"
 
 ;; meta: with quote
 'i~add
-=== : eval: evalJs """
+=== : eval: evalJs "*
 {
     isQuote: true,
     type: "Meta",
     name: "i",
     value: "`add"
 }
-"""
+*"
 
 
 ;; meta: type whose value should be a function with no arguments that returns a boolean
 f[Fn()[Bool]]
-=== : eval: evalJs """
+=== : eval: evalJs "*
 {
     isList: false,
     "type": "Meta",
@@ -155,12 +155,12 @@ f[Fn()[Bool]]
             "isList": false
         }
     ]
-}"""
+}*"
 
 
 ;; unnamed metas inside other metas will be added to the outer meta's value_type_args
 [[Type]] ; declare a meta whose value_type_args has another meta
-=== : eval: evalJs """
+=== : eval: evalJs "*
 {
     type: "Meta",
     value_type_args:[
@@ -171,12 +171,12 @@ f[Fn()[Bool]]
         }
     ]
 }
-"""
+*"
 
 
 ;; test complex value
 l~(list 1 2 3)
-===: evalJs """
+===: evalJs "*
 {
     "name": "l",
     "type": "Meta",
@@ -186,7 +186,7 @@ l~(list 1 2 3)
         3
     ]
 }
-"""
+*"
 
 
 ;; test bang is applied correctly to meta value

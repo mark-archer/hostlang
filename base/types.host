@@ -69,26 +69,26 @@ export Boolean Number String Id Any Object List Date Fn Fnjs
 ; isNumber in underscore
 ; isString in underscore
 
-var isObject : evalJs """
+var isObject : evalJs "*
     function(item){
         return _.isObject(item) && !_.isArray(item);
     }
-"""
-var isList : evalJs """
+*"
+var isList : evalJs "*
     function(item){
         return _.isArray(item);
     }
-"""
+*"
 fn isPrimitive(item)
     not : ||
         isObject item
         isList item
 var isPrim isPrimitive
-var isJsFunction : evalJs """
+var isJsFunction : evalJs "*
     function(item){
         return _.isFunction(item);
     }
-"""
+*"
 fn isFnjs(item)
     ||
         == item.type Fnjs

@@ -51,7 +51,7 @@ type TestType p~1 1 2
 	f[Fn]~:fnp()null
 (evalJs "function(TestType){delete TestType.f._sourceFile; delete TestType.f._sourceLine;}") TestType
 set TestType.type "Type"
-===: evalJs """
+===: evalJs "*
 {
     "name": "TestType",
     "type": "Type",
@@ -84,4 +84,4 @@ set TestType.type "Type"
         "isPure": true
     }
 }
-"""
+*"

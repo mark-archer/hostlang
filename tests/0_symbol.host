@@ -1,23 +1,23 @@
 ;; nulls, bools, and numbers
-parse """null undefined true false 1 1.2 -3 10e2 0xFF Infinity """
-=== : evalJs """
-    ['`',['`', null, undefined, true, false, 1, 1.2, -3, 10e2, 0xFF, Infinity]]"""
+parse "*null undefined true false 1 1.2 -3 10e2 0xFF Infinity *"
+=== : evalJs "*
+    ['`',['`', null, undefined, true, false, 1, 1.2, -3, 10e2, 0xFF, Infinity]]*"
 list null undefined true false 1 1.2 -3 10e2 0xFF Infinity
-=== : evalJs """
-    [null, undefined, true, false, 1, 1.2, -3, 10e2, 0xFF, Infinity]"""
+=== : evalJs "*
+    [null, undefined, true, false, 1, 1.2, -3, 10e2, 0xFF, Infinity]*"
 
 
 ;; double quote, triple quote, and escaped characters
-list "\t\n\"\u00A9" """\t\n\"\u00A9"""
-=== : evalJs """
+list "\t\n\"\u00A9" "*\t\n\"\u00A9*"
+=== : evalJs "*
     [
         "\t\n\"©",
         "\\t\\n\\\"\\u00A9"
-    ]"""
+    ]*"
 
 
 ;; comments mixed in with code
-parse """
+parse "*
 	1
 	1.2
 	3 ;*
@@ -27,8 +27,8 @@ parse """
 	10e2   ; 1000
 	0xFF   ; 255
 	6
-"""
-=== : evalJs """
+*"
+=== : evalJs "*
 [
     "`",
     [
@@ -42,22 +42,22 @@ parse """
         6
     ]
 ]
-"""
+*"
 
 
 ;; strings in comments and comments in strings
 null
-;* "test" """ test """ *;
-; "test" """ test """
+;* "test" "* test *" *;
+; "test" "* test *"
 === null
 ";test"
-=== : evalJs """ ";test" """
+=== : evalJs "* ";test" *"
 ";*test*;"
-=== : evalJs """ ";*test*;" """
+=== : evalJs "* ";*test*;" *"
 
 ;; names and metas
-parse """ name 1name2 'name """
-=== : evalJs """
+parse "* name 1name2 'name *"
+=== : evalJs "*
 [
     "`",
     [
@@ -68,18 +68,18 @@ parse """ name 1name2 'name """
         "`'name"
     ]
 ]
-"""
+*"
 
 
 ;; quote and tick
 'list
-=== : evalJs """ "`list" """
+=== : evalJs "* "`list" *"
 eval _
 === list
 parse " 'list "
-=== : evalJs """ ["`", "`'list"] """
+=== : evalJs "* ["`", "`'list"] *"
 parse " `list "
-=== : evalJs """ ["`", "``list"] """
+=== : evalJs "* ["`", "``list"] *"
 'list
 === : tick "list"
 eval _
@@ -87,39 +87,39 @@ eval _
 ' === "'"
 ;, 1 2 3 === (list 1 2 3)
 ' list system_id type_type_id
-=== : evalJs """
+=== : evalJs "*
     [
         "`",
         "`list",
         "`system_id",
         "`type_type_id"
-    ] """
+    ] *"
 
 
 ;; tick and quote by themselves should be returned as is
 list ` '
-=== : evalJs """ ["`", "'"] """
+=== : evalJs "* ["`", "'"] *"
 list ' ` ` '
-=== : evalJs """ ["'", "`", "`", "'"] """
+=== : evalJs "* ["'", "`", "`", "'"] *"
 
 
 ;; eval -- normal vs tick vs quote
 var piName "pi"
 list "`" piName `piName 'piName
 === (' "pi" "`pi" "`piName")
-=== : evalJs """
+=== : evalJs "*
    [
        "`",
        "pi",
        "`pi",
        "`piName"
    ]
-"""
+*"
 
 
 ;; quote and tick -- any number of leading ones
 parse " ``''`'`list "
-=== : evalJs """ ["`", "```''`'`list"] """
+=== : evalJs "* ["`", "```''`'`list"] *"
 
 ; quote -- every time eval is called a quote is removed
 ''list
@@ -132,13 +132,13 @@ var aSym "sym"
 ```aSym === (tick (tick (tick "sym")))
 
 var lst (, 1)
-``lst === : evalJs """
+``lst === : evalJs "*
 [
     "`",
     "`",
     1
 ]
-"""
+*"
 
 ; only strings and lists can be ticked, anything else is returned as is
 ````list === list
@@ -148,7 +148,7 @@ tick list === list
 ;; ticked rest param
 warn "0_symbol -- ticked rest param shouldn't require two ticks"
 ``value&
-=== : evalJs """
+=== : evalJs "*
 {
     "name": "value",
     "type": "Meta",
@@ -156,7 +156,7 @@ warn "0_symbol -- ticked rest param shouldn't require two ticks"
     "isList": true,
     "isTick": true
 }
-"""
+*"
 
 ;; test non-standard names
 ; declare a variable with a non-standard name

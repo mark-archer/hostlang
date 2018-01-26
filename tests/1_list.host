@@ -1,6 +1,6 @@
 ;; items separated by spaces
 parse "1 2 3"
-=== : evalJs """
+=== : evalJs "*
 [
     "`",
     [
@@ -10,73 +10,72 @@ parse "1 2 3"
         3
     ]
 ]
-"""
+*"
 list 1 2 3
-=== : evalJs """
+=== : evalJs "*
 [
     1,
     2,
     3
 ]
-"""
+*"
 
 
 ;; explicit lists
-parse """(1 2 3) 4"""
-=== : evalJs """
+parse "(1 2 3) 4"
+=== : evalJs "*
 ["`",
     ["`",
-        ["`",1,2,3],4]] """
+        ["`",1,2,3],4]] *"
 
 
 ;; interplay of parenthesis and implicit atoms
-parse """(1 2 3)"""
-=== : evalJs """
+parse "(1 2 3)"
+=== : evalJs "*
 ["`",
-    ["`",1,2,3]]"""
-
+    ["`",1,2,3]]*"
 
 
 ;; indented lists
-parse """
+parse "*
     1
     -2
     3
-"""
-=== : evalJs """
+*"
+=== : evalJs "*
 ["`",
-    ["`", 1, -2, 3]] """
+    ["`", 1, -2, 3]] *"
 
 
 ;; tabs vs spaces
-parse """
+parse "*
 	1
     1.2
 	-3
     10e2
 	0xFF
-"""
-=== : evalJs """
+*"
+=== : evalJs "*
 ["`",
-    ["`", 1, 1.2, -3, 1000, 255]] """
+    ["`", 1, 1.2, -3, 1000, 255]] *"
 
 
 ;; comma as list break
-parse """
+parse "*
     1 2 , 3 , 4 5
-"""
-=== : evalJs """
+*"
+=== : evalJs "*
 ["`",
     ["`",
         ["`",1,2],3,
-        ["`",4,5]]] """
+        ["`",4,5]]] *"
 
 
 ;; colon
-parse """
+parse "*
 1 2: 3 4
-"""
-=== : evalJs """
+*"
+=== : evalJs "*
 [
     "`",
     [
@@ -90,18 +89,18 @@ parse """
         ]
     ]
 ]
-"""
+*"
 
 
 ;; tabs
-parse """
+parse "*
 1 2
 	3 4
 		5 6
 	7 8
 9 10
-"""
-===: evalJs """
+*"
+===: evalJs "*
 [
     "`",
     [
@@ -129,16 +128,16 @@ parse """
         9,
         10
     ]
-]"""
+]*"
 
 
 ;; caret
-parse """
+parse "*
 1 2
     ^ 3 4
     ^ 5 6
-"""
-=== : evalJs """["`",["`",1,2,3,4,5,6]]"""
+*"
+=== : evalJs "*["`",["`",1,2,3,4,5,6]]*"
 list 1 2
     ^ 3 4
     ^ 5 6
@@ -150,7 +149,7 @@ list 1 2
 4 5)
     6 7
     8 9
-=== : evalJs """
+=== : evalJs "*
 [
     "`",
     1,
@@ -172,12 +171,12 @@ list 1 2
         9
     ]
 ]
-"""
+*"
 
 
 ;; bang
 ' 1! 2!! (3!)!
-=== : evalJs """
+=== : evalJs "*
 [
     "`",
     [
@@ -202,7 +201,7 @@ list 1 2
         ]
     ]
 ]
-"""
+*"
 
 
 ;; bang: tabs and implicit lists
@@ -210,7 +209,7 @@ list 1 2
     1!
     2!
     3!
-=== : evalJs """
+=== : evalJs "*
 [
     "`",
     [
@@ -226,7 +225,7 @@ list 1 2
         3
     ]
 ]
-"""
+*"
 
 ;; list after implicit atom should be evaluated separately
 'test
@@ -243,11 +242,11 @@ list
 
 
 ;; inline lists: complex condition
-parse """
+parse "*
 >> each lst: afn 4, fn2 6 : 7 8
 "end line"
-"""
-===: evalJs """
+*"
+===: evalJs "*
 [
     "`",
     [
@@ -273,15 +272,15 @@ parse """
     ],
     "end line"
 ]
-"""
+*"
 
 
 ;; inline lists: complex condition
-parse """
+parse "*
 >> each lst: if 6 : 1
 "end line"
-"""
-===: evalJs """
+*"
+===: evalJs "*
 [
     "`",
     [
@@ -301,7 +300,15 @@ parse """
     ],
     "end line"
 ]
-"""
+*"
 
-
-"1_list.host tests finished"
+;* TODO
+; test string with normal quotes
+parse "
+1 2
+	3 4
+		5 6
+	7 8
+9 10
+"
+*;

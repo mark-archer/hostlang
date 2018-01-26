@@ -21,12 +21,12 @@ catch (err)
 
 
 ;; << -- parse correctly
-parse """
+parse "*
 + 2 <<
 	3
 4
-"""
-=== : evalJs """
+*"
+=== : evalJs "*
 [
     "`",
     [
@@ -41,7 +41,7 @@ parse """
     ],
     4
 ]
-"""
+*"
 
 
 ;*

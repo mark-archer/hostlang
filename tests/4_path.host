@@ -6,7 +6,7 @@ list
 	/rootGroup
 	../sibblingToCurrentGroup
 	/path/ends/with/slash/
-=== : evalJs """
+=== : evalJs "*
 [
     "../somethingElse/subFolder",
     "./fs/fs",
@@ -16,4 +16,4 @@ list
     "../sibblingToCurrentGroup",
     "/path/ends/with/slash/"
 ]
-"""
+*"

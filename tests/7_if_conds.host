@@ -84,7 +84,7 @@ fn doStuff()
 list
 	doStuff!
 	doStuff!
-=== : evalJs """
+=== : evalJs "*
 [
     [
         "odd: 1",
@@ -97,7 +97,7 @@ list
         "odd: 3"
     ]
 ]
-"""
+*"
 
 
 ;; test if inside nested eaches and functions
@@ -112,14 +112,14 @@ each lst i
 	each lst i
 		getI!
 	last _
-=== : evalJs """
+=== : evalJs "*
 [
     -1,
     28,
     32,
     -1
 ]
-"""
+*"
 
 
 ;; test each with a bunch of crazy shit
@@ -191,7 +191,7 @@ for (i -1 6)
 	else
 		"must be two -- else"
 	push lst ( add i ": " _ )
-=== : evalJs """
+=== : evalJs "*
 [
     "-1: -one -- if",
     "0: zero -- if",
@@ -201,16 +201,16 @@ for (i -1 6)
     "4: == four -- elif",
     "5: > four -- elif"
 ]
-"""
+*"
 
 ;; check parsing corner case
-parse """
+parse "*
 fn walk(path)
 	1 >> 1
 		if false
 			walk p
 add 1 1
-"""
+*"
 apply evalBlock _ === 2
 
 

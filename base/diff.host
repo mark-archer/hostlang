@@ -64,7 +64,7 @@ export diff
     "diff objs" : diff
         {: a 1, c 1
         {: a 2
-===: js """
+===: js "*
 {
     "same nums": [],
     "same lists": [],
@@ -97,17 +97,17 @@ export diff
         "c": "diff"
     }
 }
-"""    
+*"    
 
 
 ; test several diffs
 diff
     new a~1 b~2 c~3
     new a~1 b~3     d~4
-===: js """
+===: js "*
 {
     "b": "diff",
     "c": "diff",
     "d": "diff"
 }
-"""
+*"

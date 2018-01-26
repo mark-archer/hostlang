@@ -3,7 +3,7 @@
 fnm hi (name)
 	` add "hi " name
 set _.closure (,), set _.closure (,), set _._sourceFile null, set _._sourceLine null
-=== : evalJs """
+=== : evalJs "*
 {
     "type": "Fn",
     "name": "hi",
@@ -25,19 +25,19 @@ set _.closure (,), set _.closure (,), set _._sourceFile null, set _._sourceLine 
     "closure": [],
     "isMacro": true, "_sourceFile": null, "_sourceLine": null
 }
-"""
+*"
 
 var sayHi : hi mark
 copy sayHi
 set _.1 "add"
-=== : dataFromString """
+=== : dataFromString "*
 [
     "`",
     "add",
     "hi ",
     "`mark"
 ]
-"""
+*"
 
 var mark "Mark"
 eval sayHi

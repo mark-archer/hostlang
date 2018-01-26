@@ -274,19 +274,23 @@ function parseNumber(pi, context, callback){
     pi.clist.push(Number(num));
     callback(true);
 }
-function parseQuotes(pi, context, callback) {
-    //console.log('parseQuotes');
+console.log('parseQuotes');
+function parseQuotes(pi, context, callback) {    
     if(pi.code[pi.i] != '"') return callback();
+
+    if(context[0]._sourceFile === "/hostlang/tests/1_list.host")
+        console.log('found');
 
     var code = pi.code;
     var i = pi.i;
 
     var terminator = null;
-    if(code[i] == '"' && code[i+1] == '"' && code[i+2] == '"')
-        terminator = '"""';
+    if(code[i] == '"' && code[i+1] == '*')
+        terminator = '*"';
     else
         terminator = '"';
     pi.i += terminator.length;
+
 
     if(terminator === '"'){
         var txt = '"';
@@ -318,7 +322,6 @@ function parseQuotes(pi, context, callback) {
         pi.i += text.length + terminator.length;
         pi.clist.push(text);
     }
-
     return callback(true);
 }
 function parseComments(pi, context, callback){

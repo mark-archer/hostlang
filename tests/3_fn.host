@@ -3,7 +3,7 @@ fn()
 set _.closure (,)
 set _._sourceFile null
 set _._sourceLine null
-=== : evalJs """
+=== : evalJs "*
 {
     "type": "Fn",
     "params": [],
@@ -12,14 +12,14 @@ set _._sourceLine null
     "_sourceFile": null,
     "_sourceLine": null
 }
-"""
+*"
 _! === null
 
 
 ;; fn: named
 fn hi()
 set _.closure (,), set _._sourceFile null, set _._sourceLine null
-=== : evalJs """
+=== : evalJs "*
 {
     "type": "Fn",
     "params": [],
@@ -27,14 +27,14 @@ set _.closure (,), set _._sourceFile null, set _._sourceLine null
     "closure": [],
     name: "hi", "_sourceFile": null, "_sourceLine": null
 }
-"""
+*"
 _! === null
 
 
 ;; fn: named, returns value
 fn hi() "hi"
 set _.closure (,), set _.closure (,), set _._sourceFile null, set _._sourceLine null
-=== : evalJs """
+=== : evalJs "*
 {
     "type": "Fn",
     "name": "hi",
@@ -47,7 +47,7 @@ set _.closure (,), set _.closure (,), set _._sourceFile null, set _._sourceLine 
     "_sourceLine": null
 
 }
-"""
+*"
 _! === "hi"
 
 

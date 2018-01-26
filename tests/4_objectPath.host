@@ -1,11 +1,11 @@
 ;; acr: setter
 new!
 set _.name "Blair"
-=== : evalJs """ {name:"Blair"} """
+=== : evalJs "* {name:"Blair"} *"
 set _.age 28
-=== : evalJs """ {name:"Blair",age:28} """
+=== : evalJs "* {name:"Blair",age:28} *"
 set _.spouse.name "Mark"
-=== : evalJs """ {name:"Blair",age:28,spouse:{name:"Mark"}} """
+=== : evalJs "* {name:"Blair",age:28,spouse:{name:"Mark"}} *"
 
 
 ;; acr: getter
@@ -16,11 +16,11 @@ blair.father.name === null
 
 
 ;; acr: parse inside parens
-parse """
+parse "*
 list
 	list (exit context.0.callDepth) 5 6
-"""
-=== : evalJs """
+*"
+=== : evalJs "*
 [
     "`",
     [
@@ -47,15 +47,15 @@ list
         ]
     ]
 ]
-"""
+*"
 
 
 ;; set value to zero
 new!
 set _.test 0
-=== : evalJs """
+=== : evalJs "*
 {test:0}
-"""
+*"
 
 
 ;; path with complex names
@@ -69,7 +69,7 @@ parse "p.toStr: fn(p) p.name"
 
 
 ;; make sure bang applies to result of getting object path
-parse "test.test!" === : evalJs """
+parse "test.test!" === : evalJs "*
 [
     "`",
     [
@@ -84,7 +84,7 @@ parse "test.test!" === : evalJs """
         ]
     ]
 ]
-"""
+*"
 
 
 ;; test all types of ObjectPath getting and setting
@@ -124,7 +124,7 @@ t.0 === "z"            ;setr with explicit fn call in path
 
 ; make sure set isn't converted to setr when getr is in value position
 parse "set memo memoName.value"
-=== : evalJs """
+=== : evalJs "*
 [
     "`",
     [
@@ -141,7 +141,7 @@ parse "set memo memoName.value"
         ]
     ]
 ]
-"""
+*"
 
 ;; test context reference for js functions
 "test".split!
@@ -195,14 +195,14 @@ parse "set o.1: + 1"
 var o : new i~1
 o.i = 2
 o.j.k = 3
-===: js """
+===: js "*
 {
     "i": 2,
     "j": {
         "k": 3
     }
 }
-"""
+*"
 
 
 ;; test not allowing setting property values to primatives

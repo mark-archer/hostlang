@@ -14,7 +14,7 @@ new! === new!
 
 ;; todo: ==?
 ; checks that the right side has everything the left side has
-;;;
+;*
     (new test~1) ==? new! ; any object will equal new!
     new test1~1 test2~2 ==? new test1~1
-;;;
+*;

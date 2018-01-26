@@ -1,4 +1,4 @@
-;;;
+;*
 var tests ()
 fn test (`testCode& subject desc check)
     ifnot(istype(testCode Fn))
@@ -26,4 +26,4 @@ fn runTests ()
     failed
 
 export test runTests
-;;;
+*;

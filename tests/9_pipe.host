@@ -44,7 +44,7 @@ parse """
 """
 
 
-;;;
+;*
 ;; test that pipe will check _ then _.type then context for function
 fn toStr(o) : add "Name: " : || o.name o.Name o.Id
 
@@ -70,7 +70,7 @@ list
     "My name is Mark"
     "I'm a Person named Mark"
     "Name: Mark"
-;;;
+*;
 
 
 ;; pipe second vs pipe first

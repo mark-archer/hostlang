@@ -339,15 +339,15 @@ function parseComments(pi, context, callback){
         return callback(true);
     }
 
-    // ;;; - block comment
-    if(code.substr(i,3) === ';;;'){
-        var iEnd = code.indexOf(';;;',i+3);
-        if(iEnd < i)
-            return ccError(context,'parseComments - did not find a matching terminator: ;;;');
-        comment = code.substring(i, iEnd+3);
-        pi.i += comment.length;
-        return callback(true);
-    }
+    // // ;;; - block comment
+    // if(code.substr(i,3) === ';;;'){
+    //     var iEnd = code.indexOf(';;;',i+3);
+    //     if(iEnd < i)
+    //         return ccError(context,'parseComments - did not find a matching terminator: ;;;');
+    //     comment = code.substring(i, iEnd+3);
+    //     pi.i += comment.length;
+    //     return callback(true);
+    // }
 
     // else line comment
     var iEnd = code.indexOf('\n',i);

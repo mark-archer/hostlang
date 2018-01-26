@@ -11,9 +11,9 @@ _.toString!
 
 
 ; match an object
-;;;
+;*
 ` log 1
 ==~ : list ` (new name~"log" type~"Fnjs") 1
 new name~"log" type~"Fnjs"
 new num~: 1 + 1 ^ name~: "Mark" + " Archer"
-;;;
+*;

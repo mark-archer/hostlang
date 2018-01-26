@@ -20,9 +20,9 @@ list "\t\n\"\u00A9" """\t\n\"\u00A9"""
 parse """
 	1
 	1.2
-	3 ;;;
+	3 ;*
 	4
-	5 ;;;
+	5 *;
 	-3
 	10e2   ; 1000
 	0xFF   ; 255
@@ -47,13 +47,13 @@ parse """
 
 ;; strings in comments and comments in strings
 null
-;;; "test" """ test """ ;;;
+;* "test" """ test """ *;
 ; "test" """ test """
 === null
 ";test"
 === : evalJs """ ";test" """
-";;;test;;;"
-=== : evalJs """ ";;;test;;;" """
+";*test*;"
+=== : evalJs """ ";*test*;" """
 
 ;; names and metas
 parse """ name 1name2 'name """

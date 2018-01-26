@@ -9,14 +9,14 @@ var i 1
 === 1
 
 ;; var: test error on declaring a variable twice in the same scope
-;;;
+;* this is currently disabled
 try
 	var i 1
 	var i 2
 catch (err)
 	"error"
 === "error"
-;;;
+*;
 
 
 ;; set: mutates an existing variable's value

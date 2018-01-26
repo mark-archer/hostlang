@@ -2,12 +2,12 @@ var endsWith : evalJs "function(s, end){return s.endsWith(end);}"
 export endsWith
 endsWith "test" "t" === true
 endsWith "test" "a" === false
-;;;
+;*
 todo: make js declarations more like host declarations
 fnjs endsWith (s end) "
     return s.endsWith(end);
 "
-;;;
+*;
 
 var string new! ; todo should be type String
 export string

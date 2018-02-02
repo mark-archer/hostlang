@@ -1,10 +1,10 @@
 
-var atom : js """function(value, persistId){
+var atom : js "*function(value, persistId){
     if(persistId === undefined)
         return obs(value);
     else
         return obsPersist(value, persistId);
-}"""
+}*"
 export atom
 
 var atoms : js "ko.observableArray"
@@ -193,7 +193,7 @@ html
 
 html
     span "test" style~"color:red" tabindex~-1
-=== """<span style="color:red" tabindex="-1">test</span>"""
+=== "*<span style="color:red" tabindex="-1">test</span>*"
 
 var name "My Name"
 html
@@ -205,4 +205,4 @@ html
             text2~name
             visible~true
             click~(fn()(log "hi"))
-=== """<h1>My Name</h1><span style="display:none" data-bind="text:'hi', text2:$component.bindHost('`name'), visible:true, click:$component.bindHost(["`","`fn",["`"],["`","`log","hi"]])"></span>"""
+=== "*<h1>My Name</h1><span style="display:none" data-bind="text:'hi', text2:$component.bindHost('`name'), visible:true, click:$component.bindHost(["`","`fn",["`"],["`","`log","hi"]])"></span>*"

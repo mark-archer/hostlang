@@ -462,12 +462,9 @@ utils.pop = function(list, cnt){
 utils.push = function(){
     var args = _.toArray(arguments);
     var ary = args.shift();
-    if(!_.isArray(ary))
-        ary = [ary];
     Array.prototype.push.apply(ary, args);
     return ary;    
 };
-utils.append = utils.push
 
 utils.removeAt = function(list, index){
     return list.splice(index,1)[0];        
@@ -488,6 +485,8 @@ utils.remove = function(list, item){
 };
 
 utils.append = function(list){ // ... items or lists
+    if(!_.isArray(list))
+        list = [list];    
     var args = _.toArray(arguments);    
     for(var i = 1; i<args.length; i++){
         var item = args[i];

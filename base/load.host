@@ -1,5 +1,6 @@
 
 fn load(paths& force~false)
+    var loadedNames (,)
     each paths p
         try
             var mdl : require p force
@@ -7,11 +8,13 @@ fn load(paths& force~false)
             >> filter n : != "_" n.0
             >> each n
                 set context.0.`n mdl.`n
+                loadedNames.push n
         catch(e)
             error : list
                 + "ERROR loading " p
                 e
-    context.0
+    ;context.0
+    loadedNames
 
 set load.useRuntimeScope true
 export load

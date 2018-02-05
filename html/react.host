@@ -39,3 +39,4 @@ var selfClosing : ssyms
     wbr     
 
 fnm react(args&) export~true
+    args

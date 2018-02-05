@@ -462,6 +462,8 @@ utils.pop = function(list, cnt){
 utils.push = function(){
     var args = _.toArray(arguments);
     var ary = args.shift();
+    if(!_.isArray(ary))
+        ary = [ary];
     Array.prototype.push.apply(ary, args);
     return ary;    
 };

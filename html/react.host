@@ -49,10 +49,14 @@ fnm react(elementType props? children&) export~true
         if(isList c)
     *;
 
+    ;*
     var eArgs children
     eArgs >> enque props
     eArgs >> enque elementType
     apply e eArgs
+    *;
+
+    apply e : append (, elementType) props children 
     ;*
     >>> var reactComponent
     reactComponent.isHostReact = true

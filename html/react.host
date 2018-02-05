@@ -1,0 +1,41 @@
+
+var atom : js "*function(value, persistId){
+    if(persistId === undefined)
+        return obs(value);
+    else
+        return obsPersist(value, persistId);
+}*"
+export atom
+
+var atoms : js "ko.observableArray"
+export atoms
+
+var calc : js "ko.computed"
+export calc 
+
+type Component
+    fields
+        name[String]
+        view        
+export Component
+
+var selfClosing : ssyms 
+    area 
+    base 
+    br 
+    col 
+    command 
+    embed 
+    hr 
+    img 
+    input 
+    keygen 
+    link 
+    menuitem 
+    meta 
+    param 
+    source 
+    track 
+    wbr     
+
+fnm react(args&) export~true

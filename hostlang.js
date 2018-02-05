@@ -357,7 +357,7 @@ core.getr = {
 
 function fn(expr, context, callback) {
 
-    var name, params, return_type, ccode;
+    var name, params, return_type, ccode, isExport;
     untick(expr);
     if(!_.isArray(expr[0]))
         name = untick(expr.shift());
@@ -365,14 +365,18 @@ function fn(expr, context, callback) {
     //assertType(params, [*(|| Meta Symbol)])
     if(!_.isArray(params))
         return ccError(context, ["fn -- invalid value for 'params'", params]);
-    if(isMeta(expr[0]))
+        
+    if(isMeta(expr[0]) && expr[0].name === "export")
+        isExport = expr.shift();
+    else if(isMeta(expr[0]))
         return_type = expr.shift();
     ccode = expr;
 
     params = _.map(params,function(p){
         if(isSym(p))
             return nmeta(ssym(p));
-        return p;});
+        return p;}
+    );
 
     var offset = 0;
     var f = {type:Fn.id};
@@ -386,6 +390,11 @@ function fn(expr, context, callback) {
     f.params = params;
     f.ccode = ccode;
     f.closure = getClosure(context,offset);
+
+    if(isExport){
+        if(!name) return ccError(context, 'cannot export an unnamed function');
+        context[0].exports[name] = f;
+    }
     
     if(return_type){
         evalHost(return_type, context, function(return_type){

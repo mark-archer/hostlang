@@ -99,3 +99,8 @@ catch(err)
 === "Error calling Fn 'sayHi': 'name' parameter - no valid value available",
 sayHi "test"
 === "Hi test"
+
+
+;; test export flag
+fn myFn() export~true
+context.0.exports.myFn === myFn

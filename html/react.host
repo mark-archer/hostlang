@@ -38,5 +38,24 @@ var selfClosing : ssyms
     track 
     wbr     
 
-fnm react(args&) export~true
-    args
+var e : js "React.createElement"
+fnm react(elementType props? children&) export~true
+    elementType =: untick elementType
+    props =: eval props    
+        
+    ;*
+    var eArgs list!
+    each children c 
+        if(isList c)
+    *;
+
+    var eArgs children
+    eArgs >> enque props
+    eArgs >> enque elementType
+    apply e eArgs
+    ;*
+    >>> var reactComponent
+    reactComponent.isHostReact = true
+    reactComponent
+    *;
+    

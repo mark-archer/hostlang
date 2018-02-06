@@ -204,7 +204,6 @@ o.j.k = 3
 }
 *"
 
-
 ;; test not allowing setting property values to primatives
 try
     var o : new i~1
@@ -212,3 +211,9 @@ try
 catch(err)
     "error"
 === "error"
+
+;; test getr mixed with pipe
+var j : << 
+    1.1
+    >> Math.round
+=== 1

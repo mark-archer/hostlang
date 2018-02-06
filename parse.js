@@ -412,6 +412,7 @@ function parseObjectPath(pi, context, callback){
         }
 
         // don't report proceeding because we don't want to reset the active parser
+        return callback(true);
     }    
 
     // special check for 'number.' path parts (this could be consumed by number parser if we don't grab it first)
@@ -538,6 +539,7 @@ function parseMetaList(pi, context, callback){
 
     return callback();
 }
+console.log('parse pipe');
 function parsePipe(pi, context, callback){
     
     if(pi.clist.pipeNext && pi.clist.length >= 2 && pi.peek() !== "."){ // if next value is dot things will be done differently

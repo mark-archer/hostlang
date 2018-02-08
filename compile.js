@@ -103,12 +103,13 @@ compile.compile.useRuntimeScope = true;
 
 //console.log('c2l');
 function c2l(exprBlock, depth){
+    untick(exprBlock);
     var lisp = "(";
     depth = depth || 0;
     _.map(exprBlock, function(expr){
         // primative
         if(!_.isObject(expr)){
-            if(isSym(expr) || [','].includes(expr)){
+            if(isSym(expr)){ //} || [','].includes(expr)){
                 lisp += untick(expr);
             } 
             else if(isString(expr)){

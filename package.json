@@ -7,8 +7,9 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "node hostlang.js -e runTests!",
-    "start": "node hostlang.js repl"
+    "test": "node hostlang.js -e 'runTests! >> log'",
+    "start": "node hostlang.js repl",
+    "build": "node hoststrap.js && webpack && echo 'var hostlang = ' | cat - hostlang.bundle.js > temp && mv temp hostlang.bundle.js && cp hostlang.bundle.js ../hostlang.bundle.js"
   },
   "repository": {
     "type": "git",

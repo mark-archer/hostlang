@@ -407,7 +407,10 @@ webpack
     ;; to bundle 
     ;webpack ./hostlang.js ../hostlang.bundle.js
     ;webpack ./hostlang.js hostlang.bundle.js && cp hostlang.bundle.js ../hostlang.bundle.js
-    node -e "require('./_hoststrap.js')" && webpack ./hostlang.js hostlang.bundle.js && cp hostlang.bundle.js ../hostlang.bundle.js
+    ;node -e "require('./_hoststrap.js')" && webpack ./hostlang.js hostlang.bundle.js && cp hostlang.bundle.js ../hostlang.bundle.js
+    ;node _hoststrap.js && webpack ./hostlang.js hostlang.bundle.js && cp hostlang.bundle.js ../hostlang.bundle.js
+
+    node hoststrap.js && webpack && echo 'var hostlang = ' | cat - hostlang.bundle.js > temp && mv temp hostlang.bundle.js && cp hostlang.bundle.js ../hostlang.bundle.js
 
     ; to minify include -p option
     webpack ./hostlang.js hostlang.bundle.js -p 

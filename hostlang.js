@@ -1361,6 +1361,11 @@ function parseHostWrapper(expr, context, callback, onError){
     parseHost(expr, context, callback);
 }
 
+function convertToLispWrapper(expr, context, callback, onError){    
+    context = contextInit(context, callback, onError);
+    compile.convertToLisp.ccode(expr, context, callback);
+}
+
 function run(code, context, callback, onError) {
     //context = context || {};
     callback = callback || context && context.exit || console.log;
@@ -1504,6 +1509,7 @@ module.exports = {
     contextInit: contextInit,
     parser: parse,
     parse: parseHostWrapper,
+    convertToLisp: convertToLispWrapper,
     //compile: compile,
     run: run,
     //runFile: runFile,

@@ -667,6 +667,8 @@ utils.isString = function(item){
     return _.isString(item);
 }
 
+utils.isArray = _.isArray;
+
 utils.nsym = function (name){
     //console.log('nsym');
     if(!_.isString(name))

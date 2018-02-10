@@ -11,7 +11,7 @@ var compile = require('./compile.js')
 // unpack base JSON
 base = utils.fromJSON(base);
 
-console.log('hostlang - v0.0.10');
+console.log('hostlang - v0.0.11');
 
 // makes sure the global window object is declared
 //try{window} catch(e){window = null}    
@@ -22,6 +22,8 @@ var fnjs = utils.fnjs;
 var untick = utils.untick;
 var eqObjects = utils.eqObjects;
 var isSym = utils.isSym;
+var isString = utils.isString;
+var isMeta = utils.isMeta;
 var nsym = utils.nsym;
 var nmeta = utils.nmeta;
 var ssym = utils.ssym;
@@ -33,7 +35,6 @@ var Meta = types.Meta;
 var Any = types.Any;
 var Int = types.Int;
 var getType = types.getType;
-var isMeta = types.isMeta;
 var Symbol = types.Symbol;
 var Expression = types.Expression;
 
@@ -113,10 +114,19 @@ core.var = fnjs(function(expr, context, callback){
     if(expr.length < 1 || expr.length > 2)
         return ccError(context, ["var - unexpected number of arguments. Expected 1 or 2, given " + expr.length, expr]);
     var name = ssym(expr[0]);
+    if(!isString(name) && !(isMeta(name) && name.name))
+        return ccError(context, ["var - variable names must be strings or named metas.  Given: ", name]);
     var value = expr[1];
+    if(isMeta(name) && value === undefined) value = name.value;
     if(value === undefined) value = null;
     evalHost(value,context,function (value) {
-        if(value === undefined) value = null;
+        if(value === undefined) 
+            value = null;
+        if(isMeta(name)){
+            name.value = value;
+            value = name;
+            name = name.name;
+        }
         bind(context,name,value);
         callback(value);
     });

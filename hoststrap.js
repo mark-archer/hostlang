@@ -1,9 +1,8 @@
 "use strict";
 
 var host = require('./hostlang.js');
-console.log('_hoststrap.js');
+console.log('hoststrap.js');
 host.run(`
-
 var base new!
 var baseDir "fs:./base/"
 GET baseDir

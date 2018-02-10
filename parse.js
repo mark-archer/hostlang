@@ -274,13 +274,9 @@ function parseNumber(pi, context, callback){
     pi.clist.push(Number(num));
     callback(true);
 }
-console.log('parseQuotes');
 function parseQuotes(pi, context, callback) {    
     if(pi.code[pi.i] != '"') return callback();
-
-    if(context[0]._sourceFile === "/hostlang/tests/1_list.host")
-        console.log('found');
-
+    
     var code = pi.code;
     var i = pi.i;
 
@@ -539,7 +535,6 @@ function parseMetaList(pi, context, callback){
 
     return callback();
 }
-console.log('parse pipe');
 function parsePipe(pi, context, callback){
     
     if(pi.clist.pipeNext && pi.clist.length >= 2 && pi.peek() !== "."){ // if next value is dot things will be done differently

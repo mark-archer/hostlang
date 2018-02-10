@@ -49,3 +49,31 @@ catch (e)
 var "complext name" "someVal"
 eval "`complext name"
 === "someVal"
+
+
+;; don't allow non-string names
+try
+	var 1 1
+catch(err)
+	"error"
+=== "error"
+
+;; do allow meta's passed into var
+var n[Int]
+n === : js "*
+{
+    "name": "n",
+    "type": "Meta",
+    "value_type": "`Int",
+    "isList": false,
+    "value": null
+}
+*"
+
+;; if a meta is passed in use it's value if no third argument is given for a value
+var n[Int]~1
+n.value === 1
+
+;; if a meta is passed in with a value and a third argument is give, overwrite it's value
+var n[Int]~1 2
+n.value === 2

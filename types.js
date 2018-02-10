@@ -276,6 +276,7 @@ types.isList = fnjs("isList",function(item){
     return false;
 });
 List.isType = types.isList;
+List.shuffle = _.shuffle;
 
 types.isObject = fnjs("isObject",function(item){    
     if(isMeta(item))

@@ -202,8 +202,12 @@ catch(err)
 === "error"
 
 
-return _
+;; test accessing a meta's value as function call
+var n[Int]~1
+add n 2 === "[object Object]2"
+add n! 2 === 3
 
+;* ;;;;;;;; TODO ;;;;;;;;;;;;
 ;; todo test function with param types specified
 fn times4 (x[Int])[Int]
 	* x 4
@@ -213,4 +217,5 @@ try
 catch (e)
     "error"
 === "error"
+*;
 

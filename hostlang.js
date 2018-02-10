@@ -338,7 +338,6 @@ function acrJs(expr, context, callback){
     }        
     return callback(rtnVal);
 }
-console.log('acrJs');
 core.setr = {
     name:"setr",
     type:Fn,
@@ -537,14 +536,13 @@ function mapArgs(aFn, args, context, callback){
         eachSync(iArgs,evalTickedArgs,context, callback);
     });
 }
-console.log('applyFn_JS');
 function applyFn_JS(expr, context, callback){
     var f = expr.shift();
 
     // convert js function to fn object
     if(_.isFunction(f)){
         f = fnjs(f);
-        expr[0] = f;
+        //expr[0] = f;
     }
 
     if(!eqObjects(f.type,Fnjs)) 
@@ -680,6 +678,7 @@ applyTypes.default = function(expr, context, callback){
 };
 applyTypes[Fnjs.id] = applyFn_JS;
 applyTypes[Fn.id] = applyFn_host;
+console.log('applyHost');
 function applyHost(expr, context, callback){
     //console.log('apply', expr, context, callback);
     bind(context,"callback",callback);
@@ -690,6 +689,13 @@ function applyHost(expr, context, callback){
     if(_.isFunction(aFn)){
         aFn = fnjs(aFn);
         expr[0] = aFn;
+    }
+
+    // metas just return their value
+    if(isMeta(aFn)){
+        if(expr.length === 1) return callback(aFn.value);
+        aFn = aFn.value
+        expr[0] = aFn;            
     }
 
     //var fnType = gettype(aFn);

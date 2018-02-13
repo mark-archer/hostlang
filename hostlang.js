@@ -313,7 +313,8 @@ function acrJs(expr, context, callback){
         nn = Number(nn);
         nn = ref.length + nn;
     }
-
+    
+    // if we still have more parts to the path, keep going
     if(path.length !== 0){
         var newRef = ref[nn];
         if(newRef === undefined || newRef === null){
@@ -331,11 +332,21 @@ function acrJs(expr, context, callback){
         ref[nn] = value;        
         return callback(root);
     }
+
+    // special meta accessor syntax
+    if(isMeta(ref) && nn === 'meta')
+        return callback(ref);    
+
     var rtnVal = ref[nn]
+    // if getting meta, return value
+    if(isMeta(rtnVal)){
+        rtnVal = rtnVal.value;
+    }
+    // if getting js method, wrap context
     if(_.isFunction(rtnVal)){
         rtnVal = fnjs(nn, rtnVal);
         rtnVal.context = ref;
-    }        
+    }            
     return callback(rtnVal);
 }
 core.setr = {
@@ -740,6 +751,7 @@ core.apply = {
 function evalJs(code){    
     return eval('"use strict";(function(_){return ' + code.trim() + ';})()');
 }
+console.log('evalSym');
 function evalSym(expr, context, callback){
     var symbol = expr;
 
@@ -778,7 +790,10 @@ function evalSym(expr, context, callback){
     for(var bi = scopes.length-1; bi >=0; bi--){
         var nvps = scopes[bi];
         if(nvps[sym] !== undefined) {
-            return callback(nvps[sym]);
+            var val = nvps[sym];
+            //if(isMeta(val)) 
+            //    return callback(val.value);
+            return callback(val);
         }
     }
 

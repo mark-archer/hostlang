@@ -70,7 +70,6 @@ fn sum(nums&[Int]): apply add nums
 sum 1 2 3
 === 6
 
-
 ;; fn: closure
 var i 0
 fn incI()
@@ -82,7 +81,7 @@ list incI! incI! incI!
 ;; fn: return type
 fn testRtnType()[Int] ; enclose~false
 	1
-_.return_type === [Int]
+_.return_type.meta === [Int]
 
 
 ;; fnjs: test async version

@@ -219,3 +219,23 @@ catch (e)
 === "error"
 *;
 
+
+;; meta props evaluate directly to their value
+var obj new!
+obj.prop = [Int]~1
+obj.prop === 1 
+
+;; meta variables don't evaluate directly to their value
+var n[Int]~1
+n === : js "*
+{
+    "name": "n",
+    "type": "Meta",
+    "value_type": "`Int",
+    "isList": false,
+    "value": 1
+}
+*"
+
+;; meta variables can be used as functions to access their value_type_args
+n! === 1

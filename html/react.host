@@ -1,44 +1,30 @@
 
-var atom : js "*function(value, persistId){
-    if(persistId === undefined)
-        return obs(value);
-    else
-        return obsPersist(value, persistId);
-}*"
-export atom
+fnm react(name args&) export~true
+    var createReactElement : js "React.createElement"
+        
+    name =: untick name
+    
+    var attrs : filter args a : isMeta a
+    var childs : filter args a : not : isMeta a
+    childs >> map c 
+        untick c
+        if(isList c)
+            apply react c
+        else
+            c
+    >>> = childs
+        
+    var props new!
+    each attrs a : props.(one a.name) =: evalOutside 7 a.value
+    apply createReactElement : append name props childs
+    ;append name props childs
+    
+react.useRuntimeScope = true
 
-var atoms : js "ko.observableArray"
-export atoms
 
-var calc : js "ko.computed"
-export calc 
+return!
 
-type Component
-    fields
-        name[String]
-        view        
-export Component
 
-var selfClosing : ssyms 
-    area 
-    base 
-    br 
-    col 
-    command 
-    embed 
-    hr 
-    img 
-    input 
-    keygen 
-    link 
-    menuitem 
-    meta 
-    param 
-    source 
-    track 
-    wbr     
-
-var e : js "React.createElement"
 fnm react(elementType props? children&) export~true
     elementType =: untick elementType
     props =: eval props    
@@ -62,4 +48,11 @@ fnm react(elementType props? children&) export~true
     reactComponent.isHostReact = true
     reactComponent
     *;
-    
+
+fnm react(args&) export~true
+    args
+
+
+fn div(args&) export~true
+    var 
+    e "div" null "text"

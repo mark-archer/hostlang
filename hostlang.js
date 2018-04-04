@@ -343,7 +343,7 @@ function acrJs(expr, context, callback){
         rtnVal = rtnVal.value;
     }
     // if getting js method, wrap context
-    if(_.isFunction(rtnVal)){
+    if(_.isFunction(rtnVal) && !rtnVal.__ko_proto__){
         rtnVal = fnjs(nn, rtnVal);
         rtnVal.context = ref;
     }            
@@ -1246,20 +1246,6 @@ function forJs(expr, context, callback){
             callback(rslt);
         });
         p.start();
-        
-        // return;
-        // var i = null;
-        // function next(rslt){
-        //     if(i === null)
-        //         i = start;
-        //     else
-        //         i += step;
-        //     if((step > 0 && i > end) || (step < 0 && i < end))
-        //         ccBreak(context,rslt);
-        //     else
-        //         loopBody(i, context, next);
-        // }
-        // next();
     });
 }
 core.for = fnjs("for",forJs);

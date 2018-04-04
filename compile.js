@@ -116,7 +116,8 @@ function c2l(exprBlock, depth){
                 lisp += '"' + expr + '"';
             }
             else {
-                lisp += expr.toString();
+                //lisp += expr.toString();
+                lisp += expr;
             }
             lisp += " ";
             return;

@@ -1,0 +1,67 @@
+var atom : js "ko.observable"
+export atom
+
+var atoms : js "ko.observableArray"
+export atoms
+
+type HtmlBindings
+export HtmlBindings
+
+fnm bind(args&) export~true
+    var bindings : new HtmlBindings
+    each args a
+        if(not(isList a))
+            error "bind expects lists where the first item is the name of what will be bound"
+        untick a ; remove tick from list
+        if(a.length != 2)
+            error "bind expects lists of name value pairs. a list with a length other than 2 was given"
+        var name : untick : a.0
+        bindings.`name =: eval a.1    
+    bindings
+bind.useRuntimeScope = true
+
+var createElement : js "*function(name){
+    return document.createElement(name);
+}*"
+export createElement
+
+var createTextNode : js "*function(text){
+    return document.createTextNode(text)
+}*"
+export createTextNode
+
+fn html(elementName args&) export~true
+    var div : createElement elementName
+    
+    var attrs : filter args a : isMeta a
+    >> each a 
+        div.(one a.name) = a.value
+    
+    var childs : filter args a : not : isMeta a 
+    >> each c
+        if(isString c)
+            c =: createTextNode c
+        if(not (isHTML c))
+            error : list "invalid child" c            
+        div.appendChild c    
+    div
+html.useRuntimeScope = true
+
+
+;; create convenience functions for common html tags
+' h1 h2 h3 h4 h5 h6
+    ^ div span p a pre
+    ^ input label button br
+    ^ table tr td thead tbody tfoot
+    ^ ul ol li
+>> skip 1
+>> each tag
+    set tag : untick tag
+    var fnTmpl : fnm(args&)
+    set fnTmpl.name tag
+    set fnTmpl.useRuntimeScope true
+    set fnTmpl.ccode : list		
+        ` 'unshift 'args : tag
+        ' apply html args
+    exports.`tag = fnTmpl
+    context.0.`tag = fnTmpl

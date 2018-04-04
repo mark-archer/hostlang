@@ -67,7 +67,6 @@ export html
         ' apply html args
     set fnTmpl.closure null
     set fnTmpl.useRuntimeScope true
-    set fnTmpl.name tag
     set exports.`tag fnTmpl
     set context.0.`tag fnTmpl
 

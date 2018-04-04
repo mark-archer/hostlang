@@ -95,6 +95,7 @@ function parseTabs(pi, context, callback){
     return callback(true);
 
 }
+console.log('parseList');
 function parseList(pi, context, callback){
     //console.log('parselist');
     var c = pi.code[pi.i];

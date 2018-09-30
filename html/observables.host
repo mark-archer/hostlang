@@ -1,4 +1,0 @@
-
-
-;; observe path fn (e.g. observe root.field.subfield (fn(val): log val))
-; when object `field has `subfield set fn will be called

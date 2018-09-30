@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+      "target": "es5",
+      "module": "commonjs",
+      "sourceMap": true,
+      "outDir": "build",
+      "jsx": "react",
+      "allowSyntheticDefaultImports": true,
+      "lib": [
+        "es2015", 
+        "es2017", 
+        "dom"
+      ]
+  },
+  "include": [
+    "server/**/*",
+    "tests/**/*",
+    "src/**/*",
+    //"public/**/*"
+    //"client/**/*"
+    //"**/*"
+  ],
+
+}

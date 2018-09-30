@@ -1,0 +1,49 @@
+{
+  "name": "hostlang",
+  "version": "0.5.0",
+  "description": "a programming metalanguage",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mark-archer/hostlang.git"
+  },
+  "keywords": [
+    "host",
+    "hostlang",
+    "programming",
+    "meta",
+    "metalanguage",
+    "language"
+  ],
+  "author": "Mark Archer",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/mark-archer/hostlang/issues"
+  },
+  "homepage": "https://github.com/mark-archer/hostlang#readme",
+  "devDependencies": {
+    "@types/chai": "^4.1.4",
+    "@types/chai-as-promised": "^7.1.0",
+    "@types/jest": "^23.3.1",
+    "@types/lodash": "^4.14.116",
+    "@types/node": "^10.5.7",
+    "@types/should": "^13.0.0",
+    "awesome-typescript-loader": "^5.2.1",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "jest": "^23.6.0",
+    "lodash": "^4.17.11",
+    "should": "^13.2.3",
+    "ts-jest": "^23.10.3",
+    "typescript": "^3.1.1"
+  },
+  "dependencies": {
+    "uuid": "^3.3.2"
+  }
+}

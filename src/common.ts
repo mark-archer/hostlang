@@ -7,13 +7,14 @@ import * as uuid from 'uuid';
 export const {
     isString,
     isFunction,
-    isObject,
     union,
     isNumber,
     clone,
     isDate,
     isBoolean
 } = _
+
+export const isObject = x => _.isObject(x) && !_.isArray(x);
 
 export const guid = uuid.v4;
 export const isList = x => _.isArray(x);

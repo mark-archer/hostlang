@@ -7,8 +7,8 @@ export function js (jsCode:string, externalReferences?:any) {
   ];
   const utils = module.exports;
   const typeInfo = require('../src/TypeInfo');
-  const refNames = ['utils', 'utils_1', 'typeInfo', 'typeInfo_1', 'Promise','console'];
-  const refValues = [ utils, utils, typeInfo, typeInfo, Promise, console];
+  const refNames = ['utils', 'utils_1', 'typeInfo', 'typeInfo_1', 'Promise','console', 'common_1'];
+  const refValues = [ utils, utils, typeInfo, typeInfo, Promise, console, require('./common')];
   keys(externalReferences).forEach(key => {
     refNames.push(key);
     refValues.push(externalReferences[key]);

@@ -15,287 +15,278 @@ describe('host TypeInfo', () => {
     context('when infering the type from the value passed in', () => {
 
       context('when the value passed in has no type', () => {
-        it('should succeed for undefined', async () => {
-          await validate(stack, undefined).should.eventually.equal(undefined);
+        it('should succeed for undefined', () => {
+          should(validate(stack, undefined)).equal(undefined);
         });
     
-        it('should succeed for null', async () => {
-          await validate(stack, null).should.eventually.equal(null);
+        it('should succeed for null', () => {
+          should(validate(stack, null)).equal(null);
         });
   
-        it('should succeed for a bool', async () => {
-          await validate(stack, true).should.eventually.equal(true);
+        it('should succeed for a bool', () => {
+          validate(stack, true).should.equal(true);
         })
   
-        it('should succeed for a number', async () => {
-          await validate(stack, 1).should.eventually.equal(1);
+        it('should succeed for a number', () => {
+          validate(stack, 1).should.equal(1);
         })
   
-        it('should succeed for a string', async () => {
-          await validate(stack, 's').should.eventually.equal('s');
+        it('should succeed for a string', () => {
+          validate(stack, 's').should.equal('s');
         })
     
-        it('should succeed for an object with no type', async () => {
-          await validate(stack, {}).should.eventually.eql({});
+        it('should succeed for an object with no type', () => {
+          validate(stack, {}).should.eql({});
         });
         
-        it('should succeed for an array', async () => {
-          await validate(stack, []).should.eventually.eql([]);
+        it('should succeed for an array', () => {
+          validate(stack, []).should.eql([]);
         });
       });
 
       context('when the value passed in has a type', () => {
-        it('should succeed when the type matches', async () => {
+        it('should succeed when the type matches', () => {
           const aObj = { typeInfo: AnyObj }
-          await validate(stack, aObj).should.eventually.equal(aObj);
+          validate(stack, aObj).should.equal(aObj);
         });
 
-        it('should fail when the type does not match', async () => {
+        it('should fail when the type does not match', () => {
           const aObj = { typeInfo: AnyList }
-          // @ts-ignore
-          await validate(stack, aObj).should.be.rejected();
+          should(() => validate(stack, aObj)).throw();
         });
 
-        it('should fail when the type does not validate', async () => {
-          const aObj = { typeInfo: valueInfo('Never', x => Promise.reject('this rejects everything')) }
-          // @ts-ignore
-          await validate(stack, aObj).should.be.rejected();
+        it('should fail when the type does not validate', () => {
+          const aObj = { typeInfo: valueInfo('Never', x => { throw new Error('this rejects everything') }) };
+          should(() => validate(stack, aObj)).throw();
         });
 
-        it('should stringify the match function when the typeinfo has no name', async () => {
-          const aObj = { typeInfo: valueInfo(undefined, undefined, x => Promise.resolve(false)) }
-          // @ts-ignore
-          await validate(stack, aObj).should.be.rejected();
+        it('should stringify the match function when the typeinfo has no name', () => {
+          const aObj = { typeInfo: valueInfo(undefined, undefined, x => false) }
+          should(() => validate(stack, aObj)).throw();
         });
       });
     });
 
-    it('should use the typeInfo passed in if one was', async () => {
+    it('should use the typeInfo passed in if one was', () => {
       const aObj = { typeInfo: AnyList }
-      // @ts-ignore
-      await validate(stack, aObj).should.be.rejected();
-      await validate(stack, aObj, AnyObj).should.eventually.equal(aObj);
+      should(() => validate(stack, aObj)).throw();
+      validate(stack, aObj, AnyObj).should.equal(aObj);
     })
 
-    it('should strinfy the type as part of the error message when the type does not have a name and does not match', async () => {
+    it('should strinfy the type as part of the error message when the type does not have a name and does not match', () => {
       let invalidValue = 'notid';
       const noNameUnionType = unionTypeInfo(undefined, Id);  
-      // @ts-ignore
-      await validate(stack, invalidValue, noNameUnionType).should.be.rejected();
+      should(() => validate(stack, invalidValue, noNameUnionType)).throw();
 
       const noNameObjType = objectInfo(undefined, [ fieldInfo('id') ])
-      // @ts-ignore
-      await validate(stack, invalidValue, noNameObjType).should.be.rejected();
-      // @ts-ignore
-      await validate(stack, {}, noNameObjType).should.be.rejected();      
+      should(() => validate(stack, invalidValue, noNameObjType)).throw();
+      should(() => validate(stack, {}, noNameObjType)).throw();
     })
 
-    it('should return the result of a custom validation function if one is returned', async () => {
-      const Any = valueInfo(undefined, x => Promise.resolve(2));  
-      await validate(stack, 1, Any).should.eventually.equal(2);
+    it('should return the result of a custom validation function if one is returned', () => {
+      const Any = valueInfo(undefined, x => 2);  
+      validate(stack, 1, Any).should.equal(2);
     })
   });
 
   describe('match', () => {
-    it('should return true when a TypeInfo validates a value', async () => {
-      await match(stack, 1, Num).should.eventually.equal(true);
+    it('should return true when a TypeInfo validates a value', () => {
+      match(stack, 1, Num).should.equal(true);
     });
     
-    it('should return false when a TypeInfo rejects a value', async () => {
-      await match(stack, 1, Str).should.eventually.equal(false);
+    it('should return false when a TypeInfo rejects a value', () => {
+      match(stack, 1, Str).should.equal(false);
     });
   });
 
-  describe.skip('typeOf', () => {
-    it('should return default types for values without a typeInfo property', async () => {
-      await typeOf(stack,undefined).should.eventually.equal(Undefined)
-      await typeOf(stack,null).should.eventually.equal(Null)
-      await typeOf(stack,true).should.eventually.equal(Bool)
-      await typeOf(stack,1).should.eventually.equal(Num)
-      await typeOf(stack,'s').should.eventually.equal(Str)      
-      await typeOf(stack,new Date()).should.eventually.equal(DT)
-      await typeOf(stack,{}).should.eventually.equal(AnyObj)
-      await typeOf(stack,[]).should.eventually.equal(AnyList)
+  describe('typeOf', () => {
+    it('should return default types for values without a typeInfo property', () => {
+      typeOf(stack,undefined).should.equal(Undefined)
+      typeOf(stack,null).should.equal(Null)
+      typeOf(stack,true).should.equal(Bool)
+      typeOf(stack,1).should.equal(Num)
+      typeOf(stack,'s').should.equal(Str)      
+      typeOf(stack,new Date()).should.equal(DT)
+      typeOf(stack,{}).should.equal(AnyObj)
+      //typeOf(stack,[]).should.equal(AnyList)
     });
     
-    it('should return the typeInfo on an object', async () => {
+    it('should return the typeInfo on an object', () => {
       const aObj = { typeInfo: AnyList }
-      await typeOf(stack, aObj).should.eventually.equal(AnyList);
+      typeOf(stack, aObj).should.equal(AnyList);
     });
 
-    it('should lookup typeInfo in the stack by name', async () => {
+    it('should lookup typeInfo in the stack by name', () => {
       const stack = [ { MyType: valueInfo() } ]
       const aObj = { typeInfo: 'MyType' }
-      await typeOf(stack, aObj).should.eventually.equal(stack[0].MyType);
+      typeOf(stack, aObj).should.equal(stack[0].MyType);
     });
 
-    it('should throw an error for strings that cannot be resolved to a TypeInfo', async () => {
+    it('should throw an error for strings that cannot be resolved to a TypeInfo', () => {
       const aObj = { typeInfo: 'MyType' }
-      await typeOf(stack, aObj).should.be.rejectedWith("typeOf - TypeInfo 'MyType' could not be found");
+      should(() => typeOf(stack, aObj)).throw("typeOf - TypeInfo 'MyType' could not be found");
     })
 
-    it('should throw an error for strings that resolve to things that are not TypeInfos', async () => {
+    it('should throw an error for strings that resolve to things that are not TypeInfos', () => {
       const stack = [ { MyType: 1 } ]
       const aObj = { typeInfo: 'MyType' }
-      await typeOf(stack, aObj).should.be.rejectedWith("typeOf - 'MyType' resolved to an invalid TypeInfo: 1");
+      should(() => typeOf(stack, aObj)).throw("typeOf - 'MyType' resolved to an invalid TypeInfo: 1");
     })
 
-    it('should throw an error for something that is not a typeInfo object', async () => {
+    it('should throw an error for something that is not a typeInfo object', () => {
       const aObj = { typeInfo: []}
-      await typeOf(stack, aObj).should.be.rejectedWith('unknown typeInfo: []');
+      should(() => typeOf(stack, aObj)).throw('unknown typeInfo: []');
     })
   });
   
   describe('basic types', () => {
-    it('Any should match and validate anything', async () => {
+    it('Any should match and validate anything', () => {
       const typeInfo = Any;
       let validValue:any = undefined;
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
 
       validValue = null;
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
 
       validValue = true;
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
 
       validValue = 1;
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
 
       validValue = 's';
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
 
       validValue = new Date();
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
 
       validValue = {};
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
 
       validValue = [];
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
     })
 
-    it('Undefined should match and validate correctly', async () => {
-      await validate(stack, undefined, Undefined).should.eventually.equal(undefined);
-      await match(stack, undefined, Undefined).should.eventually.equal(true);
+    it('Undefined should match and validate correctly', () => {
+      should(validate(stack, undefined, Undefined)).equal(undefined);
+      match(stack, undefined, Undefined).should.equal(true);
 
-      //@ts-ignore
-      await validate(stack, null, Undefined).should.be.rejected();
-      await match(stack, null, Undefined).should.eventually.equal(false);
+      should(() => validate(stack, null, Undefined)).throw();
+      match(stack, null, Undefined).should.equal(false);
     })
 
-    it('Null should match and validate correctly', async () => {
+    it('Null should match and validate correctly', () => {
       const typeInfo = Null;
       const validValue = null;
       const invalidValue = undefined;
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
 
-      //@ts-ignore
-      await validate(stack, invalidValue, typeInfo).should.be.rejected();
-      await match(stack, invalidValue, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, invalidValue, typeInfo)).throw();
+      match(stack, invalidValue, typeInfo).should.equal(false);
     })
 
-    it('Bool should match and validate correctly', async () => {
+    it('Bool should match and validate correctly', () => {
       const typeInfo = Bool;
       const validValue = true;
       const invalidValue = 1;
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
 
       //@ts-ignore
-      await validate(stack, invalidValue, typeInfo).should.be.rejected();
-      await match(stack, invalidValue, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, invalidValue, typeInfo)).throw();
+      match(stack, invalidValue, typeInfo).should.equal(false);
     })
 
-    it('Num should match and validate correctly', async () => {
+    it('Num should match and validate correctly', () => {
       const typeInfo = Num;
       const validValue = 1;
       const invalidValue = '1';
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
 
       //@ts-ignore
-      await validate(stack, invalidValue, typeInfo).should.be.rejected();
-      await match(stack, invalidValue, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, invalidValue, typeInfo)).throw();
+      match(stack, invalidValue, typeInfo).should.equal(false);
     })
 
-    it('Str should match and validate correctly', async () => {
+    it('Str should match and validate correctly', () => {
       const typeInfo = Str;
       const validValue = '1';
       const invalidValue = 1;
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
 
       //@ts-ignore
-      await validate(stack, invalidValue, typeInfo).should.be.rejected();
-      await match(stack, invalidValue, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, invalidValue, typeInfo)).throw();
+      match(stack, invalidValue, typeInfo).should.equal(false);
     })
 
-    it('DT should match and validate correctly', async () => {
+    it('DT should match and validate correctly', () => {
       const typeInfo = DT;
       const validValue = new Date();
       const invalidValue = 12345678;
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
 
       //@ts-ignore
-      await validate(stack, invalidValue, typeInfo).should.be.rejected();
-      await match(stack, invalidValue, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, invalidValue, typeInfo)).throw();
+      match(stack, invalidValue, typeInfo).should.equal(false);
     })
 
-    it.skip('Obj should match and validate correctly', async () => {
+    it('Obj should match and validate correctly', () => {
       const typeInfo = AnyObj;
       const validValue = {};
       const invalidValue:any = [];
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
 
-      //@ts-ignore
-      await validate(stack, invalidValue, typeInfo).should.be.rejected();
-      await match(stack, invalidValue, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, invalidValue, typeInfo)).throw();
+      match(stack, invalidValue, typeInfo).should.equal(false);
     })
 
-    it('List should match and validate correctly', async () => {
+    it('List should match and validate correctly', () => {
       const typeInfo = AnyList;
       const validValue:any = [];
       const invalidValue = {};
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
 
       //@ts-ignore
-      await validate(stack, invalidValue, typeInfo).should.be.rejected();
-      await match(stack, invalidValue, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, invalidValue, typeInfo)).throw();
+      match(stack, invalidValue, typeInfo).should.equal(false);
     })
   });
 
   describe('user defined types type', () => {
-    const Username = valueInfo('Username', x => validate([], x, Str).then(() => {
+    const Username = valueInfo('Username', x => {
+      validate([], x, Str);
       if (x.length < 3) throw new Error('must be 3 characters or more');
       if (x.match(/^[^a-zA-Z]/)) throw new Error('must start with a letter');
-      if (x.match(/\s/)) throw new Error('can not have spaces');
-    }));
-    // const Username = valueInfo('Username', async x => {
-    //   await validate([], x, Str);
+      if (x.match(/\s/)) throw new Error('can not have spaces');      
+    });
+    // const Username = valueInfo('Username', x => {
+    //   validate([], x, Str);
     //   if (x.length < 3) throw new Error('must be 3 characters or more');
     //   if (x.match(/^[^a-zA-Z]/)) throw new Error('must start with a letter');
     //   if (x.match(/\s/)) throw new Error('can not have spaces');
     // });
 
     context('with a value type', () => {
-      it('should use the custom validation', async () => {
-        await validate(stack, 1, Username).should.be.rejectedWith('1 did not match Str')
-        await validate(stack, 'a', Username).should.be.rejectedWith('must be 3 characters or more')
-        await validate(stack, '1aa', Username).should.be.rejectedWith('must start with a letter')
-        await validate(stack, 'a a', Username).should.be.rejectedWith('can not have spaces')
-        await validate(stack, 'aaa', Username).should.be.eventually.equal('aaa')
+      it('should use the custom validation', () => {
+        should(() => validate(stack, 1, Username)).throw('1 did not match Str')
+        should(() => validate(stack, 'a', Username)).throw('must be 3 characters or more')
+        should(() => validate(stack, '1aa', Username)).throw('must start with a letter')
+        should(() => validate(stack, 'a a', Username)).throw('can not have spaces')
+        validate(stack, 'aaa', Username).should.be.equal('aaa')        
       })
     });
 
@@ -305,42 +296,35 @@ describe('host TypeInfo', () => {
       fieldInfo('name', Str)
     ])
     context('with an object type', () => {
-      it('should throw an error if a required field is not present', async () => {
-        await validate(stack, {}, User).should.be
-        .rejectedWith('.username[Username] is invalid, value: undefined[Undefined] Error: undefined did not match Str');
+      it('should throw an error if a required field is not present', () => {
+        should(() => validate(stack, {}, User).should.be).throw('.username[Username] is invalid, value: undefined[Undefined] Error: undefined did not match Str');
       });
 
-      it('should throw an error if a field value is invalid', async () => {
-        await validate(stack, { username: 1 }, User).should.be
-        .rejectedWith('.username[Username] is invalid, value: 1[Num] Error: 1 did not match Str');
+      it('should throw an error if a field value is invalid', () => {
+        should(() => validate(stack, { username: 1 }, User)).throw('.username[Username] is invalid, value: 1[Num] Error: 1 did not match Str');
         
-        await validate(stack, { username: '1aa' }, User).should.be
-        .rejectedWith('.username[Username] is invalid, value: 1aa[Str] Error: must start with a letter');
+        should(() => validate(stack, { username: '1aa' }, User)).throw('.username[Username] is invalid, value: 1aa[Str] Error: must start with a letter');
       });
 
-      it('should succeed if opional fields are missing', async () => {
+      it('should succeed if opional fields are missing', () => {
         const user = { username: 'aaa', name: 'john' };
-        await validate(stack, user, User).should.eventually.equal(user);
+        validate(stack, user, User).should.equal(user);
       })
     });
 
-    it.skip('should still work after being stringified and parsed', async () => {
+    it.skip('should still work after being stringified and parsed', () => {
       const UserOverTheWire = parseJSON(stringify(User))
-      await validate(stack, { username: 1 }, UserOverTheWire).should.be
-      .rejectedWith('.username[Username] is invalid, value: 1[Num] Error: 1 did not match Str');
-      
-      await validate(stack, { username: '1aa' }, UserOverTheWire).should.be
-      .rejectedWith('.username[Username] is invalid, value: 1aa[Str] Error: must start with a letter');
-
+      should(() => validate(stack, { username: 1 }, UserOverTheWire)).throw('.username[Username] is invalid, value: 1[Num] Error: 1 did not match Str');
+      should(() => validate(stack, { username: '1aa' }, UserOverTheWire)).throw('.username[Username] is invalid, value: 1aa[Str] Error: must start with a letter');
       const user = { username: 'aaa', name: 'john' };
-      await validate(stack, user, UserOverTheWire).should.eventually.equal(user);
+      validate(stack, user, UserOverTheWire).should.equal(user);
     })
   });
 
   describe('ObjectInfo', () => {
     it('should allow specifying fields as strings', () => {
       const User = objectInfo('User', [ 'username', 'password', fieldInfo('age', Num) ])
-      if(!User.fields) throw new Error('fields not set');
+      //if(!User.fields) throw new Error('fields not set');
       User.fields.length.should.equal(3);
       User.fields[0].name.should.equal('username');
       User.fields[0].nullable.should.equal(false);
@@ -352,177 +336,165 @@ describe('host TypeInfo', () => {
   describe('UnionTypeInfo', () => {
     const idObjLst = unionTypeInfo('IdObjLst', Id, AnyObj, AnyList)
 
-    it('should validate if value matches any of the types', async () => {      
+    it('should validate if value matches any of the types', () => {      
       let validValue = {};      
-      await validate(stack, validValue, idObjLst).should.eventually.equal(validValue);
-      await match(stack, validValue, idObjLst).should.eventually.equal(true);
+      validate(stack, validValue, idObjLst).should.equal(validValue);
+      match(stack, validValue, idObjLst).should.equal(true);
 
       validValue = newid();
-      await validate(stack, validValue, idObjLst).should.eventually.equal(validValue);
-      await match(stack, validValue, idObjLst).should.eventually.equal(true);
+      validate(stack, validValue, idObjLst).should.equal(validValue);
+      match(stack, validValue, idObjLst).should.equal(true);
 
       validValue = [];
-      await validate(stack, validValue, idObjLst).should.eventually.equal(validValue);
-      await match(stack, validValue, idObjLst).should.eventually.equal(true);
+      validate(stack, validValue, idObjLst).should.equal(validValue);
+      match(stack, validValue, idObjLst).should.equal(true);
     })
 
-    it('should not validate if value does not match any of the types', async () => {
+    it('should not validate if value does not match any of the types', () => {
       let invalidValue = null;
-      // @ts-ignore
-      await validate(stack, invalidValue, idObjLst).should.be.rejected();
-      await match(stack, invalidValue, idObjLst).should.eventually.equal(false);
+      should(() => validate(stack, invalidValue, idObjLst)).throw();
+      match(stack, invalidValue, idObjLst).should.equal(false);
 
       invalidValue = true;
-      // @ts-ignore
-      await validate(stack, invalidValue, idObjLst).should.be.rejected();
-      await match(stack, invalidValue, idObjLst).should.eventually.equal(false);
+      should(() => validate(stack, invalidValue, idObjLst)).throw();
+      match(stack, invalidValue, idObjLst).should.equal(false);
 
       invalidValue = 1;
-      // @ts-ignore
-      await validate(stack, invalidValue, idObjLst).should.be.rejected();
-      await match(stack, invalidValue, idObjLst).should.eventually.equal(false);
+      should(() => validate(stack, invalidValue, idObjLst)).throw();
+      match(stack, invalidValue, idObjLst).should.equal(false);
 
       invalidValue = '';
-      // @ts-ignore
-      await validate(stack, invalidValue, idObjLst).should.be.rejected();
-      await match(stack, invalidValue, idObjLst).should.eventually.equal(false);
+      should(() => validate(stack, invalidValue, idObjLst)).throw();
+      match(stack, invalidValue, idObjLst).should.equal(false);
 
       invalidValue = 'not an id';
-      // @ts-ignore
-      await validate(stack, invalidValue, idObjLst).should.be.rejected();
-      await match(stack, invalidValue, idObjLst).should.eventually.equal(false);
+      should(() => validate(stack, invalidValue, idObjLst)).throw();
+      match(stack, invalidValue, idObjLst).should.equal(false);
     })
   })
 
   describe('ListInfo', () => {
-    it('should validate that the value is a list', async () => {
+    it('should validate that the value is a list', () => {
       const typeInfo = AnyList;
       const validValue:any = [];
       const invalidValue = {};
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
 
       //@ts-ignore
-      await validate(stack, invalidValue, typeInfo).should.be.rejected();
-      await match(stack, invalidValue, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, invalidValue, typeInfo)).throw();
+      match(stack, invalidValue, typeInfo).should.equal(false);
     })
 
-    it('should use the generic name "ListInfo" if the type does not have a name', async () => {
+    it('should use the generic name "ListInfo" if the type does not have a name', () => {
       const typeInfo = listInfo(undefined, Str);
       const invalidValue:any = null;
       //@ts-ignore
-      await validate(stack, invalidValue, typeInfo).should.be.rejected();
-      await match(stack, invalidValue, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, invalidValue, typeInfo)).throw();
+      match(stack, invalidValue, typeInfo).should.equal(false);
     })
 
-    it('should validate if the list has a listType but no items', async () => {
+    it('should validate if the list has a listType but no items', () => {
       const typeInfo = listInfo(undefined, Str);
       const validValue:any = [];
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
     })
 
-    it('should not validate if an item does not match listType', async () => {
+    it('should not validate if an item does not match listType', () => {
       const typeInfo = listInfo(undefined, Str);
       const invalidValue:any = [1];
       //@ts-ignore
-      await validate(stack, invalidValue, typeInfo).should.be.rejected();
-      await match(stack, invalidValue, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, invalidValue, typeInfo)).throw();
+      match(stack, invalidValue, typeInfo).should.equal(false);
     })
 
-    it('should use itemType instead of listType if it exists for an index', async () => {
+    it('should use itemType instead of listType if it exists for an index', () => {
       const typeInfo = listInfo(undefined, Str, [Num]);
       const validValue:any = [1];
-      await validate(stack, validValue, typeInfo).should.eventually.equal(validValue);
-      await match(stack, validValue, typeInfo).should.eventually.equal(true);
+      should(validate(stack, validValue, typeInfo)).equal(validValue);
+      match(stack, validValue, typeInfo).should.equal(true);
     })
 
-    it('should not validate if an item does not match its repsective itemType', async () => {
+    it('should not validate if an item does not match its repsective itemType', () => {
       const typeInfo = listInfo(undefined, Str, [Num]);
       const value:any = ['s'];
-      //@ts-ignore
-      await validate(stack, value, typeInfo).should.be.rejected();
-      await match(stack, value, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, value, typeInfo)).throw();
+      match(stack, value, typeInfo).should.equal(false);
     })
 
-    it('should validate minLength if it exists', async () => {
+    it('should validate minLength if it exists', () => {
       const typeInfo = listInfo();
       typeInfo.minLength = 1;
       let value:any = [1];
-      await validate(stack, value, typeInfo).should.eventually.equal(value);
-      await match(stack, value, typeInfo).should.eventually.equal(true);
+      validate(stack, value, typeInfo).should.equal(value);
+      match(stack, value, typeInfo).should.equal(true);
 
       value = [];
-      //@ts-ignore
-      await validate(stack, value, typeInfo).should.be.rejected();
-      await match(stack, value, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, value, typeInfo)).throw();
+      match(stack, value, typeInfo).should.equal(false);
     })
 
-    it('should validate maxLength if it exists', async () => {
+    it('should validate maxLength if it exists', () => {
       const typeInfo = listInfo();
       typeInfo.maxLength = 1
       let value:any = [];
-      await validate(stack, value, typeInfo).should.eventually.equal(value);
-      await match(stack, value, typeInfo).should.eventually.equal(true);
+      validate(stack, value, typeInfo).should.equal(value);
+      match(stack, value, typeInfo).should.equal(true);
 
       value = [1,1];
-      //@ts-ignore
-      await validate(stack, value, typeInfo).should.be.rejected();
-      await match(stack, value, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, value, typeInfo)).throw();
+      match(stack, value, typeInfo).should.equal(false);
     })
 
   })
 
   describe('FnInfo', () => {
-    it('should validate the value is a Fn', async () => {      
+    it('should validate the value is a Fn', () => {      
       const typeInfo = fnInfo();
       let value:any = null;
-      //@ts-ignore
-      await validate(stack, value, typeInfo).should.be.rejected();
-      await match(stack, value, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, value, typeInfo)).throw();
+      match(stack, value, typeInfo).should.equal(false);
 
       value = makeFn();
-      await validate(stack, value, typeInfo).should.eventually.equal(value);
-      await match(stack, value, typeInfo).should.eventually.equal(true);      
+      validate(stack, value, typeInfo).should.equal(value);
+      match(stack, value, typeInfo).should.equal(true);      
     })
 
-    it('should validate the return type matches', async () => {      
+    it('should validate the return type matches', () => {      
       const typeInfo = fnInfo(undefined, undefined, Str);      
       let value = makeFn();
-      //@ts-ignore
-      await validate(stack, value, typeInfo).should.be.rejected();
-      await match(stack, value, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, value, typeInfo)).throw();
+      match(stack, value, typeInfo).should.equal(false);
 
       value = makeFn(undefined, undefined, Str);
-      await validate(stack, value, typeInfo).should.eventually.equal(value);
-      await match(stack, value, typeInfo).should.eventually.equal(true);      
+      validate(stack, value, typeInfo).should.equal(value);
+      match(stack, value, typeInfo).should.equal(true);      
     })
 
-    it('should validate the param types match', async () => {      
+    it('should validate the param types match', () => {      
       const typeInfo = fnInfo(undefined, [ paramInfo('x', Str) ]);
       let value = makeFn();
-      //@ts-ignore
-      await validate(stack, value, typeInfo).should.be.rejected();
-      await match(stack, value, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, value, typeInfo)).throw();
+      match(stack, value, typeInfo).should.equal(false);
 
       value = makeFn(undefined, [ paramInfo('x', Str) ]);
-      await validate(stack, value, typeInfo).should.eventually.equal(value);
-      await match(stack, value, typeInfo).should.eventually.equal(true);
+      validate(stack, value, typeInfo).should.equal(value);
+      match(stack, value, typeInfo).should.equal(true);
     })
 
-    it('should not validate that a fn with params specified fits a FnInfo with no params specified', async () => {      
+    it('should not validate that a fn with params specified fits a FnInfo with no params specified', () => {      
       const typeInfo = fnInfo();      
       const value = makeFn(undefined, [ paramInfo('x', Str) ]);
-      await validate(stack, value, typeInfo).should.eventually.equal(value);
-      await match(stack, value, typeInfo).should.eventually.equal(true);
+      validate(stack, value, typeInfo).should.equal(value);
+      match(stack, value, typeInfo).should.equal(true);
     })
 
-    it('should not validate that a fn with params specified fits a FnInfo with zero params', async () => {      
+    it('should not validate that a fn with params specified fits a FnInfo with zero params', () => {      
       const typeInfo = fnInfo(undefined, []);      
       const value = makeFn(undefined, [ paramInfo('x', Str) ]);
-      //@ts-ignore
-      await validate(stack, value, typeInfo).should.be.rejected();
-      await match(stack, value, typeInfo).should.eventually.equal(false);
+      should(() => validate(stack, value, typeInfo)).throw();
+      match(stack, value, typeInfo).should.equal(false);
     })
 
     it('should match a fn with only num arguments fits a FnInfo with a rest param of type num', () => {
@@ -557,16 +529,16 @@ describe('host TypeInfo', () => {
   })
 
   describe('typeFits', () => {
-    it('should return true for any ObjectInfo fitting AnyObject', async () => {
+    it('should return true for any ObjectInfo fitting AnyObject', () => {
       const srcType = objectInfo('Person', [ fieldInfo('name', Str)])
-      await typeFits(srcType, AnyObj).should.eventually.equal(true);
-      await typeFits(srcType, AnyList).should.eventually.equal(false);
+      typeFits(srcType, AnyObj).should.equal(true);
+      typeFits(srcType, AnyList).should.equal(false);
     })
 
-    it('should return true for any ListInfo fitting AnyList', async () => {
+    it('should return true for any ListInfo fitting AnyList', () => {
       const srcType = listInfo('Strings', Str)
-      await typeFits(srcType, AnyObj).should.eventually.equal(false);
-      await typeFits(srcType, AnyList).should.eventually.equal(true);
+      typeFits(srcType, AnyObj).should.equal(false);
+      typeFits(srcType, AnyList).should.equal(true);
     })
   })
 
@@ -580,36 +552,34 @@ describe('host TypeInfo', () => {
   })
 
   describe('validataeParamsFit', () => {
-    it('should not require source params for a dest rest param', async () => {
+    it('should not require source params for a dest rest param', () => {
       const srcParams:ParamInfo[] = [];
       const fni = fnInfo('Add', [paramInfo('nums', undefined, false, undefined, true)])
-      await validataeParamsFit(srcParams, fni).should.eventually.equal(true);
+      validataeParamsFit(srcParams, fni).should.equal(true);
     })
 
-    it('should allow trailing params to fit in rest param of same type', async () => {
+    it('should allow trailing params to fit in rest param of same type', () => {
       const srcParams:ParamInfo[] = [paramInfo('n1'), paramInfo('n2')];
       const fni = fnInfo('Add', [paramInfo('nums', undefined, false, undefined, true)])
-      await validataeParamsFit(srcParams, fni).should.eventually.equal(true);
+      validataeParamsFit(srcParams, fni).should.equal(true);
     })
 
-    // it('should not allow trailing params to fit in rest param of different type', async () => {
+    // it('should not allow trailing params to fit in rest param of different type', () => {
     //   const srcParams:ParamInfo[] = [paramInfo('n1'), paramInfo('n2')];
     //   const fni = fnInfo('Add', [paramInfo('nums', Num, false, undefined, true)])
-    //   await validataeParamsFit(srcParams, fni).should.be.rejected();
+    //   validataeParamsFit(srcParams, fni).should.be.rejected();
     // })
 
-    it('should not allow extra params', async () => {
+    it('should not allow extra params', () => {
       const srcParams:ParamInfo[] = [paramInfo('n1'), paramInfo('n2')];
       const fni = fnInfo('Add', [paramInfo('n')])
-      //@ts-ignore
-      await validataeParamsFit(srcParams, fni).should.be.rejected();
+      should(() => validataeParamsFit(srcParams, fni)).throw();
     })
 
-    it('should not allow mismatching types', async () => {
+    it('should not allow mismatching types', () => {
       const srcParams:ParamInfo[] = [paramInfo('n', Num)];
       const fni = fnInfo('Add', [paramInfo('s', Str)])
-      //@ts-ignore
-      await validataeParamsFit(srcParams, fni).should.be.rejected();
+      should(() => validataeParamsFit(srcParams, fni)).throw();
     })
   })
 

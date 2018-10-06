@@ -45,7 +45,7 @@ export function compileExpr(refs:any[], stack:any[], expr:any) {
 
 export function compileExprBlock(refs:any[], stack:any[], expr:any) {
   let code = 'Promise.resolve(_)\n';
-  expr.forEach((expr:any) => {    
+  expr.forEach((expr:any) => {
     code += '.then(' + compileExpr(refs, stack, expr) + ')\n';
   })
   return code.trim();

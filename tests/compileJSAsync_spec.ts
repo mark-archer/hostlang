@@ -1,4 +1,4 @@
-import { compileExpr, compileSym, compileExprBlock, compileHost } from "../src/compile";
+import { compileExpr, compileSym, compileExprBlock, compileHost } from "../src/compileJSAsync";
 import { add, sym } from "../src/common";
 
 var should = require('should');

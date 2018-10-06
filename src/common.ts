@@ -857,3 +857,7 @@ export function spread(stack:any[], expr:any[], spreadArg:any, ...addArgs:any[])
 //@ts-ignore
 spread.isMeta = true; spread.isMacro = true;
 
+//@ts-ignore
+String.prototype.removeNewlineIndent = function() {
+    return this.split('\n').map(s => s.trim()).join('');
+}

@@ -1,4 +1,4 @@
-import { isString, isid, isObject, isBoolean, isNumber, isList, isDate, untick, isSym, tick, last, isNvp } from "./common";
+import { isString, isid, isObject, isBoolean, isNumber, isList, isDate, untick, isSym, tick, last, isNvp, Nvp } from "./common";
 import { evalSym, apply } from "./host";
 import { stringify, copy } from "./utils";
 
@@ -454,5 +454,11 @@ export function newObject(info:ObjectInfo=AnyObj, ...args:any[]) {
     }    
   });
   if(args.length) throw new Error(`unused arguments: ${args}`);
+  return o;
+}
+
+export function newStruct(...args:Nvp[]) {
+  var o:any = {};
+  args.forEach(a => o[a.name] = a.value);  
   return o;
 }

@@ -1,8 +1,10 @@
 import { isSym, untick, isExpr, isList, guid, sym } from "./common";
-import { js } from "./utils";
+import { js, cleanCopyList } from "./utils";
 import { readFileSync } from "fs";
 import { getName } from "./host";
 import { Fn } from "./typeInfo";
+import { parseHost } from "./parse";
+import { isString, isObject } from "util";
 
 
 // export function refName() {
@@ -10,7 +12,9 @@ import { Fn } from "./typeInfo";
 // }
 
 export function compileSym(refs:any[], stack:any[], sym:string) {
-  if(!isSym(sym)) return sym;
+  if(!isSym(sym)) {
+    throw new Error(`Not a symbol: ${sym}`)    
+  }
   sym = untick(sym);
   if(sym == '_') return sym;
   for(let i = stack.length-1; i >= 0; i--) {
@@ -28,25 +32,42 @@ export function compileSym(refs:any[], stack:any[], sym:string) {
   throw new Error(`${sym} is not defined`);
 }
 
-export function compileExpr(refs:any[], stack:any[], expr:any) {
-  if(!isExpr(expr)) {
-    if(isList(expr) && expr.length === 1)
-      return `_=${compileSym(refs, stack, expr[0])}`;
-    else throw new Error('compileExpr - not an expression: ' + expr);
+export function compileTerm(refs: any[], stack:any[], term:any) {
+  if(isSym(term)) {
+    return compileSym(refs, stack, term);
   }
+  if(isExpr(term)){
+    return compileExpr(refs, stack, term);  
+  }
+  if(isList(term)) {
+    return '[' + term.map(t => compileTerm(refs, stack, t)).join() + ']';
+  }
+  if(isObject(term)) {
+    return '{' + Object.keys(term).map(k => `"${k}":${compileTerm(refs, stack, term[k])}`) + '}'
+  }
+  if(isString(term)) {
+    return `"${term}"`;
+  }
+  return String(term);
+}
+
+export function compileExpr(refs:any[], stack:any[], expr:any) {
+  if(!isExpr(expr)) 
+    return '_=' + compileTerm(refs, stack, expr);
   expr.shift();
-  var f = compileSym(refs, stack, expr.shift());
+  var f = compileTerm(refs, stack, expr.shift());
   let code = `_=${f}(`;
   expr.forEach((i:any) => {
-    code += compileSym(refs, stack, i) + ',';
+    code += compileTerm(refs, stack, i) + ',';
   })
   code = code.substr(0, code.length - 1) + ')';
   return code;
 }
 
-export function compileExprBlock(refs:any[], stack:any[], expr:any) {
+export function compileExprBlock(refs:any[], stack:any[], exprBlock:any) {
   let code = '_=(function(_){';
-  expr.forEach((expr:any) => {
+  exprBlock
+  exprBlock.forEach((expr:any) => {
     code += compileExpr(refs, stack, expr) + ';';
   })
   code += 'return _;})(_)'
@@ -65,7 +86,7 @@ export function compileFn(refs:any[], stack:any[], fn:Fn) {
   const r = compileExprBlock(refs, stack, fn.body);    
   let paramRefs = '\n';
   fn.params.forEach(p => {
-    const pRef = compileSym(refs, stack, sym(p.name))
+    const pRef = compileTerm(refs, stack, sym(p.name))
     paramRefs += `${pRef}=${p.name};`
   })
   stack.pop();
@@ -91,4 +112,13 @@ export function compileHost(stack:any[], ast:any[], refs:any[]=[]) {
   let r = getName(stack, '_');
   let exec = () => f.apply(null, [ getName(stack, '_'), ...refs]);
   return { code, f, refs, exec }
+}
+
+export async function execHost(stack:any[]=[], code:string, refs:any[]=[]) {
+  const astDirty = await parseHost(stack, code)
+  const ast = cleanCopyList(astDirty)
+  console.log(ast)
+  const exe = compileHost(stack, ast, refs)
+  console.log(exe.code)
+  return exe.exec();
 }

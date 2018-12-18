@@ -1,6 +1,6 @@
-import { compileExpr, compileSym, compileExprBlock, compileHost, compileFn } from "../src/compileJS";
-import { add, sym } from "../src/common";
-import { Fn, makeFn, Str, Num } from "../src/typeInfo";
+import { compileExpr, compileTerm, compileExprBlock, compileHost, compileFn, execHost, compileSym } from "../src/compileJS";
+import { add, list } from "../src/common";
+import { Fn, Num, newObject, newStruct } from "../src/typeInfo";
 
 var should = require('should');
 
@@ -9,20 +9,54 @@ describe('compile', () => {
   describe('compileSym', () => {
     it('should determine references', () => {
       let refs = [];
-      let r = compileSym(refs, [{ a:1 }], '`a');
+      let r = compileTerm(refs, [{ a:1 }], '`a');
       r.should.equal('r0.a');
     })
 
     it('should throw an error if the sym is not defined', () => {
       should(() => compileSym([], [], '`a')).throw()
     })
+
+    it('should throw an error if not passed a symbol', () => {
+      should(() => compileSym([], [], 'a')).throw()
+    })
+  })
+
+  describe('compileTerm', () => {
+    it('should compile numbers', () => {
+      let refs:any[] = [];
+      let stack:any[] = [];
+      let r = compileTerm(refs, stack, 2)
+      r.should.equal('2');
+    })
+
+    it('should compile lists', () => {
+      let refs:any[] = [];
+      let stack:any[] = [];
+      let r = compileTerm(refs, stack, [2])
+      r.should.equal('[2]');
+    })
+
+    it('should compile expressions', () => {
+      let refs:any[] = [];
+      let stack:any[] = [{ add, a: 1 }];
+      let r = compileTerm(refs, stack, ['`', '`add', '`a', 2])
+      r.should.equal('_=r0.add(r0.a,2)');
+    })
+
+    it('should compile objects', () => {
+      let refs:any[] = [];
+      let stack:any[] = [];
+      let r = compileTerm(refs, stack, {a:1,b:1})
+      r.should.equal('{"a":1,"b":1}');
+    })
   })
 
   describe('compileExpr', () => {
-    it('should compile single symbols', () => {
+    it('should compile single terms', () => {
       let refs:any[] = [];
       let stack:any[] = [{ add, a: 1 }];
-      let r = compileExpr(refs, stack, [2])
+      let r = compileExpr(refs, stack, 2)
       r.should.equal('_=2');
     })
 
@@ -33,8 +67,11 @@ describe('compile', () => {
       r.should.equal('_=r0.add(r0.a,2)');
     })
 
-    it('should throw an error if not given a valid expression', () => {
-      should(() => compileExpr([], [], '')).throw();
+    it('should compile single strings', () => {
+      let refs:any[] = [];
+      let stack:any[] = [{ add, a: 1 }]
+      let r = compileExpr(refs, stack, 'a')
+      r.should.equal('_="a"')
     })
   })
 
@@ -181,6 +218,54 @@ describe('compile', () => {
         }
       `);
       r.exec().should.equal(6);
+    })
+  })
+  
+  describe('execHost', () => {
+    it('should exec numbers', async () => {    
+      const r = await execHost([],'1')      
+      r.should.equal(1);
+    })
+
+    it('should exec strings', async () => {    
+      const r = await execHost([],'"a"')
+      r.should.equal("a");
+    })
+
+    it('should exec refs', async () => {
+      let stack:any[] = [{ add }];
+      const r = await execHost(stack,'add');
+      r.should.equal(add);
+    })
+
+    it('should exec expressions', async () => {
+      let stack:any[] = [{ add }];
+      const r = await execHost(stack, 'add "a" 1');
+      r.should.equal("a1");
+    })
+
+    it('should exec expression blocks', async () => {
+      let stack:any[] = [{ add }];
+      const r = await execHost(stack, 'add "a" 1\nadd _ 2');
+      r.should.equal("a12");
+    })
+
+    it('should exec list declarations', async () => {
+      let stack:any[] = [{ list }];
+      const r = await execHost(stack, ', 1 2');
+      r.should.eql([1,2]);
+    })
+
+    it('should exec nvps', async () => {
+      let stack:any[] = [{ list }];
+      const r = await execHost(stack, 'a~1');
+      r.should.eql({ kind: 'Nvp', name: 'a', value: 1 });
+    })
+
+    it('should exec object declarations', async () => {
+      let stack:any[] = [{ new: newStruct }];
+      const r = await execHost(stack, '{ a~1 b~1');
+      r.should.eql({a:1, b:1});
     })
   })
 })

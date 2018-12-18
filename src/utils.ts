@@ -2,19 +2,23 @@ import { isList, isHtml, isString, isDate, isFunction, isObject, keys, isEqual, 
 
 // hide global variables from dynamic js: https://nodejs.org/api/globals.html
 export function js (jsCode:string, externalReferences?:any) {
-  const hideGlobals = [
-      'process','global'//,'setTimeout','setInterval','setImmediate','clearImmediate','clearInterval','clearTimeout'    
-  ];
-  const utils = module.exports;
-  const typeInfo = require('../src/TypeInfo');
-  const refNames = ['utils', 'utils_1', 'typeInfo', 'typeInfo_1', 'Promise','console', 'common_1'];
-  const refValues = [ utils, utils, typeInfo, typeInfo, Promise, console, require('./common')];
-  keys(externalReferences).forEach(key => {
-    refNames.push(key);
-    refValues.push(externalReferences[key]);
-  })  
-  const compiledJs = Function.apply(null, [...refNames, ...hideGlobals, '"use strict"; return ' + jsCode.trim()]);
-  return compiledJs.apply(null, refValues);    
+  try {
+    const hideGlobals = [
+        'process','global'//,'setTimeout','setInterval','setImmediate','clearImmediate','clearInterval','clearTimeout'    
+    ];
+    const utils = module.exports;
+    const typeInfo = require('../src/TypeInfo');
+    const refNames = ['utils', 'utils_1', 'typeInfo', 'typeInfo_1', 'Promise','console', 'common_1'];
+    const refValues = [ utils, utils, typeInfo, typeInfo, Promise, console, require('./common')];
+    keys(externalReferences).forEach(key => {
+      refNames.push(key);
+      refValues.push(externalReferences[key]);
+    })  
+    const compiledJs = Function.apply(null, [...refNames, ...hideGlobals, '"use strict"; return ' + jsCode.trim()]);
+    return compiledJs.apply(null, refValues);
+  } catch(err) {
+    throw new Error(`Failed to compile js code: \n${jsCode} \n${err.message}`);
+  }   
 }
 
 export function toJSON(obj:any){

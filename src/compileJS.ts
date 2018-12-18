@@ -1,12 +1,13 @@
-import { isSym, untick, isExpr, isList, guid } from "./common";
+import { isSym, untick, isExpr, isList, guid, sym } from "./common";
 import { js } from "./utils";
 import { readFileSync } from "fs";
 import { getName } from "./host";
+import { Fn } from "./typeInfo";
 
 
-export function refName() {
-  return 'ref_' + guid().replace(/-/g,'');
-}
+// export function refName() {
+//   return 'ref_' + guid().replace(/-/g,'');
+// }
 
 export function compileSym(refs:any[], stack:any[], sym:string) {
   if(!isSym(sym)) return sym;
@@ -52,17 +53,42 @@ export function compileExprBlock(refs:any[], stack:any[], expr:any) {
   return code.trim();
 }
 
+export function compileFn(refs:any[], stack:any[], fn:Fn) {
+  const fnScope = {}
+  let paramNames = []; //['_']
+  fn.params.forEach(p => {
+    paramNames.push(p.name)
+    fnScope[p.name] = null
+  });
+
+  stack.push(fnScope);
+  const r = compileExprBlock(refs, stack, fn.body);    
+  let paramRefs = '\n';
+  fn.params.forEach(p => {
+    const pRef = compileSym(refs, stack, sym(p.name))
+    paramRefs += `${pRef}=${p.name};`
+  })
+  stack.pop();
+  
+  return `function(${paramNames.join()}){
+    ${paramRefs.trimRight()}
+    let _ = null;
+    ${r};
+    return _;
+  }`
+}
+
 export function compileHost(stack:any[], ast:any[], refs:any[]=[]) {
-  let code = compileExprBlock(refs, stack, ast);
-  let fnCode = 'function(_,';  
+  let innerCode = compileExprBlock(refs, stack, ast);
+  let code = 'function(_,';
   refs.map((v, i) => {
-    fnCode += `r${i},`
+    code += `r${i},`
   })
 
-  fnCode = fnCode.substr(0,fnCode.length - 1); // remove trailing comma in arguments;
-  fnCode += `){${code};return _;}`;  
-  let f = js(fnCode);
+  code = code.substr(0,code.length - 1); // remove trailing comma in arguments;
+  code += `){${innerCode};return _;}`;
+  let f = js(code);
   let r = getName(stack, '_');
   let exec = () => f.apply(null, [ getName(stack, '_'), ...refs]);
-  return { fnCode, f, refs, exec }
+  return { code, f, refs, exec }
 }

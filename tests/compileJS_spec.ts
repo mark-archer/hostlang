@@ -112,8 +112,8 @@ describe('compile', () => {
 
   describe('compileFn', () => {
     it('should compile empty functions', () => {
-      let refs:any[] = [];
-      let stack:any[] = [{ add }, { a: 1 }];
+      let refs:any[] = []
+      let stack:any[] = [{ add }, { a: 1 }]
       let fn:Fn = {
         kind: 'Fn',
         params: [],
@@ -128,12 +128,12 @@ describe('compile', () => {
           })(_);
           return _;
         }
-      `);
+      `)
     })
 
     it('should add all parameters in order after _ and update their refs when the function is called', () => {
-      let refs:any[] = [];
-      let stack:any[] = [{ add }, { a: 1 }];
+      let refs:any[] = []
+      let stack:any[] = [{ add }, { a: 1 }]
       let fn:Fn = {
         kind: 'Fn',
         params: [ 
@@ -142,7 +142,7 @@ describe('compile', () => {
         ],
         body: []
       }
-      let r = compileFn(refs, stack, fn);
+      let r = compileFn(refs, stack, fn)
       r
       refs
       linesTrimmedEqual(r, `
@@ -154,12 +154,12 @@ describe('compile', () => {
           })(_);
           return _;
         }
-      `);
+      `)
     })
 
     it('should compile the body as an ExprBlock', () => {
-      let refs:any[] = [];
-      let stack:any[] = [{ add }, { a: 1 }];
+      let refs:any[] = []
+      let stack:any[] = [{ add }, { a: 1 }]
       //let hostFn:Fn = makeFn('add1', ['n'], Num, [['`', '`add', '`n', 1]]);
       let fn:Fn = {
         kind: 'Fn',
@@ -173,7 +173,7 @@ describe('compile', () => {
         },
         body: [ [ '`', '`add', '`n', 1 ] ]
       }
-      let r = compileFn(refs, stack, fn);
+      let r = compileFn(refs, stack, fn)
       r
       refs
       linesTrimmedEqual(r, `
@@ -190,8 +190,8 @@ describe('compile', () => {
     })
 
     it('should add named functions to the stack', () => {
-      let refs:any[] = [];
-      let stack:any[] = [{ add }, { a: 1 }];
+      let refs:any[] = []
+      let stack:any[] = [{ add }, { a: 1 }]
       let fn:Fn = {
         kind: 'Fn',
         name: 'add1',
@@ -205,15 +205,15 @@ describe('compile', () => {
         },
         body: [ [ '`', '`add', '`n', 1 ] ]
       }
-      let r = compileFn(refs, stack, fn);
+      let r = compileFn(refs, stack, fn)
       // TODO
     })
   })
 
   describe('compileHost', () => {
     it('should compile ast to js function', () => {
-      let stack:any[] = [{ add, a: 1 }];
-      let r = compileHost(stack, [['`', '`add', '`a', 2], ['`', '`add', '`_', 3]]);
+      let stack:any[] = [{ add, a: 1 }]
+      let r = compileHost(stack, [['`', '`add', '`a', 2], ['`', '`add', '`_', 3]])
       linesTrimmedEqual(r.code, `
         function(_,r0){
           _=(function(_){
@@ -223,15 +223,15 @@ describe('compile', () => {
           })(_);
           return _;
         }
-      `);
-      r.exec().should.equal(6);
+      `)
+      r.exec().should.equal(6)
     })
   })
   
   describe('execHost', () => {
     it('should exec numbers', async () => {    
       const r = await execHost([],'1')      
-      r.should.equal(1);
+      r.should.equal(1)
     })
 
     it('should exec strings', async () => {    
@@ -240,70 +240,86 @@ describe('compile', () => {
     })
 
     it('should exec refs', async () => {
-      let stack:any[] = [{ add }];
-      const r = await execHost(stack,'add');
-      r.should.equal(add);
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack,'add')
+      r.should.equal(add)
     })
 
     it('should exec expressions', async () => {
-      let stack:any[] = [{ add }];
-      const r = await execHost(stack, 'add "a" 1');
-      r.should.equal("a1");
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, 'add "a" 1')
+      r.should.equal("a1")
     })
 
     it('should exec expression blocks', async () => {
-      let stack:any[] = [{ add }];
-      const r = await execHost(stack, 'add "a" 1\nadd _ 2');
-      r.should.equal("a12");
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, 'add "a" 1\nadd _ 2')
+      r.should.equal("a12")
     })
 
     it('should exec list declarations', async () => {
-      let stack:any[] = [{ list }];
-      const r = await execHost(stack, ', 1 2');
-      r.should.eql([1,2]);
+      let stack:any[] = [{ list }]
+      const r = await execHost(stack, ', 1 2')
+      r.should.eql([1,2])
     })
 
     it('should exec nvps', async () => {
-      let stack:any[] = [{ list }];
-      const r = await execHost(stack, 'a~1');
-      r.should.eql({ kind: 'Nvp', name: 'a', value: 1 });
+      let stack:any[] = [{ list }]
+      const r = await execHost(stack, 'a~1')
+      r.should.eql({ kind: 'Nvp', name: 'a', value: 1 })
     })
 
     it('should exec object declarations', async () => {
-      let stack:any[] = [{ new: newStruct }];
-      const r = await execHost(stack, '{ a~1 b~1');
-      r.should.eql({a:1, b:1});
+      let stack:any[] = [{ new: newStruct }]
+      const r = await execHost(stack, '{ a~1 b~1')
+      r.should.eql({a:1, b:1})
     })
 
     it('should allow creating variables with no value', async () => {
-      let stack:any[] = [{ }];
-      const r = await execHost(stack, 'var a');
+      let stack:any[] = [{ }]
+      const r = await execHost(stack, 'var a')
       r
-      should(r).eql(null);
+      should(r).eql(null)
     })
 
     it('should allow creating variables with a value', async () => {
-      let stack:any[] = [{ }];
-      const r = await execHost(stack, 'var a 1');
-      r.should.equal(1);
+      let stack:any[] = [{ }]
+      const r = await execHost(stack, 'var a 1')
+      r.should.equal(1)
     })
 
     it('should allow creating variables with an expression', async () => {
-      let stack:any[] = [{ add }];
-      const r = await execHost(stack, 'var a : add 1 1');
-      r.should.equal(2);
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, 'var a : add 1 1')
+      r.should.equal(2)
     })
 
     it('should allow calling functions with no parameters', async () => {
-      let stack:any[] = [{ print1: () => 1 }];
-      const r = await execHost(stack, 'print1!');
-      r.should.equal(1);
+      let stack:any[] = [{ print1: () => 1 }]
+      const r = await execHost(stack, 'print1!')
+      r.should.equal(1)
     })
 
     it('should allow calling functions with parameters', async () => {
-      let stack:any[] = [{ add }];
-      const r = await execHost(stack, 'add 1 1');
-      r.should.equal(2);
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, 'add 1 1')
+      r.should.equal(2)
+    })
+
+    it('should allow calling macro functions', async () => {
+      let myMacro = () => [ '`', '`add', 1, 1 ]
+      //@ts-ignore
+      myMacro.isMacro = true
+      let stack:any[] = [{ add, myMacro }]
+      const r = await execHost(stack, 'myMacro!')
+      r
+      // r.should.equal(2)
+    })
+
+    it('should allow creating functions', async () => {
+      // let stack:any[] = [{ }]
+      // const r = await execHost(stack, '() => 1')
+      // r.should.equal(2)
     })
 
     it('should allow calling macro functions', async () => {

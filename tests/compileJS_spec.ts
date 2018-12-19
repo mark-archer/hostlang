@@ -1,5 +1,5 @@
 import { compileExpr, compileTerm, compileExprBlock, compileHost, compileFn, execHost, compileSym } from "../src/compileJS";
-import { add, list } from "../src/common";
+import { add, list, last, untick, sym } from "../src/common";
 import { Fn, Num, newObject, newStruct } from "../src/typeInfo";
 
 var should = require('should');
@@ -79,6 +79,41 @@ describe('compile', () => {
       let stack:any[] = [{ add, a: 1 }]
       let r = compileExpr(refs, stack, [ '`', '`add'])
       r.should.equal('_=r0.add()')
+    })
+
+    it('should allow calling macro functions while compiling', async () => {
+      let refs:any[] = []
+      let myMacro = () => [ '`', '`add', 1, 1 ]
+      //@ts-ignore
+      myMacro.isMacro = true;
+      let stack:any[] = [{ add, myMacro }]
+      const r = await compileExpr(refs, stack, ['`', '`myMacro'])
+      r.should.equal('_=r0.add(1,1)')
+    })
+
+    it('should not treat strings as macros', async () => {
+      let refs:any[] = []
+      let myMacro = () => [ '`', '`add', 1, 1 ]
+      //@ts-ignore
+      myMacro.isMacro = true;
+      let stack:any[] = [{ add, myMacro }]
+      const r = await compileExpr(refs, stack, ['`', 'myMacro'])
+      r.should.equal('_="myMacro"()')
+    })
+
+    it('should treat functions starting with $ as macros', async () => {
+      let refs:any[] = []
+      let $myMacro = () => [ '`', '`add', 1, 1 ]
+      let stack:any[] = [{ add, $myMacro }]
+      const r = await compileExpr(refs, stack, ['`', '`$myMacro'])
+      r.should.equal('_=r0.add(1,1)')
+    })
+
+    it('should allow assignment', async () => {
+      // let refs:any[] = []
+      // let stack:any[] = [{ add }]
+      // const r = await compileExpr(refs, stack, ['`', 'myMacro'])
+      // r.should.equal('_=r0.add(1,1)')
     })
   })
 
@@ -313,7 +348,7 @@ describe('compile', () => {
       let stack:any[] = [{ add, myMacro }]
       const r = await execHost(stack, 'myMacro!')
       r
-      // r.should.equal(2)
+      r.should.equal(2)
     })
 
     it('should allow creating functions', async () => {

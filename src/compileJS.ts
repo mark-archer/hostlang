@@ -1,5 +1,5 @@
-import { isSym, untick, isExpr, isList, guid, sym, last } from "./common";
-import { js, cleanCopyList } from "./utils";
+import { isSym, untick, isExpr, isList, guid, sym, last, skip } from "./common";
+import { js, cleanCopyList, stringify } from "./utils";
 import { readFileSync } from "fs";
 import { getName } from "./host";
 import { Fn } from "./typeInfo";
@@ -75,9 +75,33 @@ export function compileVar(refs:any[], stack:any[], expr:any) {
   return r
 }
 
+function isExprMacroCall(stack:any[], expr:any) {
+  if(!isExpr(expr)) return false;
+  const fnSym = expr[1];
+  if(!isSym(fnSym)) return false;  
+  const fn = getName(stack, untick(fnSym));
+  return fn && (fn.isMacro || untick(fnSym)[0] === '$');
+}
+
+export function compileMacro(refs:any[], stack:any[], expr:any) {
+  if(isExprMacroCall(stack, expr)) {
+    const fnSym = expr[1];
+    const fn = getName(stack, untick(fnSym));
+    let ast = skip(expr, 2);
+    expr = fn(stack, ...ast);
+    expr
+  }
+  return expr;
+}
+
 export function compileExpr(refs:any[], stack:any[], expr:any) {
   if(!isExpr(expr))
     return '_=' + compileTerm(refs, stack, expr)
+  if(isExprMacroCall(stack, expr)) {
+    expr = compileMacro(refs, stack, expr);
+    expr
+    return compileExpr(refs, stack, expr);
+  }
   if(expr[1] === sym('var')) 
     return compileVar(refs, stack, expr)
   expr.shift()
@@ -137,7 +161,11 @@ export function compileHost(stack:any[], ast:any[], refs:any[]=[]) {
   return { code, f, refs, exec }
 }
 
+
+
 export async function execHost(stack:any[]=[], code:string, refs:any[]=[]) {
+  if(!stack.length) stack.push({});
+  //last(stack).var = $var
   const astDirty = await parseHost(stack, code)
   const ast = cleanCopyList(astDirty)
   console.log(ast)
@@ -145,3 +173,17 @@ export async function execHost(stack:any[]=[], code:string, refs:any[]=[]) {
   console.log(exe.code)
   return exe.exec();
 }
+
+const $var = (stack:any[], name, ...valueExpr) => {
+  name
+  const ctx = last(stack)
+  name = untick(name)
+  if(ctx[name] !== undefined) throw new Error(`var already exists: ${name}`)
+  ctx[name] = null;
+  
+  //return ['`', sym(name), valueExpr]
+  //const code = `${compileExprBlock(refs, stack, valueExpr)};${compileSym(refs, stack, sym(name))}=_;`
+  //code 
+  //return code;
+}
+$var.isMacro = true;

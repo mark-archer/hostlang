@@ -44,8 +44,6 @@ export function compileSym(refs:any[], stack:any[], sym:string) {
   throw new Error(`${sym} is not defined`);
 }
 
-
-
 export function compileVar(refs:any[], stack:any[], expr:any) {
   const varSym = expr[2]
   defineVar(refs, stack, varSym)
@@ -181,8 +179,6 @@ export function compileHost(stack:any[], ast:any[], refs:any[]=[]) {
   return { code, f, refs, exec }
 }
 
-
-
 export async function execHost(stack:any[]=[], code:string, refs:any[]=[]) {
   if(!stack.length) stack.push({ });
   //last(stack).var = $var
@@ -202,15 +198,10 @@ const $fn = (refs:any[], stack:any[], expr) => {
   let args = skip(expr, 2);
   let name;
   if(isSym(args[0])) {
-    name = untick(args.shift());
-    name    
+    name = untick(args.shift());    
   }
   let params = untick(args.shift()).map(untick);
-  params
-  args
   let body = args
-  body
   const f = makeFn(name, params, undefined, body, stack);
-  f
   return compileFn(refs, stack, f);
 }

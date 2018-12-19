@@ -44,6 +44,47 @@ export function compileSym(refs:any[], stack:any[], sym:string) {
   throw new Error(`${sym} is not defined`);
 }
 
+
+
+export function compileVar(refs:any[], stack:any[], expr:any) {
+  const varSym = expr[2]
+  defineVar(refs, stack, varSym)
+  const varRef = compileSym(refs, stack, varSym)
+  const valueExpr = expr.length === 4 ? expr[3] : null;
+  let r = `${varRef}=${compileExpr(refs, stack, valueExpr)};`
+  r
+  return r
+}
+
+export function compileSet(refs:any[], stack:any[], expr:any) {
+  if(expr.length > 4) throw new Error('set called with too many arguments');
+  const varSym = expr[2]
+  const varRef = compileSym(refs, stack, varSym)
+  const valueExpr = expr[3];  
+  let r = `${varRef}=${compileTerm(refs, stack, valueExpr)};`
+  r
+  return r
+}
+
+function isExprMacroCall(stack:any[], expr:any) {
+  if(!isExpr(expr)) return false;
+  const fnSym = expr[1];
+  if(!isSym(fnSym)) return false;  
+  const fn = getName(stack, untick(fnSym));
+  return fn && (fn.isMacro || untick(fnSym)[0] === '$');
+}
+
+export function callMacro(refs:any[], stack:any[], expr:any) {
+  if(isExprMacroCall(stack, expr)) {
+    const fnSym = expr[1];
+    const fn = getName(stack, untick(fnSym));
+    let ast = skip(expr, 2);
+    expr = fn(stack, ...ast);
+    expr
+  }
+  return expr;
+}
+
 export function compileTerm(refs: any[], stack:any[], term:any) {
   if(isSym(term)) {
     return compileSym(refs, stack, term);
@@ -63,47 +104,18 @@ export function compileTerm(refs: any[], stack:any[], term:any) {
   return String(term)
 }
 
-export function compileVar(refs:any[], stack:any[], expr:any) {
-  const varSym = expr[2]
-  defineVar(refs, stack, varSym)
-  const varRef = compileSym(refs, stack, varSym)
-  const valueExpr = [...expr]
-  valueExpr.shift()
-  valueExpr.shift()
-  let r = `${compileExprBlock(refs, stack, valueExpr)};${varRef}=_;`
-  r
-  return r
-}
-
-function isExprMacroCall(stack:any[], expr:any) {
-  if(!isExpr(expr)) return false;
-  const fnSym = expr[1];
-  if(!isSym(fnSym)) return false;  
-  const fn = getName(stack, untick(fnSym));
-  return fn && (fn.isMacro || untick(fnSym)[0] === '$');
-}
-
-export function compileMacro(refs:any[], stack:any[], expr:any) {
-  if(isExprMacroCall(stack, expr)) {
-    const fnSym = expr[1];
-    const fn = getName(stack, untick(fnSym));
-    let ast = skip(expr, 2);
-    expr = fn(stack, ...ast);
-    expr
-  }
-  return expr;
-}
-
 export function compileExpr(refs:any[], stack:any[], expr:any) {
   if(!isExpr(expr))
     return '_=' + compileTerm(refs, stack, expr)
   if(isExprMacroCall(stack, expr)) {
-    expr = compileMacro(refs, stack, expr);
+    expr = callMacro(refs, stack, expr);
     expr
     return compileExpr(refs, stack, expr);
   }
   if(expr[1] === sym('var')) 
     return compileVar(refs, stack, expr)
+  if(expr[1] === sym('set')) 
+    return compileSet(refs, stack, expr)
   expr.shift()
   var f = compileTerm(refs, stack, expr.shift())
   let code = `_=${f}(`

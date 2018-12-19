@@ -81,39 +81,73 @@ describe('compile', () => {
       r.should.equal('_=r0.add()')
     })
 
-    it('should allow calling macro functions while compiling', async () => {
+    it('should allow calling macro functions while compiling', () => {
       let refs:any[] = []
       let myMacro = () => [ '`', '`add', 1, 1 ]
       //@ts-ignore
       myMacro.isMacro = true;
       let stack:any[] = [{ add, myMacro }]
-      const r = await compileExpr(refs, stack, ['`', '`myMacro'])
+      const r = compileExpr(refs, stack, ['`', '`myMacro'])
       r.should.equal('_=r0.add(1,1)')
     })
 
-    it('should not treat strings as macros', async () => {
+    it('should not treat strings as macros', () => {
       let refs:any[] = []
       let myMacro = () => [ '`', '`add', 1, 1 ]
       //@ts-ignore
       myMacro.isMacro = true;
       let stack:any[] = [{ add, myMacro }]
-      const r = await compileExpr(refs, stack, ['`', 'myMacro'])
+      const r = compileExpr(refs, stack, ['`', 'myMacro'])
       r.should.equal('_="myMacro"()')
     })
 
-    it('should treat functions starting with $ as macros', async () => {
+    it('should treat functions starting with $ as macros', () => {
       let refs:any[] = []
       let $myMacro = () => [ '`', '`add', 1, 1 ]
       let stack:any[] = [{ add, $myMacro }]
-      const r = await compileExpr(refs, stack, ['`', '`$myMacro'])
+      const r = compileExpr(refs, stack, ['`', '`$myMacro'])
       r.should.equal('_=r0.add(1,1)')
     })
 
-    it('should allow assignment', async () => {
-      // let refs:any[] = []
-      // let stack:any[] = [{ add }]
-      // const r = await compileExpr(refs, stack, ['`', 'myMacro'])
-      // r.should.equal('_=r0.add(1,1)')
+    it('should allow simple assignments', () => {
+      let refs:any[] = []
+      let stack:any[] = [{ a:1 }]
+      const r = compileExpr(refs, stack, ['`', '`set', '`a', 2])
+      r.should.equal('r0.a=2;')
+    })
+
+    it('should error when assignment to var that does not exist', () => {
+      let refs:any[] = []
+      let stack:any[] = [{ }]
+      should(() => compileExpr(refs, stack, ['`', '`set', '`a', 2])).throw()
+    })
+
+    it('should allow assignments from an expression', () => {
+      let refs:any[] = []
+      let stack:any[] = [{ a:1, add }]
+      const r = compileExpr(refs, stack, ['`', '`set', '`a', ['`', '`add', 1, 2]])
+      r.should.equal('r0.a=_=r0.add(1,2);')
+    })
+
+    it('should allow creating variables with no value', () => {
+      let stack:any[] = [{ }]
+      const r = compileExpr([], stack, ['`', '`var', '`a'])
+      r
+      should(r).eql('r0.a=_=null;')
+    })
+
+    it('should allow creating variables with a value', () => {
+      let stack:any[] = [{ }]
+      const r = compileExpr([], stack, ['`', '`var', '`a', 1])
+      r
+      should(r).eql('r0.a=_=1;')
+    })
+
+    it('should allow creating variables with an expression', () => {
+      let stack:any[] = [{ add }]
+      const r = compileExpr([], stack, ['`', '`var', '`a', ['`', '`add', 1, 2]])
+      r
+      should(r).eql('r0.a=_=r0.add(1,2);')
     })
   })
 
@@ -224,7 +258,7 @@ describe('compile', () => {
       `);
     })
 
-    it('should add named functions to the stack', () => {
+    it.skip('should add named functions to the stack', () => {
       let refs:any[] = []
       let stack:any[] = [{ add }, { a: 1 }]
       let fn:Fn = {
@@ -326,6 +360,12 @@ describe('compile', () => {
     it('should allow creating variables with an expression', async () => {
       let stack:any[] = [{ add }]
       const r = await execHost(stack, 'var a : add 1 1')
+      r.should.equal(2)
+    })
+
+    it('should allow assignments from an expression', async () => {
+      let stack:any[] = [{ a:1, add }]
+      const r = await execHost(stack, 'set a : add a 1')
       r.should.equal(2)
     })
 

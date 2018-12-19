@@ -305,6 +305,22 @@ describe('compile', () => {
       const r = await execHost(stack, 'add 1 1');
       r.should.equal(2);
     })
+
+    it('should allow calling macro functions', async () => {
+      let myMacro = () => [ '`', '`add', 1, 1 ]
+      //@ts-ignore
+      myMacro.isMacro = true;
+      let stack:any[] = [{ add, myMacro }];
+      const r = await execHost(stack, 'myMacro!');
+      r
+      // r.should.equal(2);
+    })
+
+    it('should allow creating functions', async () => {
+      // let stack:any[] = [{ }];
+      // const r = await execHost(stack, '() => 1');
+      // r.should.equal(2);
+    })
   })
 })
 

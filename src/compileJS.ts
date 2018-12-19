@@ -31,13 +31,13 @@ export function compileSym(refs:any[], stack:any[], sym:string) {
   if(!isSym(sym)) {
     throw new Error(`Not a symbol: ${sym}`)    
   }
-  sym = untick(sym);
-  if(sym == '_') return sym;
+  sym = untick(sym)
+  if(sym == '_') return sym
   for(let i = stack.length-1; i >= 0; i--) {
     if(stack[i][sym] !== undefined) {
       let ctx = stack[i]
-      let scopeId = getScopeId(refs, ctx);
-      let code = `${scopeId}.${sym}`; // NOTE this is effectively a pointer
+      let scopeId = getScopeId(refs, ctx)
+      let code = `${scopeId}.${sym}` // NOTE this is effectively a pointer
       return code;
     }
   }
@@ -49,7 +49,7 @@ export function compileTerm(refs: any[], stack:any[], term:any) {
     return compileSym(refs, stack, term);
   }
   if(isExpr(term)){
-    return compileExpr(refs, stack, term);  
+    return compileExpr(refs, stack, term);
   }
   if(isList(term)) {
     return '[' + term.map(t => compileTerm(refs, stack, t)).join() + ']';
@@ -58,9 +58,9 @@ export function compileTerm(refs: any[], stack:any[], term:any) {
     return '{' + Object.keys(term).map(k => `"${k}":${compileTerm(refs, stack, term[k])}`) + '}'
   }
   if(isString(term)) {
-    return `"${term}"`;
+    return `"${term}"`
   }
-  return String(term);
+  return String(term)
 }
 
 export function compileVar(refs:any[], stack:any[], expr:any) {
@@ -68,52 +68,52 @@ export function compileVar(refs:any[], stack:any[], expr:any) {
   defineVar(refs, stack, varSym)
   const varRef = compileSym(refs, stack, varSym)
   const valueExpr = [...expr]
-  valueExpr.shift();
-  valueExpr.shift();
+  valueExpr.shift()
+  valueExpr.shift()
   let r = `${compileExprBlock(refs, stack, valueExpr)};${varRef}=_;`
   r
-  return r;
+  return r
 }
 
 export function compileExpr(refs:any[], stack:any[], expr:any) {
-  if(!isExpr(expr)) 
-    return '_=' + compileTerm(refs, stack, expr);
+  if(!isExpr(expr))
+    return '_=' + compileTerm(refs, stack, expr)
   if(expr[1] === sym('var')) 
-    return compileVar(refs, stack, expr);
-  expr.shift();
-  var f = compileTerm(refs, stack, expr.shift());
-  let code = `_=${f}(`;
+    return compileVar(refs, stack, expr)
+  expr.shift()
+  var f = compileTerm(refs, stack, expr.shift())
+  let code = `_=${f}(`
   code += expr.map((i:any) => compileTerm(refs, stack, i)).join(',')
-  code += ')';
-  return code;
+  code += ')'
+  return code
 }
 
 export function compileExprBlock(refs:any[], stack:any[], exprBlock:any) {
-  let code = '_=(function(_){';
+  let code = '_=(function(_){'
   exprBlock.forEach((expr:any) => {
-    code += compileExpr(refs, stack, expr) + ';';
+    code += compileExpr(refs, stack, expr) + ';'
   })
   code += 'return _;})(_)'
-  return code.trim();
+  return code.trim()
 }
 
 export function compileFn(refs:any[], stack:any[], fn:Fn) {
   const fnScope = {}
-  let paramNames = []; //['_']
+  let paramNames = []
   fn.params.forEach(p => {
     paramNames.push(p.name)
     fnScope[p.name] = null
-  });
+  })
 
-  stack.push(fnScope);
-  const r = compileExprBlock(refs, stack, fn.body);    
-  let paramRefs = '\n';
+  stack.push(fnScope)
+  const r = compileExprBlock(refs, stack, fn.body)
+  let paramRefs = '\n'
   fn.params.forEach(p => {
     const pRef = compileTerm(refs, stack, sym(p.name))
     paramRefs += `${pRef}=${p.name};`
   })
-  stack.pop();
-  
+  stack.pop()
+
   return `function(${paramNames.join()}){
     ${paramRefs.trimRight()}
     let _ = null;
@@ -123,17 +123,17 @@ export function compileFn(refs:any[], stack:any[], fn:Fn) {
 }
 
 export function compileHost(stack:any[], ast:any[], refs:any[]=[]) {
-  let innerCode = compileExprBlock(refs, stack, ast);
-  let code = 'function(_,';
+  let innerCode = compileExprBlock(refs, stack, ast)
+  let code = 'function(_,'
   refs.map((v, i) => {
     code += `r${i},`
   })
 
-  code = code.substr(0,code.length - 1); // remove trailing comma in arguments;
-  code += `){${innerCode};return _;}`;
-  let f = js(code);
-  let r = getName(stack, '_');
-  let exec = () => f.apply(null, [ getName(stack, '_'), ...refs]);
+  code = code.substr(0,code.length - 1) // remove trailing comma in arguments;
+  code += `){${innerCode};return _;}`
+  let f = js(code)
+  let r = getName(stack, '_')
+  let exec = () => f.apply(null, [ getName(stack, '_'), ...refs])
   return { code, f, refs, exec }
 }
 

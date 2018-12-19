@@ -1,4 +1,4 @@
-import { isSym, untick, isExpr, isList, guid, sym } from "./common";
+import { isSym, untick, isExpr, isList, guid, sym, last } from "./common";
 import { js, cleanCopyList } from "./utils";
 import { readFileSync } from "fs";
 import { getName } from "./host";
@@ -6,10 +6,26 @@ import { Fn } from "./typeInfo";
 import { parseHost } from "./parse";
 import { isString, isObject } from "util";
 
-
 // export function refName() {
 //   return 'ref_' + guid().replace(/-/g,'');
 // }
+
+export function getScopeId(refs:any[], ctx:any) {
+  let ref = refs.indexOf(ctx);
+  if(ref === -1) {
+    ref = refs.length;
+    refs.push(ctx);
+  }
+  // NOTE this could be done with guids to avoid needing to access a map of properties 
+  return `r${ref}` 
+}
+
+export function defineVar(refs:any[], stack:any[], sym:string) {
+  const ctx = last(stack);
+  sym = untick(sym);
+  if(ctx[sym] !== undefined) throw new Error(`var already exists: ${sym}`);
+  ctx[sym] = null;
+}
 
 export function compileSym(refs:any[], stack:any[], sym:string) {
   if(!isSym(sym)) {
@@ -20,12 +36,8 @@ export function compileSym(refs:any[], stack:any[], sym:string) {
   for(let i = stack.length-1; i >= 0; i--) {
     if(stack[i][sym] !== undefined) {
       let ctx = stack[i]
-      let ref = refs.indexOf(ctx);
-      if(ref === -1) {
-        ref = refs.length;
-        refs.push(ctx);
-      }
-      let code = `r${ref}.${sym}`; // NOTE this is effectively a pointer
+      let scopeId = getScopeId(refs, ctx);
+      let code = `${scopeId}.${sym}`; // NOTE this is effectively a pointer
       return code;
     }
   }
@@ -51,22 +63,33 @@ export function compileTerm(refs: any[], stack:any[], term:any) {
   return String(term);
 }
 
+export function compileVar(refs:any[], stack:any[], expr:any) {
+  const varSym = expr[2]
+  defineVar(refs, stack, varSym)
+  const varRef = compileSym(refs, stack, varSym)
+  const valueExpr = [...expr]
+  valueExpr.shift();
+  valueExpr.shift();
+  let r = `${compileExprBlock(refs, stack, valueExpr)};${varRef}=_;`
+  r
+  return r;
+}
+
 export function compileExpr(refs:any[], stack:any[], expr:any) {
   if(!isExpr(expr)) 
     return '_=' + compileTerm(refs, stack, expr);
+  if(expr[1] === sym('var')) 
+    return compileVar(refs, stack, expr);
   expr.shift();
   var f = compileTerm(refs, stack, expr.shift());
   let code = `_=${f}(`;
-  expr.forEach((i:any) => {
-    code += compileTerm(refs, stack, i) + ',';
-  })
-  code = code.substr(0, code.length - 1) + ')';
+  code += expr.map((i:any) => compileTerm(refs, stack, i)).join(',')
+  code += ')';
   return code;
 }
 
 export function compileExprBlock(refs:any[], stack:any[], exprBlock:any) {
   let code = '_=(function(_){';
-  exprBlock
   exprBlock.forEach((expr:any) => {
     code += compileExpr(refs, stack, expr) + ';';
   })

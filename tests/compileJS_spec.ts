@@ -73,6 +73,13 @@ describe('compile', () => {
       let r = compileExpr(refs, stack, 'a')
       r.should.equal('_="a"')
     })
+
+    it('should compile function calls with no arguments', () => {
+      let refs:any[] = [];
+      let stack:any[] = [{ add, a: 1 }]
+      let r = compileExpr(refs, stack, [ '`', '`add'])
+      r.should.equal('_=r0.add()')
+    })
   })
 
   describe('compileExprBlock', () => {
@@ -266,6 +273,37 @@ describe('compile', () => {
       let stack:any[] = [{ new: newStruct }];
       const r = await execHost(stack, '{ a~1 b~1');
       r.should.eql({a:1, b:1});
+    })
+
+    it('should allow creating variables with no value', async () => {
+      let stack:any[] = [{ }];
+      const r = await execHost(stack, 'var a');
+      r
+      should(r).eql(null);
+    })
+
+    it('should allow creating variables with a value', async () => {
+      let stack:any[] = [{ }];
+      const r = await execHost(stack, 'var a 1');
+      r.should.equal(1);
+    })
+
+    it('should allow creating variables with an expression', async () => {
+      let stack:any[] = [{ add }];
+      const r = await execHost(stack, 'var a : add 1 1');
+      r.should.equal(2);
+    })
+
+    it('should allow calling functions with no parameters', async () => {
+      let stack:any[] = [{ print1: () => 1 }];
+      const r = await execHost(stack, 'print1!');
+      r.should.equal(1);
+    })
+
+    it('should allow calling functions with parameters', async () => {
+      let stack:any[] = [{ add }];
+      const r = await execHost(stack, 'add 1 1');
+      r.should.equal(2);
     })
   })
 })

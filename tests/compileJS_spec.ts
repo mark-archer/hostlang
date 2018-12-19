@@ -441,6 +441,12 @@ describe('compile', () => {
       r.should.equal(2)
     })
 
+    it('should allow calling functions with piped parameters', async () => {
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, '1 >> add 1')
+      r.should.equal(2)
+    })
+
     it('should scope block variables correctly', async () => {
       let stack:any[] = [{ add, a:1, b:2 }]
       const r = await execHost(stack, '(do (var a 2) (add a b)), (add _ a b)')

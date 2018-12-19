@@ -113,7 +113,7 @@ describe('compile', () => {
       let refs:any[] = []
       let stack:any[] = [{ a:1 }]
       const r = compileExpr(refs, stack, ['`', '`set', '`a', 2])
-      r.should.equal('r0.a=2;')
+      r.should.equal('r0.a=2')
     })
 
     it('should error when assignment to var that does not exist', () => {
@@ -126,28 +126,28 @@ describe('compile', () => {
       let refs:any[] = []
       let stack:any[] = [{ a:1, add }]
       const r = compileExpr(refs, stack, ['`', '`set', '`a', ['`', '`add', 1, 2]])
-      r.should.equal('r0.a=_=r0.add(1,2);')
+      r.should.equal('r0.a=_=r0.add(1,2)')
     })
 
     it('should allow creating variables with no value', () => {
       let stack:any[] = [{ }]
       const r = compileExpr([], stack, ['`', '`var', '`a'])
       r
-      should(r).eql('r0.a=_=null;')
+      should(r).eql('r0.a=_=null')
     })
 
     it('should allow creating variables with a value', () => {
       let stack:any[] = [{ }]
       const r = compileExpr([], stack, ['`', '`var', '`a', 1])
       r
-      should(r).eql('r0.a=_=1;')
+      should(r).eql('r0.a=_=1')
     })
 
     it('should allow creating variables with an expression', () => {
       let stack:any[] = [{ add }]
       const r = compileExpr([], stack, ['`', '`var', '`a', ['`', '`add', 1, 2]])
       r
-      should(r).eql('r0.a=_=r0.add(1,2);')
+      should(r).eql('r0.a=_=r0.add(1,2)')
     })
   })
 
@@ -173,6 +173,19 @@ describe('compile', () => {
         _=(function(_){
           _=r0.add(r1.a,2);
           _=r0.add(_,3);
+          return _;
+        })(_)
+      `);
+    })
+
+    it('should compile variable declarations in correct scope', () => {
+      let refs:any[] = [];
+      let stack:any[] = [{ add }, { a: 1 }];
+      let r = compileExprBlock(refs, stack, [['`', '`var', '`b', 2], ['`', '`add', '`a', '`b']]);
+      linesTrimmedEqual(r, `
+        _=(function(_){
+          r0.b=_=2;
+          _=r1.add(r2.a,r0.b);
           return _;
         })(_)
       `);
@@ -397,21 +410,7 @@ describe('compile', () => {
       // r.should.equal(2)
     })
 
-    it('should allow calling macro functions', async () => {
-      let myMacro = () => [ '`', '`add', 1, 1 ]
-      //@ts-ignore
-      myMacro.isMacro = true;
-      let stack:any[] = [{ add, myMacro }];
-      const r = await execHost(stack, 'myMacro!');
-      r
-      // r.should.equal(2);
-    })
-
-    it('should allow creating functions', async () => {
-      // let stack:any[] = [{ }];
-      // const r = await execHost(stack, '() => 1');
-      // r.should.equal(2);
-    })
+    
   })
 })
 

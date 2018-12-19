@@ -10,7 +10,7 @@ import { isString, isObject } from "util";
 //   return 'ref_' + guid().replace(/-/g,'');
 // }
 
-export function getScopeId(refs:any[], ctx:any) {
+export function getRefId(refs:any[], ctx:any) {
   let ref = refs.indexOf(ctx);
   if(ref === -1) {
     ref = refs.length;
@@ -36,7 +36,7 @@ export function compileSym(refs:any[], stack:any[], sym:string) {
   for(let i = stack.length-1; i >= 0; i--) {
     if(stack[i][sym] !== undefined) {
       let ctx = stack[i]
-      let scopeId = getScopeId(refs, ctx)
+      let scopeId = getRefId(refs, ctx)
       let code = `${scopeId}.${sym}` // NOTE this is effectively a pointer
       return code;
     }
@@ -51,7 +51,7 @@ export function compileVar(refs:any[], stack:any[], expr:any) {
   defineVar(refs, stack, varSym)
   const varRef = compileSym(refs, stack, varSym)
   const valueExpr = expr.length === 4 ? expr[3] : null;
-  let r = `${varRef}=${compileExpr(refs, stack, valueExpr)};`
+  let r = `${varRef}=${compileExpr(refs, stack, valueExpr)}`
   r
   return r
 }
@@ -61,7 +61,7 @@ export function compileSet(refs:any[], stack:any[], expr:any) {
   const varSym = expr[2]
   const varRef = compileSym(refs, stack, varSym)
   const valueExpr = expr[3];  
-  let r = `${varRef}=${compileTerm(refs, stack, valueExpr)};`
+  let r = `${varRef}=${compileTerm(refs, stack, valueExpr)}`
   r
   return r
 }
@@ -126,9 +126,9 @@ export function compileExpr(refs:any[], stack:any[], expr:any) {
 
 export function compileExprBlock(refs:any[], stack:any[], exprBlock:any) {
   let code = '_=(function(_){'
-  exprBlock.forEach((expr:any) => {
-    code += compileExpr(refs, stack, expr) + ';'
-  })
+  stack.push({});
+  exprBlock.forEach(expr => code += compileExpr(refs, stack, expr) + ';')
+  stack.pop();
   code += 'return _;})(_)'
   return code.trim()
 }

@@ -1,5 +1,5 @@
 import { compileExpr, compileTerm, compileExprBlock, compileHost, compileFn, execHost, compileSym } from "../src/compileJS";
-import { add, list, last, untick, sym } from "../src/common";
+import { add, list, last, untick, sym, isFunction } from "../src/common";
 import { Fn, Num, newObject, newStruct } from "../src/typeInfo";
 
 var should = require('should');
@@ -139,15 +139,62 @@ describe('compile', () => {
     it('should allow creating variables with a value', () => {
       let stack:any[] = [{ }]
       const r = compileExpr([], stack, ['`', '`var', '`a', 1])
-      r
       should(r).eql('r0.a=_=1')
     })
 
     it('should allow creating variables with an expression', () => {
       let stack:any[] = [{ add }]
       const r = compileExpr([], stack, ['`', '`var', '`a', ['`', '`add', 1, 2]])
-      r
       should(r).eql('r0.a=_=r0.add(1,2)')
+    })
+
+    it('should compile do blocks and scope variables correctly', () => {
+      let stack:any[] = [{ add, a:1 }];
+      let r = compileExpr([], stack, [
+        '`', '`do', 
+        '`a', 
+        ['`', '`var', '`a', 3]
+      ]);
+      linesTrimmedEqual(r, `
+        _=(function(_){
+          _=r0.a;
+          r1.a=_=3;
+          return _;
+        })(_)
+      `);
+    })
+
+    it('should allow creating anonymouse functions', () => {
+      let stack:any[] = [{ add }]
+      const r = compileExpr([], stack, ['`', '`fn', [], 1])
+      r
+      linesTrimmedEqual(r, `
+        _=function(){
+          let _ = null;
+          _=(function(_){
+            _=1;
+            return _;
+          })(_);
+          return _;
+        }
+      `);
+    })
+
+    it('should allow creating named functions with parameters', () => {
+      let stack:any[] = [{ add }]
+      const r = compileExpr([], stack, ['`', '`fn', '`a', ['x'], 1])
+      r
+      linesTrimmedEqual(r, `
+        r1.a=_=function(x){
+          r0.x=x;
+          let _ = null;
+          _=(function(_){
+            _=1;
+            return _;
+          })(_);
+          return _;
+        }
+      `);
     })
   })
 
@@ -203,7 +250,7 @@ describe('compile', () => {
       }
       let r = compileFn(refs, stack, fn);
       linesTrimmedEqual(r, `
-        function(){
+        _=function(){
           let _ = null;
           _=(function(_){
             return _;
@@ -228,7 +275,7 @@ describe('compile', () => {
       r
       refs
       linesTrimmedEqual(r, `
-        function(a,b){
+        _=function(a,b){
           r0.a=a;r0.b=b;
           let _ = null;
           _=(function(_){
@@ -259,7 +306,7 @@ describe('compile', () => {
       r
       refs
       linesTrimmedEqual(r, `
-        function(n){
+        _=function(n){
           r1.n=n;
           let _ = null;
           _=(function(_){
@@ -394,6 +441,12 @@ describe('compile', () => {
       r.should.equal(2)
     })
 
+    it('should scope block variables correctly', async () => {
+      let stack:any[] = [{ add, a:1, b:2 }]
+      const r = await execHost(stack, '(do (var a 2) (add a b)), (add _ a b)')
+      r.should.equal(7)
+    })
+
     it('should allow calling macro functions', async () => {
       let myMacro = () => [ '`', '`add', 1, 1 ]
       //@ts-ignore
@@ -404,13 +457,19 @@ describe('compile', () => {
       r.should.equal(2)
     })
 
-    it('should allow creating functions', async () => {
-      // let stack:any[] = [{ }]
-      // const r = await execHost(stack, '() => 1')
-      // r.should.equal(2)
+    it('should allow creating anonymouse functions', async () => {
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, '() => 1')
+      isFunction(r).should.equal(true)
+      r().should.equal(1)
     })
 
-    
+    it('should allow creating named functions with parameters', async () => {
+      let stack:any[] = [{ add, a:1, x:2 }]
+      const r = await execHost(stack, 'a (x) => x + 3')
+      isFunction(r).should.equal(true)
+      r(4).should.equal(7)
+    })    
   })
 })
 

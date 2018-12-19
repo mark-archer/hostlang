@@ -2,7 +2,7 @@ import { isSym, untick, isExpr, isList, guid, sym, last, skip } from "./common";
 import { js, cleanCopyList, stringify } from "./utils";
 import { readFileSync } from "fs";
 import { getName } from "./host";
-import { Fn } from "./typeInfo";
+import { Fn, makeFn } from "./typeInfo";
 import { parseHost } from "./parse";
 import { isString, isObject } from "util";
 
@@ -112,10 +112,11 @@ export function compileExpr(refs:any[], stack:any[], expr:any) {
     expr
     return compileExpr(refs, stack, expr);
   }
-  if(expr[1] === sym('var')) 
-    return compileVar(refs, stack, expr)
-  if(expr[1] === sym('set')) 
-    return compileSet(refs, stack, expr)
+  if(expr[1] === sym('var')) return compileVar(refs, stack, expr)
+  if(expr[1] === sym('set')) return compileSet(refs, stack, expr)
+  if(expr[1] === sym('do')) return compileExprBlock(refs, stack, skip(expr, 2))
+  if(expr[1] === sym('fn')) return $fn(refs, stack, expr);
+  
   expr.shift()
   var f = compileTerm(refs, stack, expr.shift())
   let code = `_=${f}(`
@@ -136,6 +137,7 @@ export function compileExprBlock(refs:any[], stack:any[], exprBlock:any) {
 export function compileFn(refs:any[], stack:any[], fn:Fn) {
   const fnScope = {}
   let paramNames = []
+  console.log(fn)
   fn.params.forEach(p => {
     paramNames.push(p.name)
     fnScope[p.name] = null
@@ -150,12 +152,18 @@ export function compileFn(refs:any[], stack:any[], fn:Fn) {
   })
   stack.pop()
 
-  return `function(${paramNames.join()}){
+  let code = `_=function(${paramNames.join()}){
     ${paramRefs.trimRight()}
     let _ = null;
     ${r};
     return _;
   }`
+  if(fn.name) {
+    defineVar(refs, stack, fn.name)
+    const ref = compileSym(refs, stack, sym(fn.name))
+    code = `${ref}=${code}`
+  }
+  return code;
 }
 
 export function compileHost(stack:any[], ast:any[], refs:any[]=[]) {
@@ -176,8 +184,9 @@ export function compileHost(stack:any[], ast:any[], refs:any[]=[]) {
 
 
 export async function execHost(stack:any[]=[], code:string, refs:any[]=[]) {
-  if(!stack.length) stack.push({});
+  if(!stack.length) stack.push({ });
   //last(stack).var = $var
+  //last(stack).fn = $fn
   const astDirty = await parseHost(stack, code)
   const ast = cleanCopyList(astDirty)
   console.log(ast)
@@ -186,16 +195,22 @@ export async function execHost(stack:any[]=[], code:string, refs:any[]=[]) {
   return exe.exec();
 }
 
-const $var = (stack:any[], name, ...valueExpr) => {
-  name
-  const ctx = last(stack)
-  name = untick(name)
-  if(ctx[name] !== undefined) throw new Error(`var already exists: ${name}`)
-  ctx[name] = null;
-  
-  //return ['`', sym(name), valueExpr]
-  //const code = `${compileExprBlock(refs, stack, valueExpr)};${compileSym(refs, stack, sym(name))}=_;`
-  //code 
-  //return code;
+const $fn = (refs:any[], stack:any[], expr) => {
+  refs
+  stack
+  expr
+  let args = skip(expr, 2);
+  let name;
+  if(isSym(args[0])) {
+    name = untick(args.shift());
+    name    
+  }
+  let params = untick(args.shift()).map(untick);
+  params
+  args
+  let body = args
+  body
+  const f = makeFn(name, params, undefined, body, stack);
+  f
+  return compileFn(refs, stack, f);
 }
-$var.isMacro = true;

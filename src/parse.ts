@@ -2,33 +2,8 @@ import { tick, last, range, sym, nvp, isSym, untick, isNumber, isList} from "./c
 import { js } from "./utils";
 import { apply } from "./host";
 import { meta } from "./typeInfo";
+import { ParseInfo, ParseInfoOptions, parseInfo } from "./parseInfo";
 
-export type ParseInfoOptions = {
-  terminators?: RegExp
-  maxSymLength?: number,
-  tabSize?:number,
-  debug?:boolean,
-  sourceMap?:boolean
-}
-export type ParseInfo = {
-  code: string
-  i: number
-  indent: number
-  clist: any
-  root: any[]
-  stack: any[]  
-  peek: (n?:number) => string
-  terminators:RegExp
-  maxSymLength:number
-  tabSize:number
-  peekWord: (terminators?:RegExp, maxSymLength?:number) => string
-  newList: (explicit?:boolean) => any
-  endList: (explicit?:boolean) => any
-  getCurrentLineNum: () => number
-  getCurrentColNum: () => number
-  getLine: (lineNum:number) => string
-  //getParent: (item:any, stack?:any[]) => any
-}
 export type ParseFn = (pi:ParseInfo) => any
 
 export function parseHost(stack:any[], code:string, options:ParseInfoOptions={}) : Promise<any> {
@@ -43,78 +18,8 @@ export function parseHost(stack:any[], code:string, options:ParseInfoOptions={})
     parsers.push.apply(parsers, scopeMeta.parsers);
   }
   
-  //const root = ['`','`evalBlock'];
-  const root:any[] = [];
-  const pi:ParseInfo = {
-    code,
-    i:0,
-    indent:0,
-    clist: root,
-    root,
-    stack: [],
-    peek: (n?:number) => pi.code.substr(pi.i, n || 1), // || '',
-    terminators: options.terminators || /[^a-zA-Z0-9_`'-]/, // anything not allowed in names
-    maxSymLength: options.maxSymLength || 100,
-    tabSize: options.tabSize || 4,    
-    peekWord: (terminators?:RegExp, maxSymLength?:number) => {
-      terminators = terminators || pi.terminators;
-      let maybeWord = code.substr(pi.i, maxSymLength || pi.maxSymLength);
-      var bi = terminators.exec(maybeWord);
-      if(!bi || !bi.index) return maybeWord; // TODO: this might not be right
-      return maybeWord.substr(0, bi.index);
-    },
-    newList: (explicit?:boolean) => {
-      //if(!pi.clist) throw new Error("clist is undefined - probably too many close parens ')'");
-      pi.stack.push(pi.clist);
-      var nlist:any = ['`'];
-      nlist.indent = pi.indent;
-      // if(explicit) nlist.indent = pi.clist.indent
-      // else nlist.indent = pi.clist.indent + 1
-      //nlist.indent = (pi.clist.indent + 1) || 0; // default indent to parent lists indent + 1
-      nlist.explicit = explicit || false;
-      pi.clist.push(nlist);
-      pi.clist = nlist;
-      
-      if(options.sourceMap !== false) {
-        var posCode = pi.code.substring(0,pi.i);      
-        nlist._sourceFile = stack[0] && stack[0].meta && stack[0].meta._sourceFile;
-        nlist._sourceLine = pi.getCurrentLineNum() //(posCode.match(/\n/g) || []).length;
-        nlist._sourceColumn = pi.getCurrentColNum() //posCode.length - posCode.lastIndexOf('\n');
-      }
-    },
-    endList: (explicit?:boolean) => {
-      // pi.stack.pop();      
-      // pi.clist = last(pi.stack);
-      if(pi.clist.pipeThird) throw new Error("Piped into the third spot in a list but the list only had 1 item");
-      var thisListExplicit = pi.clist.explicit || false;      
-      pi.clist = pi.stack.pop();
-      if(!pi.clist) throw new Error ("clist is undefined - probably too many close parens ')'");
-      // if(pi.clist.isCaret) {
-      //   var carets = pi.clist.pop();
-      //   if(carets[0] === '`')
-      //     carets.shift();
-      //     pi.clist.push.apply(pi.clist,carets);      
-      // }
-      if(explicit && !thisListExplicit) pi.endList(explicit);
-    },
-    getCurrentLineNum: () => pi.code.substr(0,pi.i).split('\n').length,
-    getCurrentColNum: () => (last(pi.code.substr(0,pi.i).split('\n')) || '').length || 1,
-    getLine: (lineNum) => pi.code.split('\n')[lineNum-1],
-    // getParent: (item, stack) => {
-    //   if (!stack) stack = root;
-    //   if (item === stack) return null;
-    //   for (var i = 0; i < stack.length; i++) {
-    //     var si = stack[i];
-    //     if (item === si) return stack;
-    //     if (isList(si)) {
-    //       var subCheck = pi.getParent(item, si);
-    //       if (subCheck) return subCheck;
-    //     }
-    //   }
-    //   return null;
-    // }
-  }
-
+  const pi = parseInfo(stack, code, options);
+  
   // immediately start a new list to represent to first line of code
   pi.newList();
     
@@ -616,9 +521,9 @@ function parsePipes(pi:ParseInfo){
       delete pi.clist.pipeNext;
   }
 
-  if(pi.clist.pipeThird && pi.clist.length >= 3){
+  if(pi.clist.minLength == 4 && pi.clist.length >= 3){
       pi.clist.splice(3,0,sym('_'))
-      delete pi.clist.pipeThird;
+      //delete pi.clist.pipeThird;
   }
   
   // >>> pipe to second arg
@@ -627,7 +532,7 @@ function parsePipes(pi:ParseInfo){
       var indent = pi.clist.indent;
       pi.endList();
       pi.newList();
-      pi.clist.pipeThird = true;
+      pi.clist.minLength = 4;
       pi.clist.indent = indent;        
       return true;
   }    
@@ -663,7 +568,8 @@ function parsePipes(pi:ParseInfo){
     pi.newList();
     pi.clist.indent = indent;
     pi.clist.push(sym('varSet'))
-    pi.clist.pipeThird = true;
+    //pi.clist.pipeThird = true;
+    pi.clist.minLength = 4;
     return true;
   }    
 

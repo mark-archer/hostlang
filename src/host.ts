@@ -1,8 +1,8 @@
 import { isSym, untick, isExpr, isJS, isNvp, Nvp, without, tick, unquote, isPromise, keys, clone, isList, promiseAll } from "./common";
 import { copy } from "./utils";
-import { parseHost, ParseInfoOptions } from "./parse";
+import { parseHost } from "./parse";
 import { validate, isFn, Fn, ParamInfo, isMeta } from "./typeInfo";
-import { isString } from "util";
+import { ParseInfoOptions } from "./parseInfo";
 
 //responseText
 module.exports.parseHost = parseHost;

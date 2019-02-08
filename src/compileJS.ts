@@ -64,6 +64,20 @@ export function compileSet(refs:any[], stack:any[], expr:any) {
   return r
 }
 
+export function compileCond(refs:any[], stack:any[], expr:any[]) {
+  expr.shift()
+  expr.shift()
+  let r = '';
+  expr.forEach((ifthen, i) => {
+    let _if = compileExpr(refs, stack, ifthen.shift()).substr(2)
+    const _then = compileExprBlock(refs, stack, ifthen).substr(2)
+    r += `if (${_if}) _=${_then}`
+    if (i < expr.length - 1)
+      r += '\nelse '
+  })  
+  return r
+} 
+
 function isExprMacroCall(stack:any[], expr:any) {
   if(!isExpr(expr)) return false;
   const fnSym = expr[1];
@@ -112,6 +126,7 @@ export function compileExpr(refs:any[], stack:any[], expr:any) {
   }
   if(expr[1] === sym('var')) return compileVar(refs, stack, expr)
   if(expr[1] === sym('set')) return compileSet(refs, stack, expr)
+  if(expr[1] === sym('cond')) return compileCond(refs, stack, expr);
   if(expr[1] === sym('do')) return compileExprBlock(refs, stack, skip(expr, 2))
   if(expr[1] === sym('fn')) return $fn(refs, stack, expr);
   
@@ -135,7 +150,6 @@ export function compileExprBlock(refs:any[], stack:any[], exprBlock:any) {
 export function compileFn(refs:any[], stack:any[], fn:Fn) {
   const fnScope = {}
   let paramNames = []
-  console.log(fn)
   fn.params.forEach(p => {
     paramNames.push(p.name)
     fnScope[p.name] = null
@@ -185,9 +199,7 @@ export async function execHost(stack:any[]=[], code:string, refs:any[]=[]) {
   //last(stack).fn = $fn
   const astDirty = await parseHost(stack, code)
   const ast = cleanCopyList(astDirty)
-  console.log(ast)
   const exe = compileHost(stack, ast, refs)
-  console.log(exe.code)
   return exe.exec();
 }
 

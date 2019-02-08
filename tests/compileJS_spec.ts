@@ -1,4 +1,4 @@
-import { compileExpr, compileTerm, compileExprBlock, compileHost, compileFn, execHost, compileSym } from "../src/compileJS";
+import { compileExpr, compileTerm, compileExprBlock, compileHost, compileFn, execHost, compileSym, compileCond } from "../src/compileJS";
 import { add, list, last, untick, sym, isFunction } from "../src/common";
 import { Fn, Num, newObject, newStruct } from "../src/typeInfo";
 
@@ -239,6 +239,26 @@ describe('compile', () => {
     })
   })
 
+  describe('compileCond', () => {
+    it('should compile cond as if-else blocks', () => {
+      let refs:any[] = [];
+      let stack:any[] = [{ add, a: 1 }];
+      let r = compileCond(refs, stack, [
+        '`', '`cond',
+        [ '`a', 
+            [ '`', '`add', 1, '`a' ],
+            [ '`', '`add', '`_', "#" ] 
+        ],
+        [ true, 3 ]
+      ]);
+      linesTrimmedEqual(r, `
+        if (r0.a) _=(function(_){_=r0.add(1,r0.a);_=r0.add(_,"#");return _;})(_)
+        else if (true) _=(function(_){_=3;return _;})(_)
+        `
+      );
+    })
+  })
+
   describe('compileFn', () => {
     it('should compile empty functions', () => {
       let refs:any[] = []
@@ -272,8 +292,6 @@ describe('compile', () => {
         body: []
       }
       let r = compileFn(refs, stack, fn)
-      r
-      refs
       linesTrimmedEqual(r, `
         _=function(a,b){
           r0.a=a;r0.b=b;

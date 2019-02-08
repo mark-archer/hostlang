@@ -550,7 +550,6 @@ export function warn(...args:any[]) {
     return args;
 }
 
-console.log('hostMap');
 function hostMap(stack:any[], items:any[], iterSym:any, ...body:any[]) {
     let f:any;    
     // when body is given, create function    

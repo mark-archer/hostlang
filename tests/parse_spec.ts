@@ -470,6 +470,17 @@ f 1 2
         ast.should.eql([ [ '`', '`a', [ '`', '`evalBlock', '`b', '`c' ] ] ])
       })
     )
+
+    it('should allow rtl arrow assignment', async () => {
+      const ast = await parseHost([], 'a <- 1').then(cleanCopyList)
+      ast
+      ast.should.eql([ [ '`', '`varSet', '`a', 1 ] ])      
+    })
+
+    it('should allow ltr arrow assignment', async () => {
+      const ast = await parseHost([], '1 -> a').then(cleanCopyList)
+      ast.should.eql([ 1, [ '`', '`varSet', '`a', '`_' ] ])      
+    })
   })
 
   describe('parseNvp', () => {
@@ -881,6 +892,12 @@ else
         [ '`', '`add', [ '`', '`add', '`a', '`b' ], 1 ],
         [ '`', '`add', 'result is ', '`_' ] ] ])
       }) 
+    )
+
+    it('should throw an error if there are more than two symbols proceeding it', () => 
+      //@ts-ignore
+      parseHost([], 'two many (a b) => a + b').should.be.rejected()        
+        //.rejectedWith('parseFnArrow - arrow found in unexpected location, should follow optional name and args')
     )
   })
 

@@ -744,15 +744,12 @@ function parseFnArrow(pi: ParseInfo) {
   if(pi.peek(2) !== "=>") return;
   pi.i += 2;
 
-  // make sure there is only an optional name and argument
-  if(pi.clist.length > 3) throw new Error('parseFnArrow - arrow found in unexpected location, should follow optional name and args');
-
-  // convert  single arg name to list
+  // convert single arg name to list
   if (!isList(last(pi.clist))) {
     pi.clist.push([pi.clist.pop()]);
   }
-
-  pi.clist.splice(1,0,sym('fn'));
+  
+  pi.clist.splice((pi.clist.length - 2) || 1, 0, sym('fn'))
   
   var indent = pi.clist.indent;
   pi.newList();

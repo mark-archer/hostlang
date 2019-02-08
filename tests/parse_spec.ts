@@ -894,11 +894,16 @@ else
       }) 
     )
 
-    it('should throw an error if there are more than two symbols proceeding it', () => 
-      //@ts-ignore
-      parseHost([], 'two many (a b) => a + b').should.be.rejected()        
-        //.rejectedWith('parseFnArrow - arrow found in unexpected location, should follow optional name and args')
-    )
+    it('should work with more than two symbols proceeding it', async () => {
+      const ast = await parseHost([], 'export add2 (a b) => a + b + 1, "result is " + _').then(cleanCopyList) 
+      ast.should.eql([ [ '`',
+        '`export',
+        '`fn',
+        '`add2',
+        [ '`', '`a', '`b' ],
+        [ '`', '`add', [ '`', '`add', '`a', '`b' ], 1 ],
+        [ '`', '`add', 'result is ', '`_' ] ] ])
+    })
   })
 
   describe('parseSpread', () => {

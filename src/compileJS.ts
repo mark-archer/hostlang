@@ -4,7 +4,7 @@ import { readFileSync } from "fs";
 import { getName } from "./host";
 import { Fn, makeFn } from "./typeInfo";
 import { parseHost } from "./parse";
-import { isString, isObject } from "util";
+import { isString, isObject, isFunction } from "util";
 
 // export function refName() {
 //   return 'ref_' + guid().replace(/-/g,'');
@@ -91,7 +91,7 @@ export function callMacro(refs:any[], stack:any[], expr:any) {
     const fnSym = expr[1];
     const fn = getName(stack, untick(fnSym));
     let ast = skip(expr, 2);
-    expr = fn(stack, ...ast);
+    expr = fn(stack, ...ast); // TODO compile if not js function
     expr
   }
   return expr;
@@ -112,6 +112,9 @@ export function compileTerm(refs: any[], stack:any[], term:any) {
   }
   if(isString(term)) {
     return `"${term}"`
+  }
+  if(isFunction(term)) {
+    return getRefId(refs, term);
   }
   return String(term)
 }

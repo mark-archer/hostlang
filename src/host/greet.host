@@ -5,5 +5,4 @@ fn greet (who)
     >> + "!"
   else
     "Hey you!"
-exports.greet = greet
-;; export greet
+export greet

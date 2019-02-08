@@ -1,0 +1,8 @@
+fn greet (who)
+    if who
+        "Hi " + who
+        >> + "!"
+    else
+        "Hey you!"
+exports.greet = greet
+export greet

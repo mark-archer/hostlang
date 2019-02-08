@@ -17,15 +17,16 @@ setr.isMacro = true;
 
 async function compileFile(file:string, options:any={}) {
   const code = fs.readFileSync(file, 'utf8');
-  //console.log(code,'\n');
+  console.log(code,'\n');
   const ast = await parseHost([], code);
-  //console.log(JSON.stringify(ast, null, 2), '\n')
+  console.log(JSON.stringify(ast, null, 2), '\n')
   const exports:any = {}
   const r = compileHost([{add,exports,setr}], ast);
-  // console.log(r.exec()('Mark'))
+  r.exec(); // code has to be run to get module
+  //console.log(r.exec())
   // console.log(r.exec()())
-  // console.log(exports)
-  // console.log(exports.greet('Blair'))
+  console.log(exports)
+  console.log(exports.greet('Blair'))
   return exports
 }
 

@@ -195,7 +195,7 @@ function parseIndents(pi:ParseInfo) {
     }
     if(code.substr(i,pi.tabSize) === range(pi.tabSize).map(() => ' ').join('')) {
       indent++;
-      i += 4;
+      i += pi.tabSize;
       continue;
     }
     break;

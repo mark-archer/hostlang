@@ -187,7 +187,6 @@ export function compileHost(stack:any[], ast:any[], refs:any[]=[]) {
   refs.map((v, i) => {
     code += `r${i},`
   })
-
   code = code.substr(0,code.length - 1) // remove trailing comma in arguments;
   code += `){${innerCode};return _;}`
   let f = js(code)
@@ -207,9 +206,6 @@ export async function execHost(stack:any[]=[], code:string, refs:any[]=[]) {
 }
 
 const $fn = (refs:any[], stack:any[], expr) => {
-  refs
-  stack
-  expr
   let args = skip(expr, 2);
   let name;
   if(isSym(args[0])) {

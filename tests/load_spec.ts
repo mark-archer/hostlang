@@ -23,16 +23,16 @@ describe('load', () => {
       r.x().should.equal(1);
     })
 
-    it('should work with exporting a arrow function', async () => {
+    it('should work with exporting an arrow function', async () => {
       const code = 'export x () => 1'
       const r = await compileModule(code, { codeIsPath: true });
       r.x().should.equal(1);
     })
 
-    it('should throw an error for unsupported exports', async () => {
-      const code = 'export x y z'
-      await compileModule(code, { codeIsPath: true }).should.be
-        .rejectedWith('unsupported export: export x y z');
+    it('should work with exporting a variable', async () => {
+      const code = 'export var x 1'
+      const r = await compileModule(code, { codeIsPath: true });
+      r.x.should.equal(1);
     })
   })
 })

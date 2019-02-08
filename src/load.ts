@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import { compileHost } from './compileJS';
 import { untick, isString } from './common';
 import { getName } from './host';
+import { cleanCopyList } from './utils';
 
 const add = (...args) => args.reduce((m,a) => m + a)
 
@@ -15,25 +16,16 @@ function $setr(stack, obj, name, value) {
 }
 $setr.isMacro = true;
 
-function $export(stack, target, ...rest) {
+function $export(stack, arg1, ...rest) {
   const _exports = getName(stack, 'exports');
   const _export = (name, value) => _exports[name] = value;
   // export sym 
   if (!rest.length) {
-    return ['`', _export, untick(target), target]
+    return ['`', _export, untick(arg1), arg1]
   }
-  // export fn name ..
-  if(target == '`fn') {
-    rest
-    const code = ['`', '`do', 
-      ['`', '`fn', ...rest],
-      ['`', _export, untick(rest[0]), '`_']
-    ]
-    code
-    return code
-  }
-  let s = ['export', target, ...rest].map(untick).join(' ');
-  throw new Error('unsupported export: ' + s)
+  
+  // export expr result
+  return ['`', _export, untick(rest[0]), ['`', arg1, ...rest]]
 }
 $export.isMacro = true;
 

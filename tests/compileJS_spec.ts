@@ -592,7 +592,26 @@ describe('compile', () => {
       const r = await execHost(stack, 'a (x) => x + 3')
       isFunction(r).should.equal(true)
       r(4).should.equal(7)
-    })    
+    })
+
+    it('should allow javascript closures', async () => {
+      let i = 0;
+      const inc = () => ++i;
+      let stack:any[] = [{ inc }]
+      const r = await execHost(stack, 'fn () inc!')
+      r().should.equal(1)
+      r().should.equal(2);
+      i = 10
+      r().should.equal(11);      
+    })
+
+    it('should allow host closures', async () => {
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, 'var i 0\nfn () (i = (i + 1))')      
+      console.log(r.toString())
+      r().should.equal(1)
+      r().should.equal(2);      
+    })
   })
 })
 

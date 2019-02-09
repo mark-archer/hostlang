@@ -6,3 +6,4 @@ release
 host.exe
 sessions.json
 build
+.DS_Store

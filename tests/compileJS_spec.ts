@@ -87,16 +87,6 @@ describe('compile', () => {
       r.should.equal('_=r0.add()')
     })
 
-    it('should allow calling macro functions while compiling', () => {
-      let refs:any[] = []
-      let myMacro = () => [ '`', '`add', 1, 1 ]
-      //@ts-ignore
-      myMacro.isMacro = true;
-      let stack:any[] = [{ add, myMacro }]
-      const r = compileExpr(refs, stack, ['`', '`myMacro'])
-      r.should.equal('_=r0.add(1,1)')
-    })
-
     it('should not treat strings as macros', () => {
       let refs:any[] = []
       let myMacro = () => [ '`', '`add', 1, 1 ]
@@ -112,7 +102,20 @@ describe('compile', () => {
       let $myMacro = () => [ '`', '`add', 1, 1 ]
       let stack:any[] = [{ add, $myMacro }]
       const r = compileExpr(refs, stack, ['`', '`$myMacro'])
-      r.should.equal('_=r0.add(1,1)')
+      r.should.equal('_=r0()')      
+      refs[0]().should.equal(2)      
+    })
+
+    it('should allow macros with closures', () => {
+      let refs:any[] = []
+      let x = 1
+      let $myMacro = () => [ '`', '`add', 1, x ]
+      let stack:any[] = [{ add, $myMacro }]
+      const r = compileExpr(refs, stack, ['`', '`$myMacro'])
+      r.should.equal('_=r0()')      
+      refs[0]().should.equal(2)
+      x=2
+      refs[0]().should.equal(3)
     })
 
     it('should allow simple assignments', () => {
@@ -655,7 +658,39 @@ describe('compile', () => {
     })
 
     it('should allow calling a macro inside a function', async () => {
+      let $myMacro = (stack, n) => {
+        if (n) {
+          return [ '`', '`add', 1, [ '`', '`myMacro', n-1] ]
+        } else {
+          return 0
+        }
+      }
+      //@ts-ignore
+      $myMacro.isMacro = true
+      let stack:any[] = [{ add, myMacro: $myMacro }]
+      const f = await execHost(stack, '() => () => myMacro 2')
+      f()().should.equal(2)
+      linesJoinedShouldEqual(f.toString(), `
+        function(){
+          let _ = null;
+          _=(function(_){
+            _=function(){
+              let _ = null;
+              _=(function(_){
+                _=r0(2);
+                return _;
+              })(_);
+              return _;
+            };return _;
+          })(_);
+          return _;
+        }
+      `)
+    })
+
+    it('should allow calling a macro at runtime', async () => {
       let myMacro = (stack, n) => {
+        n
         if (n) {
           return [ '`', '`add', 1, [ '`', '`myMacro', n-1] ]
         } else {
@@ -665,22 +700,16 @@ describe('compile', () => {
       //@ts-ignore
       myMacro.isMacro = true
       let stack:any[] = [{ add, myMacro }]
-      const f = await execHost(stack, '() => () => myMacro 2')
-      f()().should.equal(2)
+      const f = await execHost(stack, '(n) => myMacro n')
+      f().should.equal(0);
+      f(3).should.equal(3)
+      f(20).should.equal(20) // this is a BIG DEAL!
       linesJoinedShouldEqual(f.toString(), `
-        function (){
+        function (n){
+          r1.n=n;
           let _ = null;
           _=(function(_){
-            _=function(){      
-              let _ = null;
-              _=(function(_){
-                _=r0.add(1,
-                  _=r0.add(1,
-                    _=0));
-                  return _;
-                })(_);
-              return _;
-            };return _;
+            _=r0(r1.n);return _;
           })(_);
           return _;
         }
@@ -690,8 +719,7 @@ describe('compile', () => {
 })
 
 function linesJoinedShouldEqual(a:string, b:string) {
-  const aTrimmed = a.trim().split('\n').map(s => s.trim()).join('');
-  const bTrimmed = b.trim().split('\n').map(s => s.trim()).join('');
-  aTrimmed.should.equal(bTrimmed);
+  const [aTrimmed, bTrimmed] = [a,b].map(s => s.trim().split('\n').map(s => s.trim()).join('').replace('function (', 'function('))
+  aTrimmed.should.eql(bTrimmed);
   return aTrimmed;
 }

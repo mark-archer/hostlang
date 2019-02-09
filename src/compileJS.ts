@@ -1,5 +1,5 @@
 import { isSym, untick, isExpr, isList, guid, sym, last, skip } from "./common";
-import { js, cleanCopyList, stringify } from "./utils";
+import { js, cleanCopyList, stringify, copy } from "./utils";
 import { readFileSync } from "fs";
 import { getName } from "./host";
 import { Fn, makeFn } from "./typeInfo";
@@ -70,7 +70,7 @@ export function compileExport(refs:any[], stack:any[], expr:any[]) {
       exportCtx = stack[i];
       break;
     }
-  }  
+  }
   if (!exportCtx) throw new Error(`no export object found: ${expr.map(untick).join(' ')}`);
 
   const name = untick(expr[3]);
@@ -121,15 +121,23 @@ function isExprMacroCall(stack:any[], expr:any) {
   const fnSym = expr[1];
   if(!isSym(fnSym)) return false;  
   const fn = getName(stack, untick(fnSym));
-  return fn && (fn.isMacro || untick(fnSym)[0] === '$');
+  return fn && (fn.isMacro || (untick(fnSym)[0] === '$' && fn.isMacro !== false));
 }
 
-export function callMacro(refs:any[], stack:any[], expr:any) {
+export function compileMacro(refs:any[], stack:any[], expr:any) {
   if(isExprMacroCall(stack, expr)) {
     const fnSym = expr[1];
-    const fn = getName(stack, untick(fnSym));
-    let ast = skip(expr, 2);
-    expr = fn(stack, ...ast); // TODO if not js function then compile before running
+    const macro = getName(stack, untick(fnSym));
+    // TODO macro fn not js function then compile    
+    const callMacro = (...args) => {
+      const genAst = macro(stack, ...args)
+      const compileAst = compileHost([...stack], [genAst], [...refs])
+      //console.log(compileAst.code)
+      return compileAst.exec()
+    }
+    const _ast = copy(expr);
+    _ast[1] = callMacro    
+    return _ast
   }
   return expr;
 }
@@ -160,7 +168,7 @@ export function compileExpr(refs:any[], stack:any[], expr:any) {
   if(!isExpr(expr))
     return '_=' + compileTerm(refs, stack, expr)
   if(isExprMacroCall(stack, expr)) {
-    expr = callMacro(refs, stack, expr);
+    expr = compileMacro(refs, stack, expr);
     return compileExpr(refs, stack, expr);
   }
   if(expr[1] === sym('var')) return compileVar(refs, stack, expr)

@@ -570,16 +570,6 @@ describe('compile', () => {
       r.should.equal(7)
     })
 
-    it('should allow calling macro functions', async () => {
-      let myMacro = () => [ '`', '`add', 1, 1 ]
-      //@ts-ignore
-      myMacro.isMacro = true
-      let stack:any[] = [{ add, myMacro }]
-      const r = await execHost(stack, 'myMacro!')
-      r
-      r.should.equal(2)
-    })
-
     it('should allow creating anonymouse functions', async () => {
       let stack:any[] = [{ add }]
       const r = await execHost(stack, '() => 1')
@@ -636,6 +626,32 @@ describe('compile', () => {
     it('should not allow referencing things not in scope', async () => {
       let stack:any[] = [{ add }]
       await execHost(stack, 'stack').should.be.rejectedWith('stack is not defined')
+    })
+  })
+
+  describe('macros', () => {
+    it('should allow calling macro functions', async () => {
+      let myMacro = () => [ '`', '`add', 1, 1 ]
+      //@ts-ignore
+      myMacro.isMacro = true
+      let stack:any[] = [{ add, myMacro }]
+      const r = await execHost(stack, 'myMacro!')
+      r.should.equal(2)
+    })
+
+    it('should allow recursive macro functions', async () => {
+      let myMacro = (stack, n) => {
+        if (n) {
+          return [ '`', '`add', 1, [ '`', '`myMacro', n-1] ]
+        } else {
+          return 0
+        }
+      }
+      //@ts-ignore
+      myMacro.isMacro = true
+      let stack:any[] = [{ add, myMacro }]
+      const r = await execHost(stack, 'myMacro 5')
+      r.should.equal(5)
     })
   })
 })

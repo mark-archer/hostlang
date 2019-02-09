@@ -1,4 +1,4 @@
-import { compileExpr, compileTerm, compileExprBlock, compileHost, compileFn, execHost, compileSym, compileCond } from "../src/compileJS";
+import { compileExpr, compileTerm, compileExprBlock, compileHost, compileFn, execHost, compileSym, compileCond, compileExport } from "../src/compileJS";
 import { add, list, last, untick, sym, isFunction } from "../src/common";
 import { Fn, Num, newObject, newStruct } from "../src/typeInfo";
 
@@ -11,6 +11,12 @@ describe('compile', () => {
       let refs = [];
       let r = compileTerm(refs, [{ a:1 }], '`a');
       r.should.equal('r0.a');
+    })
+
+    it('should determine export references', () => {
+      let refs = [];
+      let r = compileTerm(refs, [{ exports: {a:1} }], '`a');
+      r.should.equal('r0.exports.a');
     })
 
     it('should throw an error if the sym is not defined', () => {
@@ -321,8 +327,6 @@ describe('compile', () => {
         body: [ [ '`', '`add', '`n', 1 ] ]
       }
       let r = compileFn(refs, stack, fn)
-      r
-      refs
       linesTrimmedEqual(r, `
         _=function(n){
           r1.n=n;
@@ -357,6 +361,45 @@ describe('compile', () => {
     })
   })
 
+  describe('compileExport', () => {
+    it('should throw an error if no export object exists', () => {
+      let refs:any[] = []
+      let stack:any[] = [{ add, a: 1 }]
+      should(() => compileExport(refs, stack, ['`', '`export', '`var', '`a', 1])).throw('no export object found: ` export var a 1')
+    })
+
+    it('should throw an error if export var already exists', () => {
+      let refs:any[] = []
+      let stack:any[] = [{ add, exports: {a:1} }]
+      should(() => compileExport(refs, stack, ['`', '`export', '`var', '`a', 1]))
+        .throw('export var already exists: a')      
+    })
+
+    it('should use the special "exports" namespace for "export var"', () => {
+      let refs:any[] = []
+      const exports = {}
+      let stack:any[] = [{ exports }]
+      let r = compileExport(refs, stack, ['`', '`export', '`var', '`a', 1])
+      linesTrimmedEqual(r, `r0.exports.a=_=1`);
+    })
+
+    it('should use the special "exports" namespace for "export fn"', () => {
+      let refs:any[] = []
+      const exports = {}
+      let stack:any[] = [{ exports }]
+      let r = compileExport(refs, stack, ['`', '`export', '`fn', '`add', [], 1])
+      linesTrimmedEqual(r, `
+        r0.exports.add=_=function(){
+          let _ = null;
+          _=(function(_){
+            _=1;return _;
+          })(_);
+          return _;
+        }
+      `)
+    })
+  })
+
   describe('compileHost', () => {
     it('should compile ast to js function', () => {
       let stack:any[] = [{ add, a: 1 }]
@@ -372,6 +415,43 @@ describe('compile', () => {
         }
       `)
       r.exec().should.equal(6)
+    })
+
+    it('should compile exports', () => {
+      const exports:any = {};
+      let stack:any[] = [{ exports }]
+      let r = compileHost(stack, [['`', '`export', '`var', '`a', 1]])
+      linesTrimmedEqual(r.code, `
+        function(_,r0){
+          _=(function(_){
+            r0.exports.a=_=1;
+            return _;
+          })(_);
+          return _;
+        }
+      `)
+      r.exec().should.equal(1)
+      exports.a.should.equal(1)      
+    })
+
+    it('should allow changing exports internally and externally', () => {
+      const exports:any = {};
+      let stack:any[] = [{ exports }]
+      let r = compileHost(stack, [
+        ['`', '`export', '`var', '`a', 1], 
+        ['`', '`export', '`fn', '`geta', [], '`a'],
+        ['`', '`export', '`fn', '`seta', ['n'], 
+          ['`', '`set', '`a', '`n']],
+        '`exports'
+      ])
+      should(exports.a).equal(null);
+      r.exec()
+      exports.a.should.equal(1)
+      exports.geta().should.equal(1)
+      exports.a = 2;
+      exports.geta().should.equal(2);
+      exports.seta(3);
+      exports.a.should.equal(3);      
     })
   })
   

@@ -16,19 +16,6 @@ function $setr(stack, obj, name, value) {
 }
 $setr.isMacro = true;
 
-function $export(stack, arg1, ...rest) {
-  const _exports = getName(stack, 'exports');
-  const _export = (name, value) => _exports[name] = value;
-  // export sym 
-  if (!rest.length) {
-    return ['`', _export, untick(arg1), arg1]
-  }
-  
-  // export expr result
-  return ['`', _export, untick(rest[0]), ['`', arg1, ...rest]]
-}
-$export.isMacro = true;
-
 export type LoadOptions = {
   codeIsPath?:boolean
 }
@@ -42,10 +29,10 @@ export async function compileModule(path:string, options:LoadOptions={}) {
   }
   //console.log({code},'\n');
   const ast = await parseHost([], code);
-  //console.log(JSON.stringify(ast, null, 2), '\n')
+  console.log(JSON.stringify(ast, null, 2), '\n')
   const exports:any = {}
-  const r = compileHost([{add,exports,setr: $setr,export:$export}], ast);
-  //console.log(r.code);
+  const r = compileHost([{add, exports, setr: $setr}], ast);
+  console.log(r.code);
   r.exec(); // code has to be run to generate module
   //console.log(r.exec())
   // console.log(r.exec()())

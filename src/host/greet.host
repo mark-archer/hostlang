@@ -1,8 +1,8 @@
 "tabSize=2"
-fn greet (who)
+
+export fn greet (who)
   if who
     "Hi " + who
     >> + "!"
   else
     "Hey you!"
-export greet

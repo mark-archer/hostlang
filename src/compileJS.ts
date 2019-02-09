@@ -40,6 +40,12 @@ export function compileSym(refs:any[], stack:any[], sym:string) {
       let code = `${scopeId}.${sym}` // NOTE this is effectively a pointer
       return code;
     }
+    if(stack[i].exports && stack[i].exports[sym] !== undefined) {
+      let ctx = stack[i]
+      let scopeId = getRefId(refs, ctx)
+      let code = `${scopeId}.exports.${sym}` // NOTE this is effectively a pointer
+      return code;
+    }
   }
   throw new Error(`${sym} is not defined`);
 }
@@ -50,8 +56,40 @@ export function compileVar(refs:any[], stack:any[], expr:any) {
   const varRef = compileSym(refs, stack, varSym)
   const valueExpr = expr.length === 4 ? expr[3] : null;
   let r = `${varRef}=${compileExpr(refs, stack, valueExpr)}`
-  r
   return r
+}
+
+export function compileExport(refs:any[], stack:any[], expr:any[]) {
+  refs
+  stack
+  expr
+
+  let exportCtx;
+  for(let i = stack.length - 1; i >= 0; i--) {
+    if(stack[i].exports !== undefined) {
+      exportCtx = stack[i];
+      break;
+    }
+  }  
+  if (!exportCtx) throw new Error(`no export object found: ${expr.map(untick).join(' ')}`);
+
+  const name = untick(expr[3]);
+  if(exportCtx.exports[name] !== undefined || exportCtx[name] !== undefined) throw new Error(`export var already exists: ${name}`);
+
+  exportCtx.exports[name] = null;
+  const exportRef = compileSym(refs, stack, sym(name));
+  
+  const op = untick(expr[2]);
+  let code = '';
+  if (op == 'fn') {
+    expr.splice(1,1) // remove '`export`
+    expr.splice(2,1) // remove name
+    code = compileExpr(refs, stack, expr)
+  } else {
+    code = compileExpr(refs, stack, expr[4])
+  }
+  code = exportRef + '=' + code
+  return code;
 }
 
 export function compileSet(refs:any[], stack:any[], expr:any) {
@@ -132,6 +170,7 @@ export function compileExpr(refs:any[], stack:any[], expr:any) {
   if(expr[1] === sym('cond')) return compileCond(refs, stack, expr);
   if(expr[1] === sym('do')) return compileExprBlock(refs, stack, skip(expr, 2))
   if(expr[1] === sym('fn')) return $fn(refs, stack, expr);
+  if(expr[1] === sym('export')) return compileExport(refs, stack, expr);
   
   expr.shift()
   var f = compileTerm(refs, stack, expr.shift())
@@ -197,8 +236,6 @@ export function compileHost(stack:any[], ast:any[], refs:any[]=[]) {
 
 export async function execHost(stack:any[]=[], code:string, refs:any[]=[]) {
   if(!stack.length) stack.push({ });
-  //last(stack).var = $var
-  //last(stack).fn = $fn
   const astDirty = await parseHost(stack, code)
   const ast = cleanCopyList(astDirty)
   const exe = compileHost(stack, ast, refs)

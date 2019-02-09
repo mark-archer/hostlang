@@ -608,9 +608,34 @@ describe('compile', () => {
     it('should allow host closures', async () => {
       let stack:any[] = [{ add }]
       const r = await execHost(stack, 'var i 0\nfn () (i = (i + 1))')      
-      console.log(r.toString())
       r().should.equal(1)
-      r().should.equal(2);      
+      r().should.equal(2);
+    })
+
+    it('should allow references to be changed both internally and externally', async () => {
+      let i = 0;
+      let stack:any[] = [{ i, add }]
+      const r = await execHost(stack, 'fn () : i =: i + 1')
+      r().should.equal(1)
+      r().should.equal(2);
+      stack[0].i.should.equal(2)
+      stack[0].i = 10
+      r().should.equal(11);      
+    })
+
+    it('should capture references to functions passed in so they can be changed later (like stubs/mocks)', async () => {
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, 'var i 0\nfn () (i = (i + 1))')      
+      r().should.equal(1)
+      r().should.equal(2);
+      stack[0].add = () => 11;
+      r().should.equal(11);
+      r().should.equal(11);
+    })
+
+    it('should not allow referencing things not in scope', async () => {
+      let stack:any[] = [{ add }]
+      await execHost(stack, 'stack').should.be.rejectedWith('stack is not defined')
     })
   })
 })

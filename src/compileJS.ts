@@ -129,8 +129,7 @@ export function callMacro(refs:any[], stack:any[], expr:any) {
     const fnSym = expr[1];
     const fn = getName(stack, untick(fnSym));
     let ast = skip(expr, 2);
-    expr = fn(stack, ...ast); // TODO compile if not js function
-    expr
+    expr = fn(stack, ...ast); // TODO if not js function then compile before running
   }
   return expr;
 }

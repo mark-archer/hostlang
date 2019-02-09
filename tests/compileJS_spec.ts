@@ -161,7 +161,7 @@ describe('compile', () => {
         '`a', 
         ['`', '`var', '`a', 3]
       ]);
-      linesTrimmedEqual(r, `
+      linesJoinedShouldEqual(r, `
         _=(function(_){
           _=r0.a;
           r1.a=_=3;
@@ -174,7 +174,7 @@ describe('compile', () => {
       let stack:any[] = [{ add }]
       const r = compileExpr([], stack, ['`', '`fn', [], 1])
       r
-      linesTrimmedEqual(r, `
+      linesJoinedShouldEqual(r, `
         _=function(){
           let _ = null;
           _=(function(_){
@@ -190,7 +190,7 @@ describe('compile', () => {
       let stack:any[] = [{ add }]
       const r = compileExpr([], stack, ['`', '`fn', '`a', ['x'], 1])
       r
-      linesTrimmedEqual(r, `
+      linesJoinedShouldEqual(r, `
         r1.a=_=function(x){
           r0.x=x;
           let _ = null;
@@ -209,7 +209,7 @@ describe('compile', () => {
       let refs:any[] = [];
       let stack:any[] = [{ add, a: 1 }];
       let r = compileExprBlock(refs, stack, [['`', '`add', '`a', 2], ['`', '`add', '`_', 3]]);
-      linesTrimmedEqual(r, `
+      linesJoinedShouldEqual(r, `
         _=(function(_){
           _=r0.add(r0.a,2);
           _=r0.add(_,3);
@@ -222,7 +222,7 @@ describe('compile', () => {
       let refs:any[] = [];
       let stack:any[] = [{ add }, { a: 1 }];
       let r = compileExprBlock(refs, stack, [['`', '`add', '`a', 2], ['`', '`add', '`_', 3]]);
-      linesTrimmedEqual(r, `
+      linesJoinedShouldEqual(r, `
         _=(function(_){
           _=r0.add(r1.a,2);
           _=r0.add(_,3);
@@ -235,7 +235,7 @@ describe('compile', () => {
       let refs:any[] = [];
       let stack:any[] = [{ add }, { a: 1 }];
       let r = compileExprBlock(refs, stack, [['`', '`var', '`b', 2], ['`', '`add', '`a', '`b']]);
-      linesTrimmedEqual(r, `
+      linesJoinedShouldEqual(r, `
         _=(function(_){
           r0.b=_=2;
           _=r1.add(r2.a,r0.b);
@@ -257,7 +257,7 @@ describe('compile', () => {
         ],
         [ true, 3 ]
       ]);
-      linesTrimmedEqual(r, `
+      linesJoinedShouldEqual(r, `
         if (r0.a) _=(function(_){_=r0.add(1,r0.a);_=r0.add(_,"#");return _;})(_)
         else if (true) _=(function(_){_=3;return _;})(_)
         `
@@ -275,7 +275,7 @@ describe('compile', () => {
         body: []
       }
       let r = compileFn(refs, stack, fn);
-      linesTrimmedEqual(r, `
+      linesJoinedShouldEqual(r, `
         _=function(){
           let _ = null;
           _=(function(_){
@@ -298,7 +298,7 @@ describe('compile', () => {
         body: []
       }
       let r = compileFn(refs, stack, fn)
-      linesTrimmedEqual(r, `
+      linesJoinedShouldEqual(r, `
         _=function(a,b){
           r0.a=a;r0.b=b;
           let _ = null;
@@ -327,7 +327,7 @@ describe('compile', () => {
         body: [ [ '`', '`add', '`n', 1 ] ]
       }
       let r = compileFn(refs, stack, fn)
-      linesTrimmedEqual(r, `
+      linesJoinedShouldEqual(r, `
         _=function(n){
           r1.n=n;
           let _ = null;
@@ -380,7 +380,7 @@ describe('compile', () => {
       const exports = {}
       let stack:any[] = [{ exports }]
       let r = compileExport(refs, stack, ['`', '`export', '`var', '`a', 1])
-      linesTrimmedEqual(r, `r0.exports.a=_=1`);
+      linesJoinedShouldEqual(r, `r0.exports.a=_=1`);
     })
 
     it('should use the special "exports" namespace for "export fn"', () => {
@@ -388,7 +388,7 @@ describe('compile', () => {
       const exports = {}
       let stack:any[] = [{ exports }]
       let r = compileExport(refs, stack, ['`', '`export', '`fn', '`add', [], 1])
-      linesTrimmedEqual(r, `
+      linesJoinedShouldEqual(r, `
         r0.exports.add=_=function(){
           let _ = null;
           _=(function(_){
@@ -404,7 +404,7 @@ describe('compile', () => {
       const exports = {a:1}
       let stack:any[] = [{ exports }]
       let r = compileHost(stack, [['`', '`set', '`exports', 1]])
-      linesTrimmedEqual(r.code, `
+      linesJoinedShouldEqual(r.code, `
         function(_,r0){
           _=(function(_){
             _=r0.exports=1;
@@ -423,7 +423,7 @@ describe('compile', () => {
     it('should compile ast to js function', () => {
       let stack:any[] = [{ add, a: 1 }]
       let r = compileHost(stack, [['`', '`add', '`a', 2], ['`', '`add', '`_', 3]])
-      linesTrimmedEqual(r.code, `
+      linesJoinedShouldEqual(r.code, `
         function(_,r0){
           _=(function(_){
             _=r0.add(r0.a,2);
@@ -440,7 +440,7 @@ describe('compile', () => {
       const exports:any = {};
       let stack:any[] = [{ exports }]
       let r = compileHost(stack, [['`', '`export', '`var', '`a', 1]])
-      linesTrimmedEqual(r.code, `
+      linesJoinedShouldEqual(r.code, `
         function(_,r0){
           _=(function(_){
             r0.exports.a=_=1;
@@ -651,12 +651,45 @@ describe('compile', () => {
       myMacro.isMacro = true
       let stack:any[] = [{ add, myMacro }]
       const r = await execHost(stack, 'myMacro 5')
-      r.should.equal(5)
+      r.should.equal(5)      
+    })
+
+    it('should allow calling a macro inside a function', async () => {
+      let myMacro = (stack, n) => {
+        if (n) {
+          return [ '`', '`add', 1, [ '`', '`myMacro', n-1] ]
+        } else {
+          return 0
+        }
+      }
+      //@ts-ignore
+      myMacro.isMacro = true
+      let stack:any[] = [{ add, myMacro }]
+      const f = await execHost(stack, '() => () => myMacro 2')
+      f()().should.equal(2)
+      linesJoinedShouldEqual(f.toString(), `
+        function (){
+          let _ = null;
+          _=(function(_){
+            _=function(){      
+              let _ = null;
+              _=(function(_){
+                _=r0.add(1,
+                  _=r0.add(1,
+                    _=0));
+                  return _;
+                })(_);
+              return _;
+            };return _;
+          })(_);
+          return _;
+        }
+      `)
     })
   })
 })
 
-function linesTrimmedEqual(a:string, b:string) {
+function linesJoinedShouldEqual(a:string, b:string) {
   const aTrimmed = a.trim().split('\n').map(s => s.trim()).join('');
   const bTrimmed = b.trim().split('\n').map(s => s.trim()).join('');
   aTrimmed.should.equal(bTrimmed);

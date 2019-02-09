@@ -155,7 +155,7 @@ function parseSymbols(pi:ParseInfo){
 
   // test for symbol (with optional leading quotes and ticks)
   //var aSym:any = maybeSymbol.match(/^['`]*[a-zA-Z_][a-zA-Z_0-9-]*[^a-zA-Z?*&]/);
-  var aSym:any = maybeSymbol.match(/^['`]*[a-zA-Z_][a-zA-Z_0-9-]*/);
+  var aSym:any = maybeSymbol.match(/^['`]*[\$a-zA-Z_][a-zA-Z_0-9-]*/);
   if(aSym){
     aSym = aSym[0];
     //aSym = aSym.substr(0,aSym.length-1);

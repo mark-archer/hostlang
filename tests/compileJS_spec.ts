@@ -634,26 +634,22 @@ describe('compile', () => {
 
   describe('macros', () => {
     it('should allow calling macro functions', async () => {
-      let myMacro = () => [ '`', '`add', 1, 1 ]
-      //@ts-ignore
-      myMacro.isMacro = true
-      let stack:any[] = [{ add, myMacro }]
-      const r = await execHost(stack, 'myMacro!')
+      let $myMacro = () => [ '`', '`add', 1, 1 ]
+      let stack:any[] = [{ add, $myMacro }]
+      const r = await execHost(stack, '$myMacro!')
       r.should.equal(2)
     })
 
     it('should allow recursive macro functions', async () => {
-      let myMacro = (n) => {
+      let $myMacro = (n) => {
         if (n) {
-          return [ '`', '`add', 1, [ '`', '`myMacro', n-1] ]
+          return [ '`', '`add', 1, [ '`', '`$myMacro', n-1] ]
         } else {
           return 0
         }
       }
-      //@ts-ignore
-      myMacro.isMacro = true
-      let stack:any[] = [{ add, myMacro }]
-      const r = await execHost(stack, 'myMacro 5')
+      let stack:any[] = [{ add, $myMacro }]
+      const r = await execHost(stack, '$myMacro 5')
       r.should.equal(5)      
     })
 

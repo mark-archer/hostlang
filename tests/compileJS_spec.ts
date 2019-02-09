@@ -632,6 +632,32 @@ describe('compile', () => {
     })
   })
 
+  describe('tick', () => {
+    it('should allow a symbol to be returned with being evaluated', async () => {
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, '`n')
+      r.should.equal('`n')
+    })
+
+    it('should allow an expression to be returned without evaluated', async () => {
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, '` add a b')
+      r.should.eql([ '`', '`add', '`a', '`b' ])
+    })
+
+    it('should allow a multipule leading ticks in symbols', async () => {
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, '``n')
+      r.should.equal('``n')
+    })
+
+    it('should allow multipule leading ticks in expressions', async () => {
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, '` ` add a b')
+      r.should.eql([ '`', '`', '`add', '`a', '`b' ])
+    })
+  })
+
   describe('macros', () => {
     it('should allow calling macro functions', async () => {
       let $myMacro = () => [ '`', '`add', 1, 1 ]
@@ -709,6 +735,12 @@ describe('compile', () => {
           return _;
         }
       `)
+    })
+
+    it('should allow a macro to be declared', async () => {
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, "fn $myMacro (): ` add n 1")
+      r().should.eql([ '`', '`add', '`n', 1 ]) // NOTE n is unbound      
     })
   })
 })

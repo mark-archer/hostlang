@@ -32,6 +32,7 @@ export function compileSym(refs:any[], stack:any[], sym:string) {
     throw new Error(`Not a symbol: ${sym}`)    
   }
   sym = untick(sym)
+  if(isSym(sym)) return `"${sym}"`;
   if(sym == '_') return sym
   for(let i = stack.length-1; i >= 0; i--) {
     if(stack[i][sym] !== undefined) {
@@ -178,6 +179,13 @@ export function compileExpr(refs:any[], stack:any[], expr:any) {
   if(expr[1] === sym('do')) return compileExprBlock(refs, stack, skip(expr, 2))
   if(expr[1] === sym('fn')) return $fn(refs, stack, expr);
   if(expr[1] === sym('export')) return compileExport(refs, stack, expr);
+
+
+  if(expr[1] === '`') {
+    expr.shift();
+    const astClosure = () => expr; // TODO this should probably be a copy
+    return compileExpr(refs, stack, ['`', astClosure])    
+  }
   
   expr.shift()
   var f = compileTerm(refs, stack, expr.shift())
@@ -190,7 +198,7 @@ export function compileExpr(refs:any[], stack:any[], expr:any) {
 export function compileExprBlock(refs:any[], stack:any[], exprBlock:any) {
   let code = '_=(function(_){'
   stack.push({});
-  exprBlock.forEach(expr => code += compileExpr(refs, stack, expr) + ';')
+  exprBlock.forEach(expr => code += compileExpr(refs, stack, expr) + ';')  
   stack.pop();
   code += 'return _;})(_)'
   return code.trim()

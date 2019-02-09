@@ -35,9 +35,6 @@ export async function compileModule(path:string, options:LoadOptions={}) {
   console.log(r.code);
   r.exec(); // code has to be run to generate module
   //console.log(r.exec())
-  // console.log(r.exec()())
-  //console.log(exports)
-  //console.log(exports.greet('Blair'))
   return exports
 }
 

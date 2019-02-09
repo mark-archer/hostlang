@@ -97,7 +97,7 @@ export function compileSet(refs:any[], stack:any[], expr:any) {
   const varSym = expr[2]
   const varRef = compileSym(refs, stack, varSym)
   const valueExpr = expr[3];  
-  let r = `${varRef}=${compileTerm(refs, stack, valueExpr)}`
+  let r = `_=${varRef}=${compileTerm(refs, stack, valueExpr)}`
   r
   return r
 }
@@ -162,7 +162,6 @@ export function compileExpr(refs:any[], stack:any[], expr:any) {
     return '_=' + compileTerm(refs, stack, expr)
   if(isExprMacroCall(stack, expr)) {
     expr = callMacro(refs, stack, expr);
-    expr
     return compileExpr(refs, stack, expr);
   }
   if(expr[1] === sym('var')) return compileVar(refs, stack, expr)
@@ -221,7 +220,7 @@ export function compileFn(refs:any[], stack:any[], fn:Fn) {
 }
 
 export function compileHost(stack:any[], ast:any[], refs:any[]=[]) {
-  let innerCode = compileExprBlock(refs, stack, ast)
+  let innerCode = compileExprBlock(refs, stack, ast)  
   let code = 'function(_,'
   refs.map((v, i) => {
     code += `r${i},`

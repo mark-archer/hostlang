@@ -119,7 +119,7 @@ describe('compile', () => {
       let refs:any[] = []
       let stack:any[] = [{ a:1 }]
       const r = compileExpr(refs, stack, ['`', '`set', '`a', 2])
-      r.should.equal('r0.a=2')
+      r.should.equal('_=r0.a=2')
     })
 
     it('should error when assignment to var that does not exist', () => {
@@ -132,7 +132,7 @@ describe('compile', () => {
       let refs:any[] = []
       let stack:any[] = [{ a:1, add }]
       const r = compileExpr(refs, stack, ['`', '`set', '`a', ['`', '`add', 1, 2]])
-      r.should.equal('r0.a=_=r0.add(1,2)')
+      r.should.equal('_=r0.a=_=r0.add(1,2)')
     })
 
     it('should allow creating variables with no value', () => {
@@ -397,6 +397,25 @@ describe('compile', () => {
           return _;
         }
       `)
+    })
+
+    it('should allow specifying the entire export object', () => {
+      let refs:any[] = []
+      const exports = {a:1}
+      let stack:any[] = [{ exports }]
+      let r = compileHost(stack, [['`', '`set', '`exports', 1]])
+      linesTrimmedEqual(r.code, `
+        function(_,r0){
+          _=(function(_){
+            _=r0.exports=1;
+            return _;
+          })(_);
+          return _;
+        }
+      `)
+      console.log(r.code)
+      const _exports = r.exec();
+      _exports.should.equal(1);      
     })
   })
 

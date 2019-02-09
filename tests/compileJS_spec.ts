@@ -643,7 +643,7 @@ describe('compile', () => {
     })
 
     it('should allow recursive macro functions', async () => {
-      let myMacro = (stack, n) => {
+      let myMacro = (n) => {
         if (n) {
           return [ '`', '`add', 1, [ '`', '`myMacro', n-1] ]
         } else {
@@ -658,7 +658,7 @@ describe('compile', () => {
     })
 
     it('should allow calling a macro inside a function', async () => {
-      let $myMacro = (stack, n) => {
+      let $myMacro = (n) => {
         if (n) {
           return [ '`', '`add', 1, [ '`', '`myMacro', n-1] ]
         } else {
@@ -689,8 +689,7 @@ describe('compile', () => {
     })
 
     it('should allow calling a macro at runtime', async () => {
-      let myMacro = (stack, n) => {
-        n
+      let myMacro = (n) => {
         if (n) {
           return [ '`', '`add', 1, [ '`', '`myMacro', n-1] ]
         } else {
@@ -703,7 +702,7 @@ describe('compile', () => {
       const f = await execHost(stack, '(n) => myMacro n')
       f().should.equal(0);
       f(3).should.equal(3)
-      f(20).should.equal(20) // this is a BIG DEAL!
+      f(20).should.equal(20)      
       linesJoinedShouldEqual(f.toString(), `
         function (n){
           r1.n=n;

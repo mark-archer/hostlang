@@ -130,7 +130,8 @@ export function compileMacro(refs:any[], stack:any[], expr:any) {
     const macro = getName(stack, untick(fnSym));
     // TODO macro fn not js function then compile    
     const callMacro = (...args) => {
-      const genAst = macro(stack, ...args)
+      // if stack is needed it can be included with in a new scope
+      const genAst = macro(...args)
       const compileAst = compileHost([...stack], [genAst], [...refs])
       //console.log(compileAst.code)
       return compileAst.exec()

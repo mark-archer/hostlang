@@ -2,6 +2,7 @@ import { compileSym, compileFn, compileExpr, compileExprBlock, compileHost } fro
 import { add } from "../src/common";
 import { Fn } from "../src/typeInfo";
 import { parseHost } from "../src/parse";
+import { cleanCopyList } from "../src/utils";
 
 var should = require('should');
 
@@ -33,6 +34,9 @@ describe.only('compile', () => {
       linesJoinedShouldEqual(r, `
         _=(function(){
           let _=null;
+          _=(function(_){
+            return _;
+          })(_);
           return _;
         })
       `)
@@ -51,6 +55,9 @@ describe.only('compile', () => {
       linesJoinedShouldEqual(r, `
         let myFn=_=(function(){
           let _=null;
+          _=(function(_){
+            return _;
+          })(_);
           return _;
         })
       `)
@@ -70,7 +77,10 @@ describe.only('compile', () => {
       linesJoinedShouldEqual(r, `
         _=(function(n){
           let _=null;
-          _=add(n,1);
+          _=(function(_){
+            _=add(n,1);
+            return _;
+          })(_);
           return _;
         })
       `)
@@ -82,9 +92,7 @@ describe.only('compile', () => {
       const refs:any[] = []
       const stack:any[] = [{ add }, { a: 1 }]
       let r = compileExpr(refs, stack, ['`', '`add', '`a', 1]);
-      linesJoinedShouldEqual(r, `
-        _=add(a,1)
-      `)
+      linesJoinedShouldEqual(r, `_=add(a,1)`)
     })
   })
 
@@ -99,6 +107,24 @@ describe.only('compile', () => {
           return _;
         })(_);
       `)
+    })
+  })
+
+  describe('compileSet', () => {
+    it('should allow assigning values to variable names', async () => {
+      const imports = { add, a:1 }
+      let ast = await parseHost([], 'a = 2')
+      let r = compileHost(imports, ast);
+      r.exec().should.equal(2);
+    })
+
+    it('should allow assigning expression results to variable names', async () => {
+      const imports = { add, a:1, b:0 }
+      let ast = await parseHost([], 'a =: add a 1\nb')
+      console.log(cleanCopyList(ast))
+      let r = compileHost(imports, ast);
+      console.log(r.code)
+      r.exec().should.equal(0);
     })
   })
 
@@ -125,20 +151,43 @@ describe.only('compile', () => {
       let r = compileHost(imports, ast);
       const f = r.exec();
       f().should.equal(2);
-      console.log(r.code)
       linesJoinedShouldEqual(r.code, `      
-      function(_,add,a){
-        _=(function(_){
-          _=(function(){
-            let _=null;
-            _=add(a,1);
+        function(_,add,a){
+          _=(function(_){
+            _=(function(){
+              let _=null;
+              _=(function(_){
+                _=add(a,1);
+                return _;
+              })(_);
+              return _;
+            });
             return _;
-          });
+          })(_);
           return _;
-        })(_);
-        return _;
-      }
+        }
       `)
+    })
+
+    it('should allow declaring variables with no value', async () => {
+      const imports = { }
+      let ast = await parseHost([], 'var a')
+      let r = compileHost(imports, ast);
+      should(r.exec()).be.null();
+    })
+
+    it('should allow declaring variables with values', async () => {
+      const imports = { }
+      let ast = await parseHost([], 'var a 1')
+      let r = compileHost(imports, ast);
+      r.exec().should.equal(1);
+    })
+
+    it('should allow declaring variables with expressions', async () => {
+      const imports = { add }
+      let ast = await parseHost([], 'var a : add 1 1')
+      let r = compileHost(imports, ast);
+      r.exec().should.equal(2);      
     })
   })
 })

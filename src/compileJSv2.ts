@@ -7,13 +7,12 @@ import { parseHost } from "./parse";
 import { isString, isObject, isFunction } from "util";
 
 
-export function getRefId(refs:any[], ctx:any) {
+export function getRef(refs:any[], ctx:any) {
   let ref = refs.indexOf(ctx);
   if(ref === -1) {
     ref = refs.length;
     refs.push(ctx);
   }
-  // NOTE this could be done with guids to avoid needing to access a map of properties 
   return `r${ref}` 
 }
 
@@ -43,6 +42,15 @@ export function compileSym(stack:any[], sym:string) {
   throw new Error(`${sym} is not defined`);
 }
 
+export function compileVar(refs:any[], stack:any[], expr:any) {
+  const varSym = expr[2]
+  defineVar(stack, varSym)
+  const varRef = compileSym(stack, varSym)
+  const valueExpr = expr.length === 4 ? expr[3] : null;
+  let r = `let ${varRef}=_=${compileExpr(refs, stack, valueExpr)}`
+  return r
+}
+
 export function compileFn(refs:any[], stack:any[], fn:Fn) {
   const fnScope = {};
   let code = '';
@@ -54,20 +62,41 @@ export function compileFn(refs:any[], stack:any[], fn:Fn) {
   }).join();
   stack = [...stack, fnScope]
   code += '){\n\tlet _=null;'
-  fn.body.forEach(expr => {
-    code += '\n\t' + compileExpr(refs, stack, expr) + ';';
-  })
+  code += compileExprBlock(refs, stack, fn.body);
   code += '\n\treturn _;\n})'
   return code
 }
 
-export function compileExpr(refs:any[], stack:any[], expr:any) {  
+export function compileSet(refs:any[], stack:any[], expr:any) : string {
+  if(expr.length > 4) throw new Error('set called with too many arguments');
+  const varSym = expr[2]
+  const varRef = compileSym(stack, varSym)
+  const valueExpr = expr[3];  
+  let r = `_=${varRef}=${compileExpr(refs, stack, valueExpr)}`
+  r
+  return r
+}
+
+export function compileExpr(refs:any[], stack:any[], expr:any) : string {  
   if (isSym(expr)) return compileSym(stack, expr);
   if(!isExpr(expr)) return expr;
+
   if(expr[1] === sym('fn')) return $fn(refs, stack, expr);
+  if(expr[1] === sym('do')) return compileExprBlock(refs, stack, skip(expr, 2))
+  if(expr[1] === sym('var')) return compileVar(refs, stack, expr)
+  if(expr[1] === sym('set')) return compileSet(refs, stack, expr)
+  // if(expr[1] === sym('cond')) return compileCond(refs, stack, expr);
+  // if(expr[1] === sym('export')) return compileExport(refs, stack, expr);
+  // if(expr[1] === '`') return compileTick(refs, stack, expr);
+  //if(expr[1] === "'") return compileQuote(refs, stack, expr);
+
   expr.shift();
   const fnName = untick(expr.shift())
-  const args = expr.map(i => compileExpr(refs, stack, i)).join();
+  const args = expr.map(i => {
+    let code:string = compileExpr(refs, stack, i)
+    if(code.startsWith && code.startsWith('_=')) code = code.substr(2)    
+    return code
+  }).join();
   let code = `_=${fnName}(${args})`;
   return code;
 }
@@ -78,14 +107,16 @@ export function compileExprBlock(refs:any[], stack:any[], expr:any) {
   code += ''
   expr = untick(expr);
   expr.forEach(i => {
-    code += '\n\t' + compileExpr(refs, stack, i) + ';';
+    code += '\n\t';
+    if(isSym(i)) code += '_=' + compileSym(stack, i);
+    else code += compileExpr(refs, stack, i);
+    code += ';';
   })
   code += '\n\treturn _;\n})(_);'
   return code
 }
 
 export function compileHost(imports:any, ast:any[]) {
-
   const stack:any[] = [imports]
   const refs:any[] = []
   let innerCode = compileExprBlock(refs, stack, ast)
@@ -98,7 +129,7 @@ export function compileHost(imports:any, ast:any[]) {
   .concat(refs.map((v,i) => `r${i}`))
   .join();
   code += `){\n\t${innerCode}\n\treturn _;\n}`
-  code
+  //code = code.replace('_=_=', '_=')
   let f = js(code)
   let exec = () => f.apply(null, [ getName(stack, '_'), ...importValues, ...refs])
   return { code, f, exec, imports, ast }

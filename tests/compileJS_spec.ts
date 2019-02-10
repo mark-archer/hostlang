@@ -343,9 +343,9 @@ describe('compile', () => {
       `);
     })
 
-    it.skip('should add named functions to the stack', () => {
+    it('should add named functions to the stack', () => {
       let refs:any[] = []
-      let stack:any[] = [{ add }, { a: 1 }]
+      let stack:any[] = [{ add, a: 1 }]
       let fn:Fn = {
         kind: 'Fn',
         name: 'add1',
@@ -360,7 +360,7 @@ describe('compile', () => {
         body: [ [ '`', '`add', '`n', 1 ] ]
       }
       let r = compileFn(refs, stack, fn)
-      // TODO
+      should(stack[0].add1).should.not.equal(undefined)      
     })
   })
 
@@ -776,7 +776,15 @@ describe('compile', () => {
     it('should allow a macro to be declared', async () => {
       let stack:any[] = [{ add }]
       const r = await execHost(stack, "fn $myMacro (): ` add n 1")
-      r().should.eql([ '`', '`add', '`n', 1 ]) // NOTE n is unbound      
+      r().should.eql([ '`', '`add', '`n', 1 ])
+    })
+
+    it.skip('should allow declared macros to be run at runtime', async () => {
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, "fn $myMacro (n): ' `add n 1 \n$myMacro 2")
+      r
+      //console.log(r(1))
+      r.should.eql([ '`', '`add', 2, 1 ])
     })
   })
 })

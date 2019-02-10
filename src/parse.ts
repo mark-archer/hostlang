@@ -159,7 +159,8 @@ function parseSymbols(pi:ParseInfo){
   if(aSym){
     aSym = aSym[0];
     //aSym = aSym.substr(0,aSym.length-1);
-    pi.i+= aSym.length;
+    pi.i+= aSym.length;    
+    //if(aSym[0] !== "'") aSym = tick(aSym); pi.clist.push(aSym);
     pi.clist.push(tick(aSym));
     return true;
   }

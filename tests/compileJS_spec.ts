@@ -633,28 +633,64 @@ describe('compile', () => {
   })
 
   describe('tick', () => {
-    it('should allow a symbol to be returned with being evaluated', async () => {
-      let stack:any[] = [{ add }]
+    it('should allow a symbol to be returned without being evaluated', async () => {
+      let stack:any[] = [{ }]
       const r = await execHost(stack, '`n')
       r.should.equal('`n')
     })
 
     it('should allow an expression to be returned without evaluated', async () => {
-      let stack:any[] = [{ add }]
+      let stack:any[] = [{ }]
       const r = await execHost(stack, '` add a b')
       r.should.eql([ '`', '`add', '`a', '`b' ])
     })
 
     it('should allow a multipule leading ticks in symbols', async () => {
-      let stack:any[] = [{ add }]
+      let stack:any[] = [{ }]
       const r = await execHost(stack, '``n')
       r.should.equal('``n')
     })
 
     it('should allow multipule leading ticks in expressions', async () => {
-      let stack:any[] = [{ add }]
+      let stack:any[] = [{ }]
       const r = await execHost(stack, '` ` add a b')
       r.should.eql([ '`', '`', '`add', '`a', '`b' ])
+    })
+  })
+
+  describe('quote', () => {
+    it('should allow a symbol to be evaluated and returned as a symbol', async () => {
+      let stack:any[] = [{ f: 'add' }]
+      const r = await execHost(stack, "'f")
+      r.should.equal('`add')
+    })
+
+    it('should evaluated symbols at runtime', async () => {
+      let stack:any[] = [{ f: 'add' }]
+      const r = await execHost(stack, "() => 'f")
+      r().should.equal('`add')
+      stack[0].f = 'add2'
+      r().should.equal('`add2')
+    })
+
+    it('should allow an expression to be evaluated and then returned as unevaluated', async () => {
+      let stack:any[] = [{ add, f: 'add', n: 1  }]
+      const r = await execHost(stack, "' f n 1")
+      r.should.eql([ '`', '`add', 1, 1 ])
+    })
+
+    it('should allow partial evaulations', async () => {
+      let stack:any[] = [{ add, f: 'add', n: 1  }]
+      const r = await execHost(stack, "' f n `a")
+      r.should.eql([ '`', '`add', 1, '`a' ])
+    })
+
+    it('should evaluate expressions at runtime', async () => {
+      let stack:any[] = [{ add, f: 'add', n: 1  }]
+      const r = await execHost(stack, "() => ' f n `a")      
+      r().should.eql([ '`', '`add', 1, '`a' ])
+      stack[0].f = 'add2'
+      r().should.eql([ '`', '`add2', 1, '`a' ])
     })
   })
 

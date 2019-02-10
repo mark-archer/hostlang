@@ -8,6 +8,7 @@ import { ParseInfoOptions } from "./parseInfo";
 module.exports.parseHost = parseHost;
 
 export function getName(stack:any[], name:string) { // maybe rename this to `get` so `get` & `set` & `getr` & `setr`
+  if (isSym(name)) return untick(name);
   for(let i = stack.length - 1; i >= 0; i--) {
     if(stack[i][name] !== undefined) return stack[i][name];
   }

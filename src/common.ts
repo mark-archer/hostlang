@@ -73,15 +73,11 @@ export function untick(x:any) {
     return x;
 }
 
-// export function quote(x:any) {
-//     if(isString(x) && x[0] === "'") return x.substr(1);
-//     if(isList(x) && x[0] === "'") {
-//         x = [...x];
-//         x.shift();
-//         return x;
-//     }
-//     return x;
-// }
+export function quote(x:any) {
+    if (isSym(x)) return tick("'" + untick(x))
+    if (isExpr(x)) return tick(["'", ...untick(x)]);
+    return x;
+}
 
 export function unquote(x:any) {
     if(isString(x) && x[0] === "'") return x.substr(1);

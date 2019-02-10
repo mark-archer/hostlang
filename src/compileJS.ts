@@ -1,7 +1,7 @@
-import { isSym, untick, isExpr, isList, guid, sym, last, skip } from "./common";
+import { isSym, untick, isExpr, isList, guid, sym, last, skip, unquote, tick, quote } from "./common";
 import { js, cleanCopyList, stringify, copy } from "./utils";
 import { readFileSync } from "fs";
-import { getName } from "./host";
+import { getName, evalHost } from "./host";
 import { Fn, makeFn } from "./typeInfo";
 import { parseHost } from "./parse";
 import { isString, isObject, isFunction } from "util";
@@ -32,7 +32,13 @@ export function compileSym(refs:any[], stack:any[], sym:string) {
     throw new Error(`Not a symbol: ${sym}`)    
   }
   sym = untick(sym)
-  if(isSym(sym)) return `"${sym}"`;
+  if(isSym(sym)) return `"${sym}"`; // logic for tick  
+  if(sym[0] === `'`) { // logic for quote
+    sym = unquote(sym)
+    sym
+    const evalQuote = () => `${tick(getName(stack, sym))}`
+    return compileExpr(refs, stack, ['`', evalQuote]);    
+  }
   if(sym == '_') return sym
   for(let i = stack.length-1; i >= 0; i--) {
     if(stack[i][sym] !== undefined) {
@@ -61,10 +67,6 @@ export function compileVar(refs:any[], stack:any[], expr:any) {
 }
 
 export function compileExport(refs:any[], stack:any[], expr:any[]) {
-  refs
-  stack
-  expr
-
   let exportCtx;
   for(let i = stack.length - 1; i >= 0; i--) {
     if(stack[i].exports !== undefined) {
@@ -144,7 +146,7 @@ export function compileMacro(refs:any[], stack:any[], expr:any) {
   return expr;
 }
 
-export function compileTerm(refs: any[], stack:any[], term:any) {
+export function compileTerm(refs:any[], stack:any[], term:any) {
   if(isSym(term)) {
     return compileSym(refs, stack, term);
   }
@@ -166,6 +168,29 @@ export function compileTerm(refs: any[], stack:any[], term:any) {
   return String(term)
 }
 
+export function compileTick(refs:any[], stack:any[], expr:any) {
+  expr.shift();
+  const astClosure = () => expr; // TODO this should probably be a copy
+  return compileExpr(refs, stack, ['`', astClosure])    
+}
+
+export function compileQuote(refs:any[], stack:any[], expr:any) {
+  expr.shift()
+  expr.shift()
+  const ast = [...expr];
+  expr = ['`', () => {
+    const _code = ast.map(i => {
+      if(isSym(i)) {
+        return tick(getName(stack, untick(i)))
+      }
+      return i
+    })
+    _code.unshift('`');
+    return _code;
+  }]
+  return compileExpr(refs, stack, expr);
+}
+
 export function compileExpr(refs:any[], stack:any[], expr:any) {
   if(!isExpr(expr))
     return '_=' + compileTerm(refs, stack, expr)
@@ -179,13 +204,8 @@ export function compileExpr(refs:any[], stack:any[], expr:any) {
   if(expr[1] === sym('do')) return compileExprBlock(refs, stack, skip(expr, 2))
   if(expr[1] === sym('fn')) return $fn(refs, stack, expr);
   if(expr[1] === sym('export')) return compileExport(refs, stack, expr);
-
-
-  if(expr[1] === '`') {
-    expr.shift();
-    const astClosure = () => expr; // TODO this should probably be a copy
-    return compileExpr(refs, stack, ['`', astClosure])    
-  }
+  if(expr[1] === '`') return compileTick(refs, stack, expr);
+  if(expr[1] === "'") return compileQuote(refs, stack, expr);
   
   expr.shift()
   var f = compileTerm(refs, stack, expr.shift())
@@ -244,7 +264,6 @@ export function compileHost(stack:any[], ast:any[], refs:any[]=[]) {
   code = code.substr(0,code.length - 1) // remove trailing comma in arguments;
   code += `){${innerCode};return _;}`
   let f = js(code)
-  let r = getName(stack, '_')
   let exec = () => f.apply(null, [ getName(stack, '_'), ...refs])
   return { code, f, refs, exec }
 }

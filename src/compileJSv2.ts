@@ -1,4 +1,4 @@
-import { isSym, untick, isExpr, isList, guid, sym, last, skip, unquote, tick, quote } from "./common";
+import { isSym, untick, isExpr, isList, guid, sym, last, skip, unquote, tick, quote, add } from "./common";
 import { js, cleanCopyList, stringify, copy } from "./utils";
 import { readFileSync } from "fs";
 import { getName, evalHost } from "./host";
@@ -77,6 +77,20 @@ export function compileSet(refs:any[], stack:any[], expr:any) : string {
   return r
 }
 
+export function compileCond(refs:any[], stack:any[], expr:any[]) {
+  expr.shift()
+  expr.shift()
+  let r = '';
+  expr.forEach((ifthen, i) => {
+    let _if = compileExpr(refs, stack, ifthen.shift())
+    const _then = compileExprBlock(refs, stack, ifthen)
+    r += `if (${_if}) ${_then}`
+    if (i < expr.length - 1)
+      r += '\nelse '
+  })  
+  return r
+} 
+
 export function compileExpr(refs:any[], stack:any[], expr:any) : string {  
   if (isSym(expr)) return compileSym(stack, expr);
   if(!isExpr(expr)) return expr;
@@ -85,18 +99,14 @@ export function compileExpr(refs:any[], stack:any[], expr:any) : string {
   if(expr[1] === sym('do')) return compileExprBlock(refs, stack, skip(expr, 2))
   if(expr[1] === sym('var')) return compileVar(refs, stack, expr)
   if(expr[1] === sym('set')) return compileSet(refs, stack, expr)
-  // if(expr[1] === sym('cond')) return compileCond(refs, stack, expr);
+  if(expr[1] === sym('cond')) return compileCond(refs, stack, expr);
   // if(expr[1] === sym('export')) return compileExport(refs, stack, expr);
   // if(expr[1] === '`') return compileTick(refs, stack, expr);
   //if(expr[1] === "'") return compileQuote(refs, stack, expr);
 
   expr.shift();
   const fnName = untick(expr.shift())
-  const args = expr.map(i => {
-    let code:string = compileExpr(refs, stack, i)
-    if(code.startsWith && code.startsWith('_=')) code = code.substr(2)    
-    return code
-  }).join();
+  const args = expr.map(i => compileExpr(refs, stack, i)).join();
   let code = `_=${fnName}(${args})`;
   return code;
 }
@@ -108,7 +118,9 @@ export function compileExprBlock(refs:any[], stack:any[], expr:any) {
   expr = untick(expr);
   expr.forEach(i => {
     code += '\n\t';
-    if(isSym(i)) code += '_=' + compileSym(stack, i);
+    // if(isSym(i)) code += '_=' + compileSym(stack, i);
+    // else code += compileExpr(refs, stack, i);
+    if(!isExpr(i)) code += '_=' + compileExpr(refs, stack, i);
     else code += compileExpr(refs, stack, i);
     code += ';';
   })
@@ -129,9 +141,9 @@ export function compileHost(imports:any, ast:any[]) {
   .concat(refs.map((v,i) => `r${i}`))
   .join();
   code += `){\n\t${innerCode}\n\treturn _;\n}`
-  //code = code.replace('_=_=', '_=')
   let f = js(code)
-  let exec = () => f.apply(null, [ getName(stack, '_'), ...importValues, ...refs])
+  const _ = getName(stack, '_')
+  let exec = () => f.apply(null, [ _, ...importValues, ...refs])
   return { code, f, exec, imports, ast }
 }
 
@@ -146,3 +158,20 @@ const $fn = (refs:any[], stack:any[], expr) => {
   const f = makeFn(name, params, undefined, body, stack);
   return compileFn(refs, stack, f);
 }
+
+
+let r = (function(_,add,a){
+  _=(function(_){
+    if (a) _=(function(_){
+      _=add(a,1);
+      return _;
+    })(_);
+    else if (true) _=(function(_){
+      3;
+      return _;
+    })(_);;
+    return _;
+  })(_);
+  return _;
+})(null, add, 0)
+r

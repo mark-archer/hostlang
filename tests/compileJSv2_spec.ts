@@ -124,7 +124,57 @@ describe.only('compile', () => {
       console.log(cleanCopyList(ast))
       let r = compileHost(imports, ast);
       console.log(r.code)
-      r.exec().should.equal(0);
+      r.exec().should.equal(0);      
+    })
+  })
+
+  describe('compileCond', () => {
+    it('should work with a single if statement', async () => {
+      const imports = { add, a:1 }
+      let ast = await parseHost([], 'if a : add a 1')
+      let r = compileHost(imports, ast);
+      console.log(r.code)
+      r.exec().should.equal(2);
+    })
+
+    it('should work with if-else statement', async () => {
+      const imports = { add, a:0 }
+      let ast = await parseHost([], 'if a : add a 1\nelse 3')
+      let r = compileHost(imports, ast);
+      console.log(r.code)
+      linesJoinedShouldEqual(r.code, `
+        function(_,add,a){
+          _=(function(_){
+            if (a) _=(function(_){
+              _=add(a,1);
+              return _;
+            })(_);
+            else if (true) _=(function(_){
+              _=3;
+              return _;
+            })(_);;
+            return _;
+          })(_);
+          return _;
+        }
+      `)
+      r.exec().should.equal(3);
+    })
+
+    it('should transform `cond into if-else statments', async () => {
+      const imports = { add, a:0, b:2, c:3 }
+      let ast = await parseHost([], 'if a : add a 1\nelif (add b 1) b\nelse c')      
+      let r = compileHost(imports, ast);
+      console.log(r.code)
+      r.exec().should.equal(2);
+    })
+
+    it('should transform `cond into if-else statments', async () => {
+      const imports = { add, a:0, b:-1, c:5 }
+      let ast = await parseHost([], 'if a : add a 1\nelif (add b 1) b\nelse c')      
+      let r = compileHost(imports, ast);
+      console.log(r.code)
+      r.exec().should.equal(5);
     })
   })
 

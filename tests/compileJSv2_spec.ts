@@ -1,4 +1,4 @@
-import { compileSym, compileFn, compileExpr, compileExprBlock, compileHost } from "../src/compileJSv2";
+import { compileSym, compileFn, compileExpr, compileExprBlock, compileHost, compileMacro } from "../src/compileJSv2";
 import { add } from "../src/common";
 import { Fn } from "../src/typeInfo";
 import { parseHost } from "../src/parse";
@@ -44,12 +44,12 @@ describe.only('compile', () => {
       }
       let r = compileFn(refs, stack, fn);
       linesJoinedShouldEqual(r, `
-        (function(){
+        function(){
           let _=null;
           return(function(_){
             return _;
           })(_);
-        })
+        }
       `)
     })
 
@@ -64,27 +64,29 @@ describe.only('compile', () => {
       }
       let r = compileFn(refs, stack, fn);
       linesJoinedShouldEqual(r, `
-        let myFn=(function(){
+        function myFn(){
           let _=null;
           return(function(_){
             return _;
           })(_);
-        })
+        }
       `)
     })
 
-    it('should add references to named functions to the stack', () => {
-      const refs:any[] = []
-      const stack:any[] = [{ add, a: 1 }]
-      let fn:Fn = {
-        kind: 'Fn',
-        params: [],
-        body: [],
-        name: 'myFn'
-      }
-      let r = compileFn(refs, stack, fn);
-      Object.keys(stack[0]).includes('myFn').should.equal(true)
-    })
+    // this is currently done in compileExprBlock because it can't be done in a single statement
+    // e.g. _=function myF(){}; myF() does not work
+    // it('should add references to named functions to the stack', () => {      
+    //   const refs:any[] = []
+    //   const stack:any[] = [{ add, a: 1 }]
+    //   let fn:Fn = {
+    //     kind: 'Fn',
+    //     params: [],
+    //     body: [],
+    //     name: 'myFn'
+    //   }
+    //   let r = compileFn(refs, stack, fn);
+    //   Object.keys(stack[0]).includes('myFn').should.equal(true)
+    // })
 
     it('should compile parameter names', () => {
       const refs:any[] = []
@@ -98,12 +100,12 @@ describe.only('compile', () => {
       }
       let r = compileFn(refs, stack, fn);
       linesJoinedShouldEqual(r, `
-        (function(n){
+        function(n){
           let _=null;
           return(function(_){
             _=add(n,1);
             return _;
-          })(_);})
+          })(_);}
       `)
     })
 
@@ -152,6 +154,24 @@ describe.only('compile', () => {
     it('should reference imported functions as references', async () => {
       const imports = { a:1, add }
       const ast = await parseHost([], '() => a + 1')
+      const c = compileHost(imports, ast);
+      const f = c.exec()
+      f().should.equal(2)
+      imports.a = 2
+      f().should.equal(3)
+    })
+
+    it('should allow calling functions that have just been declared', async () => {
+      const imports = { a:1, add }
+      const ast = await parseHost([], 'add2 () => a + 1\n add2!')
+      const c = compileHost(imports, ast);
+      const f = c.exec()
+      f.should.equal(2)
+    })
+
+    it('should allow calling functions that have just been declared', async () => {
+      const imports = { a:1, add }
+      const ast = await parseHost([], 'add2 () => a + 1\n () => add2!')
       const c = compileHost(imports, ast);
       const f = c.exec()
       f().should.equal(2)
@@ -208,13 +228,13 @@ describe.only('compile', () => {
       linesJoinedShouldEqual(r.code, `      
         function(_,imports,){
           return (function(_){
-            _=(function(){
+            _=function(){
               let _=null;
               return(function(_){
                 _=imports['add'](imports['a'],1);
                 return _;
               })(_);
-            });
+            };
             return _;
           })(_);
         }
@@ -421,16 +441,31 @@ describe.only('compile', () => {
       r(2).should.eql([ '`', '`add2', 2, '`a' ])
     })
 
-    it.skip('should work with nested expressions', async () => {
+    it('should work with nested expressions', async () => {
       let imports = { add, f: 'add' }
       const r = await execHost(imports, "n => ' f n `a (f n)") 
-      r(1).should.eql([ '`', '`add', 1, '`a' ])
+      console.log(r.toString())
+      r(1).should.eql([ '`', '`add', 1, '`a', ['`', '`add', 1]])
       imports.f = 'add2'
-      r(2).should.eql([ '`', '`add2', 2, '`a' ])
+      r(2).should.eql([ '`', '`add2', 2, '`a', ['`', '`add2', 2]])
     })
   })
 
   describe('compileMacro', () => {
+    it('should compile macros as a runtime call', async () => {
+      let $myMacro = (n) => [ '`', '`add', 1, 1 ]
+      let stack:any[] = [{ add, $myMacro }]
+      let refs:any[] = []
+      const r = await compileMacro(refs, stack, ['`', '`$myMacro', 2])
+      linesJoinedShouldEqual(r, `
+        (function(){
+          const ast = imports['$myMacro'](2);
+          const exe = imports.compileHost(r0.stack, [ast], r0.refs)
+          return exe.exec()
+        })()
+      `)      
+    })
+
     it('should allow calling macro functions', async () => {
       let $myMacro = () => [ '`', '`add', 1, 1 ]
       let imports = { add, $myMacro }
@@ -475,20 +510,10 @@ describe.only('compile', () => {
       //@ts-ignore
       myMacro.isMacro = true
       let stack:any[] = [{ add, myMacro }]
-      const f = await execHost(stack, '(n) => myMacro n')
+      const f = await execHost(stack, '(n) => myMacro n')      
       f().should.equal(0);
       f(3).should.equal(3)
-      f(20).should.equal(20)
-      linesJoinedShouldEqual(f.toString(), `
-        function(n){
-          let _=null;
-          _=(function(_){
-            _=r0(n);
-            return _;
-          })(_);
-          return _;
-        }
-      `)
+      f(20).should.equal(20)      
     })
 
     it('should allow a macro to be declared', async () => {
@@ -501,6 +526,14 @@ describe.only('compile', () => {
       let stack:any[] = [{ add }]
       const r = await execHost(stack, "fn $myMacro (n): ' `add n 1 \n$myMacro 2")
       r.should.eql(3)
+    })
+
+    it('should allow declared macros to be run at runtime', async () => {
+      let stack:any[] = [{ add, i:3 }]
+      const r = await execHost(stack, "fn $myMacro (n): ' `add n 1 i \n() => $myMacro 2")
+      r().should.eql(6)
+      stack[0].i = 4
+      r().should.eql(7)
     })
   })
 })

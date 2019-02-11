@@ -6,23 +6,29 @@ import { cleanCopyList } from "../src/utils";
 
 var should = require('should');
 
+async function execHost(imports:any, code:string) {
+  let ast = await parseHost([imports], code)
+  ast = cleanCopyList(ast);
+  let r = compileHost(imports, ast);
+  return r.exec()
+}
 
 describe.only('compile', () => {
   describe('compileSym', () => {
     it('should error if sym is not defined', () => {
       const stack:any[] = [{}]
-      should(() => compileSym(stack, '`a')).throw('a is not defined');
+      should(() => compileSym([], stack, '`a')).throw('a is not defined');
     })
 
     it('should return the symbol as an import reference if it is in the first scope in the stack', () => {
       const stack:any[] = [{ a:1 }]
-      const r = compileSym(stack, '`a');
+      const r = compileSym([], stack, '`a');
       r.should.equal("imports['a']");
     })
 
     it('should return the symbol as a string if it exists', () => {
       const stack:any[] = [{}, { a:1 }]
-      const r = compileSym(stack, '`a');
+      const r = compileSym([], stack, '`a');
       r.should.equal('a');
     })
   })
@@ -67,6 +73,19 @@ describe.only('compile', () => {
           return _;
         })
       `)
+    })
+
+    it('should add references to named functions to the stack', () => {
+      const refs:any[] = []
+      const stack:any[] = [{ add, a: 1 }]
+      let fn:Fn = {
+        kind: 'Fn',
+        params: [],
+        body: [],
+        name: 'myFn'
+      }
+      let r = compileFn(refs, stack, fn);
+      Object.keys(stack[0]).includes('myFn').should.equal(true)
     })
 
     it('should compile parameter names', () => {
@@ -334,6 +353,153 @@ describe.only('compile', () => {
       const imports = { exports:{} }
       let ast = await parseHost([], 'export var a\nvar a 1')
       should(() => compileHost(imports, ast)).throw('var already exists as an export: a')
+    })
+  })
+
+  describe('compileTick', () => {
+    
+    it('should allow a symbol to be returned without being evaluated', async () => {
+      const exports:any = {}
+      const imports = { add, exports }
+      let ast = await parseHost([], '`a')
+      let r = compileHost(imports, ast);
+      r.exec().should.equal('`a');
+    })
+
+    it('should allow an expression to be returned without evaluated', async () => {
+      const exports:any = {}
+      const imports = { add, exports }
+      let ast = await parseHost([], '` add a b')
+      let r = compileHost(imports, ast);
+      cleanCopyList(r.exec()).should.eql([ '`', '`add', '`a', '`b' ])
+    })
+
+    it('should allow a multipule leading ticks in symbols', async () => {
+      const r = await execHost({}, '``n')
+      r.should.equal('``n')
+    })
+
+    it('should allow multipule leading ticks in expressions', async () => {
+      const r = await execHost({}, '` ` add a b')
+      cleanCopyList(r).should.eql([ '`', '`', '`add', '`a', '`b' ])
+    })
+  })
+
+  describe('compileQuote', () => {
+    it('should allow a symbol to be evaluated and returned as a symbol', async () => {
+      let imports = { f: 'add' }
+      const r = await execHost(imports, "'f")
+      r.should.equal('`add')
+    })
+
+    it('should evaluated symbols at runtime', async () => {
+      let imports = { f: 'add' }
+      const r = await execHost(imports, "() => 'f")
+      r().should.equal('`add')
+      imports.f = 'add2'
+      r().should.equal('`add2')
+    })
+
+    it('should allow an expression to be evaluated and then returned as unevaluated', async () => {
+      let imports = { add, f: 'add', n: 1  }
+      const r = await execHost(imports, "' f n 1")
+      r.should.eql([ '`', '`add', 1, 1 ])
+    })
+
+    it('should allow partial evaulations', async () => {
+      let imports = { add, f: 'add', n: 1  }
+      const r = await execHost(imports, "' f n `a")
+      r.should.eql([ '`', '`add', 1, '`a' ])
+    })
+
+    it('should evaluate expressions at runtime', async () => {
+      let imports = { add, f: 'add', n: 1  }
+      const r = await execHost(imports, "() => ' f n `a")      
+      r().should.eql([ '`', '`add', 1, '`a' ])
+      imports.f = 'add2'
+      r().should.eql([ '`', '`add2', 1, '`a' ])
+    })
+
+    it('should evaluate expressions at runtime', async () => {
+      let imports = { add, f: 'add' }
+      const r = await execHost(imports, "n => ' f n `a") 
+      r(1).should.eql([ '`', '`add', 1, '`a' ])
+      imports.f = 'add2'
+      r(2).should.eql([ '`', '`add2', 2, '`a' ])
+    })
+  })
+
+  describe('compileMacro', () => {
+    it('should allow calling macro functions', async () => {
+      let $myMacro = () => [ '`', '`add', 1, 1 ]
+      let imports = { add, $myMacro }
+      const r = await execHost(imports, '$myMacro!')
+      r.should.equal(2)
+    })
+
+    it('should allow recursive macro functions', async () => {
+      let $myMacro = (n) => {
+        if (n) {
+          return [ '`', '`add', 1, [ '`', '`$myMacro', n-1] ]
+        } else {
+          return 0
+        }
+      }
+      let imports = { add, $myMacro }
+      const r = await execHost(imports, '$myMacro 5')      
+      r.should.equal(5)
+    })
+
+    it('should allow calling a macro inside a function', async () => {
+      let $myMacro = (n) => {
+        if (n) {
+          return [ '`', '`add', 1, [ '`', '`$myMacro', n-1] ]
+        } else {
+          return 0
+        }
+      }
+      let stack:any[] = [{ add, $myMacro }]
+      const f = await execHost(stack, '() => () => $myMacro 2')
+      f()().should.equal(2)      
+    })
+
+    it('should allow calling a macro at runtime', async () => {
+      let myMacro = (n) => {
+        if (n) {
+          return [ '`', '`add', 1, [ '`', '`myMacro', n-1] ]
+        } else {
+          return 0
+        }
+      }
+      //@ts-ignore
+      myMacro.isMacro = true
+      let stack:any[] = [{ add, myMacro }]
+      const f = await execHost(stack, '(n) => myMacro n')
+      f().should.equal(0);
+      f(3).should.equal(3)
+      f(20).should.equal(20)
+      linesJoinedShouldEqual(f.toString(), `
+        function(n){
+          let _=null;
+          _=(function(_){
+            _=r0(n);
+            return _;
+          })(_);
+          return _;
+        }
+      `)
+    })
+
+    it('should allow a macro to be declared', async () => {
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, "fn $myMacro (): ` add n 1")
+      r().should.eql([ '`', '`add', '`n', 1 ])
+    })
+
+    it('should allow declared macros to be run at runtime', async () => {
+      let stack:any[] = [{ add }]
+      const r = await execHost(stack, "fn $myMacro (n): ' `add n 1 \n$myMacro 2")
+      r.should.eql([ '`', '`add', 2, 1 ])
     })
   })
 })

@@ -14,11 +14,17 @@ describe.only('compile', () => {
       should(() => compileSym(stack, '`a')).throw('a is not defined');
     })
 
-    it('should return the symbol as a string if it exists', () => {
+    it('should return the symbol as an import reference if it is in the first scope in the stack', () => {
       const stack:any[] = [{ a:1 }]
       const r = compileSym(stack, '`a');
+      r.should.equal("imports['a']");
+    })
+
+    it('should return the symbol as a string if it exists', () => {
+      const stack:any[] = [{}, { a:1 }]
+      const r = compileSym(stack, '`a');
       r.should.equal('a');
-    })    
+    })
   })
 
   describe('compileFn', () => {
@@ -65,7 +71,7 @@ describe.only('compile', () => {
 
     it('should compile parameter names', () => {
       const refs:any[] = []
-      const stack:any[] = [{ add }, { a: 1 }]
+      const stack:any[] = [{}, { add }, { a: 1 }]
       let fn:Fn = {
         kind: 'Fn',
         params: [ {
@@ -85,21 +91,81 @@ describe.only('compile', () => {
         })
       `)
     })
+
+    it('should maintain closures between multipule instances of a function', async () => {
+      const exports:any = {}
+      const imports = { add, exports }
+      const ast = await parseHost([], 'n => () => n + 1')      
+      const c = compileHost(imports, ast);
+      const f = c.exec()
+      const f1 = f(1);
+      const f2 = f(2);
+      f1().should.equal(2);
+      f2().should.equal(3);
+      const f3 = f(3);
+      f3().should.equal(4);
+    })
+
+    it('should use import and export references with closures correctly', async () => {
+      const exports:any = {}
+      const imports = { add, exports, a:1 }
+      const ast = await parseHost([], 'n => () => n + a')
+      const c = compileHost(imports, ast);
+      const f = c.exec()
+      const f1 = f(1);
+      const f2 = f(2);
+      f1().should.equal(2);
+      f2().should.equal(3);
+      const f3 = f(3);
+      f3().should.equal(4);
+      imports.a = 0;
+      f1().should.equal(1);
+      f2().should.equal(2);
+      f3().should.equal(3);      
+    })
+
+    it('should reference imported values as references', async () => {
+      const imports = { a:1 }
+      const ast = await parseHost([], '() => a')
+      const c = compileHost(imports, ast);
+      const f = c.exec()
+      f().should.equal(1)
+      imports.a = 2
+      f().should.equal(2)      
+    })
+
+    it('should reference imported functions as references', async () => {
+      const imports = { a:1, add }
+      const ast = await parseHost([], '() => a + 1')
+      const c = compileHost(imports, ast);
+      const f = c.exec()
+      f().should.equal(2)
+      imports.a = 2
+      f().should.equal(3)
+    })
   })
 
   describe('compileExpr', () => {
     it('should work with references and values', () => {
       const refs:any[] = []
-      const stack:any[] = [{ add }, { a: 1 }]
+      const stack:any[] = [{}, { add }, { a: 1 }]
       let r = compileExpr(refs, stack, ['`', '`add', '`a', 1]);
       linesJoinedShouldEqual(r, `_=add(a,1)`)
+    })
+
+    it('should treat the first level in the stack as imports', () => {
+      const refs:any[] = []
+      const stack:any[] = [{ add }, { a: 1 }]
+      let r = compileExpr(refs, stack, ['`', '`add', '`a', 1]);
+      linesJoinedShouldEqual(r, `_=imports['add'](a,1)`)
     })
   })
 
   describe('compileExprBlock', () => {
     it('should work with references and values', () => {
       const refs:any[] = []
-      const stack:any[] = [{ add }, { a: 1 }]
+      const imports = {}
+      const stack:any[] = [imports, { add }, { a: 1 }]
       let r = compileExprBlock(refs, stack, [['`', '`add', '`a', 1]]);
       linesJoinedShouldEqual(r, `
         _=(function(_){
@@ -117,13 +183,13 @@ describe.only('compile', () => {
       r.exec().should.equal(2);
       console.log(r.code)
       linesJoinedShouldEqual(r.code, `      
-      function(_,add,a){
-        _=(function(_){
-          _=add(a,1);
+        function(_,imports,){
+          _=(function(_){
+            _=imports['add'](imports['a'],1);
+            return _;
+          })(_);
           return _;
-        })(_);
-        return _;
-      }
+        }
       `)
     })
 
@@ -133,21 +199,21 @@ describe.only('compile', () => {
       let r = compileHost(imports, ast);
       const f = r.exec();
       f().should.equal(2);
+      console.log(r.code)
       linesJoinedShouldEqual(r.code, `      
-        function(_,add,a){
+        function(_,imports,){
           _=(function(_){
             _=(function(){
-              let _=null;
-              _=(function(_){
-                _=add(a,1);
+              let _=null;_=(function(_){
+                _=imports['add'](imports['a'],1);
                 return _;
-              })(_);
-              return _;
-            });
+            })(_);
             return _;
-          })(_);
+          });
           return _;
-        }
+        })(_);
+        return _;
+      }
       `)
     })
   })
@@ -206,23 +272,6 @@ describe.only('compile', () => {
       const imports = { add, a:0 }
       let ast = await parseHost([], 'if a : add a 1\nelse 3')
       let r = compileHost(imports, ast);
-      console.log(r.code)
-      linesJoinedShouldEqual(r.code, `
-        function(_,add,a){
-          _=(function(_){
-            if (a) _=(function(_){
-              _=add(a,1);
-              return _;
-            })(_);
-            else if (true) _=(function(_){
-              _=3;
-              return _;
-            })(_);;
-            return _;
-          })(_);
-          return _;
-        }
-      `)
       r.exec().should.equal(3);
     })
 

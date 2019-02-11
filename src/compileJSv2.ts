@@ -34,10 +34,11 @@ export function compileSym(stack:any[], sym:string) {
   if(sym == '_') return sym;
   for(let i = stack.length-1; i >= 0; i--) {
     if(stack[i].exports && stack[i].exports[sym] !== undefined) {
-      let code = `exports.${sym}`
+      let code = `imports.exports.${sym}`
       return code;
     }
     if(stack[i][sym] !== undefined) {
+      if(i == 0) return `imports['${sym}']`
       return sym;
     }
   }
@@ -136,7 +137,7 @@ export function compileExpr(refs:any[], stack:any[], expr:any) : string {
   //if(expr[1] === "'") return compileQuote(refs, stack, expr);
 
   expr.shift();
-  const fnName = untick(expr.shift())
+  const fnName = compileExpr(refs, stack, expr.shift()) //untick(expr.shift())
   const args = expr.map(i => compileExpr(refs, stack, i)).join();
   let code = `_=${fnName}(${args})`;
   return code;
@@ -161,18 +162,20 @@ export function compileHost(imports:any, ast:any[]) {
   const stack:any[] = [imports]
   const refs:any[] = []
   let innerCode = compileExprBlock(refs, stack, ast)
-  let code = 'function(_,'
-  let importValues:any[] = []
-  code += Object.keys(imports).map(key => {
-    importValues.push(imports[key])
-    return key
-  })
-  .concat(refs.map((v,i) => `r${i}`))
-  .join();
+  let code = 'function(_,imports,'
+  code += refs.map((v,i) => `r${i}`).join();
+  //let importValues:any[] = []
+  // code += Object.keys(imports).map(key => {
+  //   importValues.push(imports[key])
+  //   return key
+  // })
+  // .concat(refs.map((v,i) => `r${i}`))
+  // .join();
   code += `){\n\t${innerCode}\n\treturn _;\n}`
   let f = js(code)
-  const _ = getName(stack, '_')
-  let exec = () => f.apply(null, [ _, ...importValues, ...refs])
+  const _ = getName(stack, '_')  
+  //let exec = () => f.apply(null, [ _, ...importValues, ...refs])
+  let exec = () => f.apply(null, [ _, imports, ...refs])
   return { code, f, exec, imports, ast }
 }
 
@@ -187,20 +190,3 @@ const $fn = (refs:any[], stack:any[], expr) => {
   const f = makeFn(name, params, undefined, body, stack);
   return compileFn(refs, stack, f);
 }
-
-
-let r = (function(_,add,a){
-  _=(function(_){
-    if (a) _=(function(_){
-      _=add(a,1);
-      return _;
-    })(_);
-    else if (true) _=(function(_){
-      3;
-      return _;
-    })(_);;
-    return _;
-  })(_);
-  return _;
-})(null, add, 0)
-r

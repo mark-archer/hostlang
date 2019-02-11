@@ -66,16 +66,16 @@ export function compileFn(refs:any[], stack:any[], fn:Fn) {
     defineVar(stack, fn.name)
     code = `let ${fn.name}=`
   }
-  code += `_=(function(`
+  code += `(function(`
   const fnScope = {};
   code += fn.params.map(p => {
     fnScope[p.name] = null;
     return p.name
   }).join();
   stack = [...stack, fnScope]
-  code += '){\n\tlet _=null;'
+  code += '){\n\tlet _=null;\n\treturn'
   code += compileExprBlock(refs, stack, fn.body);
-  code += '\n\treturn _;\n})'
+  code += '\n})'
   return code
 }
 
@@ -84,7 +84,7 @@ export function compileSet(refs:any[], stack:any[], expr:any) : string {
   const varSym = expr[2]
   const varRef = compileSym(refs, stack, varSym)
   const valueExpr = expr[3];  
-  let r = `_=${varRef}=${compileExpr(refs, stack, valueExpr)}`
+  let r = `${varRef}=${compileExpr(refs, stack, valueExpr)}`
   r
   return r
 }
@@ -96,7 +96,7 @@ export function compileCond(refs:any[], stack:any[], expr:any[]) {
   expr.forEach((ifthen, i) => {
     let _if = compileExpr(refs, stack, ifthen.shift())
     const _then = compileExprBlock(refs, stack, ifthen)
-    r += `if (${_if}) ${_then}`
+    r += `if (${_if}) _=${_then}`
     if (i < expr.length - 1)
       r += '\nelse '
   })  
@@ -128,7 +128,7 @@ export function compileExport(refs:any[], stack:any[], expr:any[]) {
   } else {
     code = compileExpr(refs, stack, expr[4])
   }
-  code = '_=' + exportRef + '=' + code
+  code = exportRef + '=' + code
   return code;
 }
 
@@ -149,10 +149,11 @@ export function compileQuote(refs:any[], stack:any[], expr:any) {
     i = `imports.tick(${i})`
     return i
   })
+  pieces
   pieces = pieces.join(',\n')
   pieces
   let code = `
-    _=(function() {
+    (function() {
       return ['\`', ${pieces}]
     })();
   `
@@ -164,13 +165,18 @@ function isMacroCall(stack:any[], expr:any) {
   const fnSym = expr[1];
   if(!isSym(fnSym)) return false;  
   const fn = getName(stack, untick(fnSym));
+  if(!fn && untick(fnSym)[0] === '$') return true;
   return fn && (fn.isMacro || (untick(fnSym)[0] === '$' && fn.isMacro !== false));
 }
 
 export function compileMacro(refs:any[], stack:any[], expr:any) {
   if(!isMacroCall(stack, expr)) return expr
   const fnSym = expr[1];
-  const macro = getName(stack, untick(fnSym));  
+  const macro = getName(stack, untick(fnSym));
+  // TODO redo this the same way quote was redone
+  // this doesn't work anymore because we're relying on js closures
+  // not this might have worked if we passed the stack down during runtime
+  // might have to do it that way anyway when trying to compile to C so keep it in mind
   const callMacro = (...args) => {
     const genAst = macro(...args)    
     const compileAst = compileHost(stack, [genAst], refs)
@@ -191,11 +197,13 @@ export function compileExpr(refs:any[], stack:any[], expr:any) : string {
     return String(expr);
   }
   
+  //if(expr[1] === sym('var')) return compileVar(refs, stack, expr)
+  if(expr[1] === sym('var')) throw new Error('var can only be used in a block')
+  //if(expr[1] === sym('cond')) return compileCond(refs, stack, expr);
+  if(expr[1] === sym('cond')) throw new Error('cond can only be used in a block')
   if(expr[1] === sym('fn')) return $fn(refs, stack, expr);
   if(expr[1] === sym('do')) return compileExprBlock(refs, stack, skip(expr, 2))
-  if(expr[1] === sym('var')) return compileVar(refs, stack, expr)
   if(expr[1] === sym('set')) return compileSet(refs, stack, expr)
-  if(expr[1] === sym('cond')) return compileCond(refs, stack, expr);
   if(expr[1] === sym('export')) return compileExport(refs, stack, expr);
   if(expr[1] === '`') return compileTick(refs, stack, expr);
   if(expr[1] === "'") return compileQuote(refs, stack, expr);
@@ -204,22 +212,29 @@ export function compileExpr(refs:any[], stack:any[], expr:any) : string {
   expr.shift();
   const fnName = compileExpr(refs, stack, expr.shift())
   const args = expr.map(i => compileExpr(refs, stack, i)).join();
-  let code = `_=${fnName}(${args})`;
+  let code = `${fnName}(${args})`;
   return code;
 }
 
 export function compileExprBlock(refs:any[], stack:any[], expr:any) {
-  let code = `_=(function(_){`
+  let code = `(function(_){`
   stack = [...stack, {}]
   code += ''
   expr = untick(expr);
   expr.forEach(i => {
-    code += '\n\t';
-    if(!isExpr(i)) code += '_='
-    code += compileExpr(refs, stack, i);
-    code += ';';
+    let exprCode;
+    if(i[1] === sym('var')) exprCode = compileVar(refs, stack, i)
+    else if(i[1] === sym('cond')) exprCode = compileCond(refs, stack, i)
+    else {
+      exprCode = '_=' + compileExpr(refs, stack, i);
+    }    
+    exprCode = `\n\t${exprCode};`
+    code += exprCode
+    exprCode
+    return exprCode;
   })
   code += '\n\treturn _;\n})(_);'
+  code
   return code
 }
 
@@ -227,9 +242,10 @@ export function compileHost(imports:any, ast:any[], refs:any[]=[]) {
   const stack:any[] = isList(imports) ? [...imports] : [imports]
   if(isList(imports)) imports = imports[0] || {};
   let innerCode = compileExprBlock(refs, stack, ast)
+  innerCode
   let code = 'function(_,imports,'
   code += refs.map((v,i) => `r${i}`).join();
-  code += `){\n\t${innerCode}\n\treturn _;\n}`
+  code += `){\n\treturn ${innerCode}\n}`
   let f = js(code)
   const _ = getName(stack, '_')  
   let exec = () => f.apply(null, [ _, imports, ...refs])
@@ -245,5 +261,19 @@ const $fn = (refs:any[], stack:any[], expr) => {
   let params = untick(args.shift()).map(untick);
   let body = args
   const f = makeFn(name, params, undefined, body, stack);
-  return compileFn(refs, stack, f);
+  const code = compileFn(refs, stack, f);
+  return code;
 }
+
+
+
+(function(_,imports,){
+  return (function(_){
+    if (imports['a']) (function(_){
+      _=imports['add'](imports['a'],1);
+      _=imports['add'](_,3);
+      return _;
+    })(_);;
+    return _;
+  })(_);
+})

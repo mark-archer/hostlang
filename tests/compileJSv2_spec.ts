@@ -44,12 +44,11 @@ describe.only('compile', () => {
       }
       let r = compileFn(refs, stack, fn);
       linesJoinedShouldEqual(r, `
-        _=(function(){
+        (function(){
           let _=null;
-          _=(function(_){
+          return(function(_){
             return _;
           })(_);
-          return _;
         })
       `)
     })
@@ -65,12 +64,11 @@ describe.only('compile', () => {
       }
       let r = compileFn(refs, stack, fn);
       linesJoinedShouldEqual(r, `
-        let myFn=_=(function(){
+        let myFn=(function(){
           let _=null;
-          _=(function(_){
+          return(function(_){
             return _;
           })(_);
-          return _;
         })
       `)
     })
@@ -100,14 +98,12 @@ describe.only('compile', () => {
       }
       let r = compileFn(refs, stack, fn);
       linesJoinedShouldEqual(r, `
-        _=(function(n){
+        (function(n){
           let _=null;
-          _=(function(_){
+          return(function(_){
             _=add(n,1);
             return _;
-          })(_);
-          return _;
-        })
+          })(_);})
       `)
     })
 
@@ -169,14 +165,14 @@ describe.only('compile', () => {
       const refs:any[] = []
       const stack:any[] = [{}, { add }, { a: 1 }]
       let r = compileExpr(refs, stack, ['`', '`add', '`a', 1]);
-      linesJoinedShouldEqual(r, `_=add(a,1)`)
+      linesJoinedShouldEqual(r, `add(a,1)`)
     })
 
     it('should treat the first level in the stack as imports', () => {
       const refs:any[] = []
       const stack:any[] = [{ add }, { a: 1 }]
       let r = compileExpr(refs, stack, ['`', '`add', '`a', 1]);
-      linesJoinedShouldEqual(r, `_=imports['add'](a,1)`)
+      linesJoinedShouldEqual(r, `imports['add'](a,1)`)
     })
   })
 
@@ -185,10 +181,11 @@ describe.only('compile', () => {
       const refs:any[] = []
       const imports = {}
       const stack:any[] = [imports, { add }, { a: 1 }]
-      let r = compileExprBlock(refs, stack, [['`', '`add', '`a', 1]]);
+      let r = compileExprBlock(refs, stack, [['`', '`add', '`a', 1], ['`', '`add', '`_', 2]]);
       linesJoinedShouldEqual(r, `
-        _=(function(_){
+        (function(_){
           _=add(a,1);
+          _=add(_,2);
           return _;
         })(_);
       `)
@@ -199,17 +196,7 @@ describe.only('compile', () => {
     it('should work with references and values', () => {
       const imports = { add, a: 1 }
       let r = compileHost(imports, [['`', '`add', '`a', 1]]);
-      r.exec().should.equal(2);
-      console.log(r.code)
-      linesJoinedShouldEqual(r.code, `      
-        function(_,imports,){
-          _=(function(_){
-            _=imports['add'](imports['a'],1);
-            return _;
-          })(_);
-          return _;
-        }
-      `)
+      r.exec().should.equal(2);      
     })
 
     it('should work with function declarations', async () => {
@@ -218,21 +205,19 @@ describe.only('compile', () => {
       let r = compileHost(imports, ast);
       const f = r.exec();
       f().should.equal(2);
-      console.log(r.code)
       linesJoinedShouldEqual(r.code, `      
         function(_,imports,){
-          _=(function(_){
+          return (function(_){
             _=(function(){
-              let _=null;_=(function(_){
+              let _=null;
+              return(function(_){
                 _=imports['add'](imports['a'],1);
                 return _;
-            })(_);
+              })(_);
+            });
             return _;
-          });
-          return _;
-        })(_);
-        return _;
-      }
+          })(_);
+        }
       `)
     })
   })
@@ -285,6 +270,14 @@ describe.only('compile', () => {
       let r = compileHost(imports, ast);
       console.log(r.code)
       r.exec().should.equal(2);
+    })
+
+    it('should compile an if statements body as a block', async () => {
+      const imports = { add, a:1 }
+      let ast = await parseHost([], 'if a : add a 1, add _ 3')
+      let r = compileHost(imports, ast);
+      console.log(r.code)
+      r.exec().should.equal(5);
     })
 
     it('should work with if-else statement', async () => {
@@ -427,6 +420,14 @@ describe.only('compile', () => {
       imports.f = 'add2'
       r(2).should.eql([ '`', '`add2', 2, '`a' ])
     })
+
+    it.skip('should work with nested expressions', async () => {
+      let imports = { add, f: 'add' }
+      const r = await execHost(imports, "n => ' f n `a (f n)") 
+      r(1).should.eql([ '`', '`add', 1, '`a' ])
+      imports.f = 'add2'
+      r(2).should.eql([ '`', '`add2', 2, '`a' ])
+    })
   })
 
   describe('compileMacro', () => {
@@ -499,7 +500,7 @@ describe.only('compile', () => {
     it('should allow declared macros to be run at runtime', async () => {
       let stack:any[] = [{ add }]
       const r = await execHost(stack, "fn $myMacro (n): ' `add n 1 \n$myMacro 2")
-      r.should.eql([ '`', '`add', 2, 1 ])
+      r.should.eql(3)
     })
   })
 })

@@ -110,6 +110,71 @@ describe.only('compile', () => {
     })
   })
 
+  describe('compileHost', () => {
+    it('should work with references and values', () => {
+      const imports = { add, a: 1 }
+      let r = compileHost(imports, [['`', '`add', '`a', 1]]);
+      r.exec().should.equal(2);
+      console.log(r.code)
+      linesJoinedShouldEqual(r.code, `      
+      function(_,add,a){
+        _=(function(_){
+          _=add(a,1);
+          return _;
+        })(_);
+        return _;
+      }
+      `)
+    })
+
+    it('should work with function declarations', async () => {
+      const imports = { add, a: 1 }
+      const ast = await parseHost([], '() => add a 1')
+      let r = compileHost(imports, ast);
+      const f = r.exec();
+      f().should.equal(2);
+      linesJoinedShouldEqual(r.code, `      
+        function(_,add,a){
+          _=(function(_){
+            _=(function(){
+              let _=null;
+              _=(function(_){
+                _=add(a,1);
+                return _;
+              })(_);
+              return _;
+            });
+            return _;
+          })(_);
+          return _;
+        }
+      `)
+    })
+  })
+
+  describe('compileVar', () => {
+    it('should allow declaring variables with no value', async () => {
+      const imports = { }
+      let ast = await parseHost([], 'var a')
+      let r = compileHost(imports, ast);
+      should(r.exec()).be.null();
+    })
+
+    it('should allow declaring variables with values', async () => {
+      const imports = { }
+      let ast = await parseHost([], 'var a 1')
+      let r = compileHost(imports, ast);
+      r.exec().should.equal(1);
+    })
+
+    it('should allow declaring variables with expressions', async () => {
+      const imports = { add }
+      let ast = await parseHost([], 'var a : add 1 1')
+      let r = compileHost(imports, ast);
+      r.exec().should.equal(2);      
+    })
+  })
+
   describe('compileSet', () => {
     it('should allow assigning values to variable names', async () => {
       const imports = { add, a:1 }
@@ -178,66 +243,48 @@ describe.only('compile', () => {
     })
   })
 
-  describe('compileHost', () => {
-    it('should work with references and values', () => {
-      const imports = { add, a: 1 }
-      let r = compileHost(imports, [['`', '`add', '`a', 1]]);
-      r.exec().should.equal(2);
-      console.log(r.code)
-      linesJoinedShouldEqual(r.code, `      
-      function(_,add,a){
-        _=(function(_){
-          _=add(a,1);
-          return _;
-        })(_);
-        return _;
-      }
-      `)
-    })
-
-    it('should work with function declarations', async () => {
-      const imports = { add, a: 1 }
-      const ast = await parseHost([], '() => add a 1')
-      let r = compileHost(imports, ast);
-      const f = r.exec();
-      f().should.equal(2);
-      linesJoinedShouldEqual(r.code, `      
-        function(_,add,a){
-          _=(function(_){
-            _=(function(){
-              let _=null;
-              _=(function(_){
-                _=add(a,1);
-                return _;
-              })(_);
-              return _;
-            });
-            return _;
-          })(_);
-          return _;
-        }
-      `)
-    })
-
-    it('should allow declaring variables with no value', async () => {
+  describe('compileExport', () => {
+    it('should throw an error if exports object does not exist', async () => {
       const imports = { }
-      let ast = await parseHost([], 'var a')
-      let r = compileHost(imports, ast);
-      should(r.exec()).be.null();
+      let ast = await parseHost([], 'export var a 1')
+      should(() => compileHost(imports, ast)).throw('no export object found: ` export var a 1')
     })
 
-    it('should allow declaring variables with values', async () => {
-      const imports = { }
-      let ast = await parseHost([], 'var a 1')
+    it('should allow declaring variables that will be exported', async () => {
+      const exports:any = {}
+      const imports = { add, exports }
+      let ast = await parseHost([], 'export var a 1')
       let r = compileHost(imports, ast);
       r.exec().should.equal(1);
+      exports.a.should.equal(1)
     })
 
-    it('should allow declaring variables with expressions', async () => {
-      const imports = { add }
-      let ast = await parseHost([], 'var a : add 1 1')
+    it('should allow declaring functions that will be exported', async () => {
+      const exports:any = {}
+      const imports = { add, exports }
+      let ast = await parseHost([], 'export add1 n => n + 1')
       let r = compileHost(imports, ast);
-      r.exec().should.equal(2);      
+      const add1 = r.exec();
+      add1(1).should.equal(2);
+      exports.add1.should.equal(add1)      
+    })
+
+    it('should throw an error if export already exists', async () => {
+      const imports = { exports:{} }
+      let ast = await parseHost([], 'export var a 1\nexport var a')
+      should(() => compileHost(imports, ast)).throw('export already exists: a')
+    })
+
+    it('should throw an error if trying to export a variable that already exists', async () => {
+      const imports = { exports:{} }
+      let ast = await parseHost([], 'var a 1\nexport var a')
+      should(() => compileHost(imports, ast)).throw('export cannot be declared because something with that name already exists: a')
+    })
+
+    it('should throw an error if trying to declare a variable that is already an export', async () => {
+      const imports = { exports:{} }
+      let ast = await parseHost([], 'export var a\nvar a 1')
+      should(() => compileHost(imports, ast)).throw('var already exists as an export: a')
     })
   })
 })
@@ -247,3 +294,5 @@ function linesJoinedShouldEqual(a:string, b:string) {
   aTrimmed.should.eql(bTrimmed);
   return aTrimmed;
 }
+
+

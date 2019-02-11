@@ -19,6 +19,8 @@ export function getRef(refs:any[], ctx:any) {
 export function defineVar(stack:any[], sym:string) {
   const ctx = last(stack);
   sym = untick(sym);
+  const exports = getName(stack, 'exports');
+  if(exports && exports[sym] !== undefined) throw new Error(`var already exists as an export: ${sym}`);
   if(ctx[sym] !== undefined) throw new Error(`var already exists: ${sym}`);
   ctx[sym] = null;
 }
@@ -31,12 +33,12 @@ export function compileSym(stack:any[], sym:string) {
   if(isSym(sym)) return `"${sym}"`; // logic for tick    
   if(sym == '_') return sym;
   for(let i = stack.length-1; i >= 0; i--) {
-    if(stack[i][sym] !== undefined) {
-      return sym;
-    }
     if(stack[i].exports && stack[i].exports[sym] !== undefined) {
       let code = `exports.${sym}`
       return code;
+    }
+    if(stack[i][sym] !== undefined) {
+      return sym;
     }
   }
   throw new Error(`${sym} is not defined`);
@@ -89,7 +91,36 @@ export function compileCond(refs:any[], stack:any[], expr:any[]) {
       r += '\nelse '
   })  
   return r
-} 
+}
+
+export function compileExport(refs:any[], stack:any[], expr:any[]) {
+  let exportCtx;
+  for(let i = stack.length - 1; i >= 0; i--) {
+    if(stack[i].exports !== undefined) {
+      exportCtx = stack[i];
+      break;
+    }
+  }
+  if (!exportCtx) throw new Error(`no export object found: ${expr.map(untick).join(' ')}`);
+
+  const name = untick(expr[3]);
+  if(exportCtx.exports[name] !== undefined || exportCtx[name] !== undefined) throw new Error(`export already exists: ${name}`);
+  if(stack.find(scope => scope[name] !== undefined)) throw new Error(`export cannot be declared because something with that name already exists: ${name}`);
+  exportCtx.exports[name] = null;
+  const exportRef = compileSym(stack, sym(name));
+    
+  const op = untick(expr[2]);
+  let code = '';
+  if (op == 'fn') {
+    expr.splice(1,1) // remove '`export`
+    expr.splice(2,1) // remove name
+    code = compileExpr(refs, stack, expr)
+  } else {
+    code = compileExpr(refs, stack, expr[4])
+  }
+  code = '_=' + exportRef + '=' + code
+  return code;
+}
 
 export function compileExpr(refs:any[], stack:any[], expr:any) : string {  
   if (isSym(expr)) return compileSym(stack, expr);
@@ -100,7 +131,7 @@ export function compileExpr(refs:any[], stack:any[], expr:any) : string {
   if(expr[1] === sym('var')) return compileVar(refs, stack, expr)
   if(expr[1] === sym('set')) return compileSet(refs, stack, expr)
   if(expr[1] === sym('cond')) return compileCond(refs, stack, expr);
-  // if(expr[1] === sym('export')) return compileExport(refs, stack, expr);
+  if(expr[1] === sym('export')) return compileExport(refs, stack, expr);
   // if(expr[1] === '`') return compileTick(refs, stack, expr);
   //if(expr[1] === "'") return compileQuote(refs, stack, expr);
 
@@ -118,10 +149,8 @@ export function compileExprBlock(refs:any[], stack:any[], expr:any) {
   expr = untick(expr);
   expr.forEach(i => {
     code += '\n\t';
-    // if(isSym(i)) code += '_=' + compileSym(stack, i);
-    // else code += compileExpr(refs, stack, i);
-    if(!isExpr(i)) code += '_=' + compileExpr(refs, stack, i);
-    else code += compileExpr(refs, stack, i);
+    if(!isExpr(i)) code += '_='
+    code += compileExpr(refs, stack, i);
     code += ';';
   })
   code += '\n\treturn _;\n})(_);'

@@ -203,6 +203,32 @@ export function compileMacro(refs:any[], stack:any[], expr:any) {
   return code.trim()
 }
 
+export function compileGetr(refs:any[], stack:any[], expr:any) {
+  expr.shift()
+  expr.shift()
+  expr  
+  let code = compileExpr(refs, stack, expr.shift());
+  while(expr.length) {
+    let prop = compileExpr(refs, stack, untick(expr.shift()));
+    code += `[${prop}]`
+  }
+  return code
+}
+
+export function compileSetr(refs:any[], stack:any[], expr:any) {
+  expr.shift()
+  expr.shift()
+  let ref = compileExpr(refs, stack, expr.shift());
+  let code = ref;
+  while(expr.length > 1) {
+    let prop = compileExpr(refs, stack, untick(expr.shift()));
+    code += `[${prop}]`
+  }  
+  let value = compileExpr(refs, stack, untick(expr.shift()));
+  code += `=${value}`
+  return code
+}
+
 export function compileExpr(refs:any[], stack:any[], expr:any) : string {  
   if(!isExpr(expr)) {
     if(isSym(expr)) return compileSym(refs, stack, expr);
@@ -212,18 +238,13 @@ export function compileExpr(refs:any[], stack:any[], expr:any) : string {
     if(isFunction(expr)) return getRef(refs, expr);
     return String(expr);
   }
-  
-  //if(expr[1] === sym('var')) return compileVar(refs, stack, expr)
+
+  const compilers = stack[0].compilers;
+  const cname = untick(expr[1])
+  if(compilers && compilers[cname]) return compilers[cname](refs, stack, expr);
   if(expr[1] === sym('var')) throw new Error('var can only be used in a block')
-  //if(expr[1] === sym('cond')) return compileCond(refs, stack, expr);
-  if(expr[1] === sym('cond')) throw new Error('cond can only be used in a block')
-  if(expr[1] === sym('fn')) return compileFn(refs, stack, expr);
-  if(expr[1] === sym('do')) return compileExprBlock(refs, stack, skip(expr, 2))
-  if(expr[1] === sym('set')) return compileSet(refs, stack, expr)
-  if(expr[1] === sym('export')) return compileExport(refs, stack, expr);
-  if(expr[1] === '`') return compileTick(refs, stack, expr);
-  if(expr[1] === "'") return compileQuote(refs, stack, expr);
-  if(isMacroCall(stack, expr)) return compileMacro(refs, stack, expr);
+  if(expr[1] === sym('cond')) throw new Error('cond can only be used in a block')  
+  if(isMacroCall(stack, expr)) return compileMacro(refs, stack, expr);  
 
   expr.shift();
   const fnName = compileExpr(refs, stack, expr.shift())
@@ -233,10 +254,12 @@ export function compileExpr(refs:any[], stack:any[], expr:any) : string {
 }
 
 export function compileExprBlock(refs:any[], stack:any[], expr:any) {
+  expr = untick(expr);
+  if(expr[0] === '`do') expr.shift()
+  expr
   let code = `(function(_){`
   stack = [...stack, {}]
   code += ''
-  expr = untick(expr);
   expr.forEach(i => {
     let exprCode;
     if(i[1] === sym('var')) exprCode = compileVar(refs, stack, i)
@@ -257,9 +280,32 @@ export function compileExprBlock(refs:any[], stack:any[], expr:any) {
   return code
 }
 
+function loadDefaultCompilers(stack:any[]) {
+  const imports = stack[0]
+  if(!imports.compilers) imports.compilers = {};
+  const defaultCompilers = {
+    'getr': compileGetr,
+    'setr': compileSetr,
+    'do': compileExprBlock,
+    'fn': compileFn,
+    'set': compileSet,
+    'export': compileExport,
+    '`': compileTick,
+    "'": compileQuote,
+  }
+  Object.keys(defaultCompilers).map(key => {
+    imports.compilers[key] = imports.compilers[key] || defaultCompilers[key];
+  })
+  //console.log(imports.compilers)
+}
+
 export function compileHost(imports:any, ast:any[], refs:any[]=[]) {
+  imports
   const stack:any[] = isList(imports) ? [...imports] : [imports]
+  stack
   if(isList(imports)) imports = imports[0] || {};
+  stack[0] = imports;
+  loadDefaultCompilers(stack)
   let innerCode = compileExprBlock(refs, stack, ast)
   let code = 'function(_,imports,'
   code += refs.map((v,i) => `r${i}`).join();
@@ -268,6 +314,10 @@ export function compileHost(imports:any, ast:any[], refs:any[]=[]) {
   const _ = getName(stack, '_')  
   let exec = () => f.apply(null, [ _, imports, ...refs])
   return { code, f, exec, imports, ast }
+}
+
+export function load() {
+
 }
 
 

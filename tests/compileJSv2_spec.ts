@@ -210,6 +210,12 @@ describe.only('compile', () => {
         })(_);
       `)
     })
+
+    it('should work with do blocks', async () => {
+      const imports = { add, a: 1 }
+      let r:any = await execHost(imports, 'do (add a 1) (add _ 2)')
+      r.should.equal(4)      
+    })
   })
 
   describe('compileHost', () => {
@@ -585,6 +591,50 @@ describe.only('compile', () => {
       stack[0].$myMacro = n => ['`', '`add', '`i', '`i', n]
       m1().should.equal(3);
       m2().should.equal(4);
+    })
+  })
+
+  describe('compileGetr', () => {
+    it('should compile getr', async () => {
+      const imports = { obj:{a:1} }
+      let r = await execHost(imports, `obj.a`)
+      r.should.equal(1)
+    })
+
+    it('should compile multipule getrs', async () => {
+      const imports = { obj:{a:1, b:{ c:2 }}}
+      let r = await execHost(imports, `obj.b.c`)
+      r.should.equal(2)
+    })
+
+    it('should work in function position', async () => {
+      const imports = { list: (...args) => args, add1: i => i + 1 }
+      let r = await execHost(imports, `, 1 2 3\n_.map add1`)
+      r.should.eql([2,3,4])
+    })
+  })
+
+  describe('compileSetr', () => {
+    it('should compile setr', async () => {
+      const imports = { obj:{a:1, b:{ c:1 }}}
+      let r = await execHost(imports, `obj.a = 2`)
+      r.should.equal(2)
+      imports.obj.a.should.equal(2)
+    })
+
+    it('should compile multipule setrs', async () => {
+      const imports = { obj:{a:1, b:{ c:1 }}}
+      let r = await execHost(imports, `obj.b.c = 2`)
+      r.should.equal(2)
+      imports.obj.b.c.should.eql(2)
+    })
+  })
+
+  describe('compileLoop', () => {
+    it('should compile loops', async () => {
+      const imports = { list: (...args) => args, add1: i => i + 1 }
+      let r = await execHost(imports, `, 1 2 3\n_.map add1`)
+      r
     })
   })
 })

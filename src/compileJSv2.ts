@@ -40,11 +40,11 @@ export function compileSym(refs:any[], stack:any[], sym:string) {
   if(sym == '_') return sym;
   for(let i = stack.length-1; i >= 0; i--) {
     if(stack[i].exports && stack[i].exports[sym] !== undefined) {
-      let code = `imports.exports.${sym}`
+      let code = `env.exports.${sym}`
       return code;
     }
     if(stack[i][sym] !== undefined) {
-      if(i == 0) return `imports['${sym}']`
+      if(i == 0) return `env['${sym}']`
       return sym;
     }
   }
@@ -151,7 +151,7 @@ export function compileTick(refs:any[], stack:any[], expr:any) {
 
 export function compileQuote(refs:any[], stack:any[], expr:any) {
   expr.splice(0,2)
-  stack[0].tick = stack[0].tick  || tick // add tick to imports
+  stack[0].tick = stack[0].tick  || tick // add tick to env
   let pieces = expr.map(i => {
     if(i && i[0] === '`' && i[1] === '`') {
       return compileExpr(refs, stack, i);
@@ -161,7 +161,7 @@ export function compileQuote(refs:any[], stack:any[], expr:any) {
       i = compileExpr(refs, stack, i);
     } else {
       i = compileExpr(refs, stack, i);
-      i = `imports.tick(${i})`
+      i = `env.tick(${i})`
     }    
     return i
   })
@@ -186,8 +186,8 @@ function isMacroCall(stack:any[], expr:any) {
 }
 
 export function compileMacro(refs:any[], stack:any[], expr:any) {
-  const imports = stack[0];
-  imports.compileHost = imports.compileHost || compileHost;
+  const env = stack[0];
+  env.compileHost = env.compileHost || compileHost;
   expr.shift()
   const macroExpr = compileExpr(refs, stack, expr.shift())
   const macroArgs = expr.map(_expr => compileExpr(refs, stack, _expr)).join()
@@ -196,7 +196,7 @@ export function compileMacro(refs:any[], stack:any[], expr:any) {
   let code = `
     (function(){      
       const ast = ${macroExpr}(${macroArgs});
-      const exe = imports.compileHost(${compileArgsRef}.stack, [ast], ${compileArgsRef}.refs)
+      const exe = env.compileHost(${compileArgsRef}.stack, [ast], ${compileArgsRef}.refs)
       return exe.exec()
     })()`
   code
@@ -281,8 +281,8 @@ export function compileExprBlock(refs:any[], stack:any[], expr:any) {
 }
 
 function loadDefaultCompilers(stack:any[]) {
-  const imports = stack[0]
-  if(!imports.compilers) imports.compilers = {};
+  const env = stack[0]
+  if(!env.compilers) env.compilers = {};
   const defaultCompilers = {
     'getr': compileGetr,
     'setr': compileSetr,
@@ -294,26 +294,25 @@ function loadDefaultCompilers(stack:any[]) {
     "'": compileQuote,
   }
   Object.keys(defaultCompilers).map(key => {
-    imports.compilers[key] = imports.compilers[key] || defaultCompilers[key];
+    env.compilers[key] = env.compilers[key] || defaultCompilers[key];
   })
-  //console.log(imports.compilers)
+  //console.log(env.compilers)
 }
 
-export function compileHost(imports:any, ast:any[], refs:any[]=[]) {
-  imports
-  const stack:any[] = isList(imports) ? [...imports] : [imports]
+export function compileHost(env:any, ast:any[], refs:any[]=[]) {
+  const stack:any[] = isList(env) ? [...env] : [env]
   stack
-  if(isList(imports)) imports = imports[0] || {};
-  stack[0] = imports;
+  if(isList(env)) env = env[0] || {};
+  stack[0] = env;
   loadDefaultCompilers(stack)
   let innerCode = compileExprBlock(refs, stack, ast)
-  let code = 'function(_,imports,'
+  let code = 'function(_,env,'
   code += refs.map((v,i) => `r${i}`).join();
   code += `){\n\treturn ${innerCode}\n}`
   let f = js(code)
   const _ = getName(stack, '_')  
-  let exec = () => f.apply(null, [ _, imports, ...refs])
-  return { code, f, exec, imports, ast }
+  let exec = () => f.apply(null, [ _, env, ...refs])
+  return { code, f, exec, env, ast }
 }
 
 export function load() {

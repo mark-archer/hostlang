@@ -61,14 +61,23 @@ export function compileVar(refs:any[], stack:any[], expr:any) {
   return r
 }
 
-export function compileFn(refs:any[], stack:any[], fn:Fn) {
+export function compileFn(refs:any[], stack:any[], expr:(any[] | Fn)) {
+  let fn:Fn;
+  if(isList(expr)) {
+    //@ts-ignore
+    let args = skip(expr, 2);
+    let name;
+    if(isSym(args[0])) name = untick(args.shift());
+    let params = untick(args.shift()).map(untick);
+    let body = args
+    fn = makeFn(name, params, undefined, body, stack);
+  } else {
+    // @ts-ignore
+    fn = expr
+  }  
+
   let code = '';
-  // if(fn.name) {
-  //   defineVar(stack, fn.name)
-  //   //code = `let ${fn.name}=`
-  // }
   code += `function ${fn.name || ''}(`
-  //code += `function(`
   const fnScope = {};
   code += fn.params.map(p => {
     fnScope[p.name] = null;
@@ -208,7 +217,7 @@ export function compileExpr(refs:any[], stack:any[], expr:any) : string {
   if(expr[1] === sym('var')) throw new Error('var can only be used in a block')
   //if(expr[1] === sym('cond')) return compileCond(refs, stack, expr);
   if(expr[1] === sym('cond')) throw new Error('cond can only be used in a block')
-  if(expr[1] === sym('fn')) return $fn(refs, stack, expr);
+  if(expr[1] === sym('fn')) return compileFn(refs, stack, expr);
   if(expr[1] === sym('do')) return compileExprBlock(refs, stack, skip(expr, 2))
   if(expr[1] === sym('set')) return compileSet(refs, stack, expr)
   if(expr[1] === sym('export')) return compileExport(refs, stack, expr);
@@ -261,13 +270,4 @@ export function compileHost(imports:any, ast:any[], refs:any[]=[]) {
   return { code, f, exec, imports, ast }
 }
 
-const $fn = (refs:any[], stack:any[], expr) => {
-  let args = skip(expr, 2);
-  let name;
-  if(isSym(args[0])) name = untick(args.shift());
-  let params = untick(args.shift()).map(untick);
-  let body = args
-  const f = makeFn(name, params, undefined, body, stack);
-  const code = compileFn(refs, stack, f);
-  return code;
-}
+

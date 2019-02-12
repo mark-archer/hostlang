@@ -555,6 +555,37 @@ describe.only('compile', () => {
       stack[0].i = 4
       r().should.eql(7)
     })
+
+    it('should allow macro closures', async () => {
+      let stack:any[] = [{ add, i:1 }]
+      const r = await execHost(stack, "$myMacro n => ' `add n 1 i\n(n) => () => $myMacro n")
+      const m1 = r(1);
+      const m2 = r(2);
+      m1().should.equal(3);
+      m2().should.equal(4);
+      stack[0].add = (a,b,c) => a+b+c+1;
+      m1().should.equal(4);
+      m2().should.equal(5);
+    })
+
+    it('should allow macros to combine code snippits inside closures', async () => {
+      let stack:any[] = [{ add, i:1, $myMacro: n => ['`', '`add', n, '`i'] }]
+      const r = await execHost(stack, "(n) => () => $myMacro n")
+      const m1 = r(1);
+      const m2 = r(2);
+      m1().should.equal(2);
+      m2().should.equal(3);
+      stack[0].add = (a,b) => a+b+1;
+      m1().should.equal(3);
+      m2().should.equal(4);
+      stack[0].add = add
+      stack[0].$myMacro = n => ['`', '`add', '`i', '`i']
+      m1().should.equal(2);
+      m2().should.equal(2);
+      stack[0].$myMacro = n => ['`', '`add', '`i', '`i', n]
+      m1().should.equal(3);
+      m2().should.equal(4);
+    })
   })
 })
 

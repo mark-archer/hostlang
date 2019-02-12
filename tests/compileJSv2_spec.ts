@@ -449,6 +449,26 @@ describe.only('compile', () => {
       imports.f = 'add2'
       r(2).should.eql([ '`', '`add2', 2, '`a', ['`', '`add2', 2]])
     })
+
+    it('should work with nested and ticked expressions', async () => {
+      let imports = { add, f: 'add', m:'o' }
+      const r = await execHost(imports, "n => ' f n `a (` f n) (f m 'm `a)") 
+      console.log(r.toString())
+      r(1).should.eql([ '`', '`add', 1, '`a', ['`', '`f', '`n'], ['`', '`add', '`o', '``o', '`a']])
+      imports.f = 'add2'
+      imports.m = '`p'
+      r(1).should.eql([ '`', '`add2', 1, '`a', ['`', '`f', '`n'], ['`', '`add2', '``p', '```p', '`a']])
+    })
+
+    it('should work with nested and ticked expressions deeper', async () => {
+      let imports = { add, f: 'add', m:'o' }
+      const r = await execHost(imports, "n => ' f n `a (` f n (f n)) (f m 'm `a (f n))") 
+      console.log(r.toString())
+      r(1).should.eql([ '`', '`add', 1, '`a', ['`', '`f', '`n', ['`', '`f', '`n']], ['`', '`add', '`o', '``o', '`a', ['`', '`add', 1]]])
+      imports.f = 'add2'
+      imports.m = '`p'
+      r(2).should.eql([ '`', '`add2', 2, '`a', ['`', '`f', '`n', ['`', '`f', '`n']], ['`', '`add2', '``p', '```p', '`a', ['`', '`add2', 2]]])
+    })
   })
 
   describe('compileMacro', () => {

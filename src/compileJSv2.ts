@@ -154,7 +154,6 @@ export function compileQuote(refs:any[], stack:any[], expr:any) {
       i = compileExpr(refs, stack, i);
       i = `imports.tick(${i})`
     }    
-    
     return i
   })
   pieces

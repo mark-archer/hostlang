@@ -24,9 +24,6 @@ export function defineVar(stack:any[], sym:string) {
 }
 
 export function compileSym(refs:any[], stack:any[], sym:string) {
-  if(!isSym(sym)) {
-    throw new Error(`Not a symbol: ${sym}`)
-  }
   sym = untick(sym)
   // tick logic
   if(isSym(sym)) return `"${sym}"`; 
@@ -91,7 +88,7 @@ export function compileFn(refs:any[], stack:any[], expr:(any[] | Fn)) {
 }
 
 export function compileSet(refs:any[], stack:any[], expr:any) : string {
-  if(expr.length > 4) throw new Error('set called with too many arguments');
+  if(expr.length > 4) throw new Error('set called with too many arguments: ' + untick(expr).join());
   const varSym = expr[2]
   const varRef = compileSym(refs, stack, varSym)
   const valueExpr = expr[3];  
@@ -177,7 +174,7 @@ export function compileQuote(refs:any[], stack:any[], expr:any) {
 }
 
 function isMacroCall(stack:any[], expr:any) {
-  if(!isExpr(expr)) return false;
+  //if(!isExpr(expr)) return false;
   const fnSym = expr[1];
   if(!isSym(fnSym)) return false;  
   const fn = getName(stack, untick(fnSym));
@@ -232,10 +229,11 @@ export function compileSetr(refs:any[], stack:any[], expr:any) {
 export function compileExpr(refs:any[], stack:any[], expr:any) : string {  
   if(!isExpr(expr)) {
     if(isSym(expr)) return compileSym(refs, stack, expr);
-    if(isList(expr)) return '[' + expr.map(t => compileExpr(refs, stack, t)).join() + ']';
-    if(isObject(expr)) return '{' + Object.keys(expr).map(k => `"${k}":${compileExpr(refs, stack, expr[k])}`) + '}'
+    if(isList(expr) || isObject(expr) || isFunction(expr)) return getRef(refs, expr);
+    //if(isList(expr)) return '[' + expr.map(t => compileExpr(refs, stack, t)).join() + ']';
+    //if(isObject(expr)) return '{' + Object.keys(expr).map(k => `"${k}":${compileExpr(refs, stack, expr[k])}`) + '}'
+    //if(isFunction(expr)) return getRef(refs, expr);
     if(isString(expr)) return `"${expr}"`
-    if(isFunction(expr)) return getRef(refs, expr);
     return String(expr);
   }
 
@@ -304,6 +302,7 @@ export function compileHost(env:any, ast:any[], refs:any[]=[]) {
   stack
   if(isList(env)) env = env[0] || {};
   stack[0] = env;
+  env.env = env;
   loadDefaultCompilers(stack)
   let innerCode = compileExprBlock(refs, stack, ast)
   let code = 'function(_,env,'

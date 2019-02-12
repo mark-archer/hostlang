@@ -1,4 +1,4 @@
-import { compileSym, compileFn, compileExpr, compileExprBlock, compileHost, compileMacro } from "../src/compileJSv2";
+import { compileSym, compileFn, compileExpr, compileExprBlock, compileHost, compileMacro, defineVar, compileSet } from "../src/compileJSv2";
 import { add } from "../src/common";
 import { Fn } from "../src/typeInfo";
 import { parseHost } from "../src/parse";
@@ -13,7 +13,13 @@ async function execHost(env:any, code:string) {
   return r.exec()
 }
 
-describe('compile', () => {
+describe.only('compile', () => {
+  describe('defineVar', () => {
+    it('should error if var already exists', () => {
+      should(() => defineVar([{a:1}], 'a')).throw('var already exists: a')
+    })
+  })
+
   describe('compileSym', () => {
     it('should error if sym is not defined', () => {
       const stack:any[] = [{}]
@@ -194,6 +200,26 @@ describe('compile', () => {
       let r = compileExpr(refs, stack, ['`', '`add', '`a', 1]);
       linesJoinedShouldEqual(r, `env['add'](a,1)`)
     })
+
+    it('should maintain references', async () => {
+      const refs:any[] = []
+      const stack:any[] = []      
+      const obj = {a:1}
+      const lst = [1,2,obj]
+      let r = compileExpr(refs, stack, lst);
+      linesJoinedShouldEqual(r, `r0`)
+      const env = { list: (...args) => args, lst }
+      r = await execHost(env, ', 1 2 lst')
+      r.should.eql([1,2,lst])
+      r[2].should.equal(lst)
+    })
+
+    it('should throw an error if passed a var or cond expr', async () => {
+      const refs:any[] = []
+      const stack:any[] = [{ add }, { a: 1 }]
+      should(() => compileExpr(refs, stack, ['`', '`var', '`a', 1])).throw('var can only be used in a block')
+      should(() => compileExpr(refs, stack, ['`', '`cond', '`a', 1])).throw('cond can only be used in a block')      
+    })
   })
 
   describe('compileExprBlock', () => {
@@ -246,6 +272,11 @@ describe('compile', () => {
         }
       `)
     })
+
+    it('should ensure a valid env is the first item in the stack', async () => {
+      let r = await execHost([], 'env');
+      r.env.should.not.be.null()
+    })
   })
 
   describe('compileVar', () => {
@@ -286,6 +317,13 @@ describe('compile', () => {
       let r = compileHost(env, ast);
       console.log(r.code)
       r.exec().should.equal(0);      
+    })
+
+    it('should error if given too many arguments', async () => {
+      const env = { add, a:1, b:0 }
+      let ast = await parseHost([], 'a = b c')
+      console.log(cleanCopyList(ast))
+      should(() => compileSet([],[],ast[0])).throw('set called with too many arguments: `set,`a,`b,`c')
     })
   })
 

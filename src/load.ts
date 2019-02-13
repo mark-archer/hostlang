@@ -1,7 +1,7 @@
 
 import { parseHost } from './parse';
 import * as fs from 'fs';
-import { compileHost } from './compileJS';
+import { compileHost } from './compile';
 import { untick, isString } from './common';
 import { getName } from './host';
 import { cleanCopyList } from './utils';

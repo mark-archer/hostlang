@@ -1,4 +1,4 @@
-import { compileSym, compileFn, compileExpr, compileExprBlock, compileHost, compileMacro, defineVar, compileSet, compileModule } from "../src/compileJSv2";
+import { compileSym, compileFn, compileExpr, compileExprBlock, compileHost, compileMacro, defineVar, compileSet, compileModule } from "../src/compile";
 import { add } from "../src/common";
 import { Fn, objectInfo } from "../src/typeInfo";
 import { parseHost } from "../src/parse";
@@ -14,7 +14,7 @@ async function execHost(env:any, code:string) {
   return r.exec()
 }
 
-describe.only('compile', () => {
+describe('compile', () => {
   describe('defineVar', () => {
     it('should error if var already exists', () => {
       should(() => defineVar([{a:1}], 'a')).throw('var already exists: a')

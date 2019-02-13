@@ -117,7 +117,9 @@ export function makeFn(name?:string, params:(string | ParamInfo)[]=[], returnTyp
     params: paramsFixed,
     returnType,
     body,
-    closure
+    closure,    
+    //@ts-ignore
+    isMacro: name && name[0] === '$'
   }
 }
 

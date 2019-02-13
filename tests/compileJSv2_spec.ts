@@ -1,8 +1,9 @@
-import { compileSym, compileFn, compileExpr, compileExprBlock, compileHost, compileMacro, defineVar, compileSet } from "../src/compileJSv2";
+import { compileSym, compileFn, compileExpr, compileExprBlock, compileHost, compileMacro, defineVar, compileSet, compileModule } from "../src/compileJSv2";
 import { add } from "../src/common";
-import { Fn } from "../src/typeInfo";
+import { Fn, objectInfo } from "../src/typeInfo";
 import { parseHost } from "../src/parse";
-import { cleanCopyList } from "../src/utils";
+import { cleanCopyList, stringify } from "../src/utils";
+import { readFileSync } from "fs";
 
 var should = require('should');
 
@@ -411,6 +412,12 @@ describe.only('compile', () => {
       let ast = await parseHost([], 'export var a\nvar a 1')
       should(() => compileHost(env, ast)).throw('var already exists as an export: a')
     })
+
+    it('should throw an error if not used with var or fn', async () => {
+      const env = { exports:{} }
+      let ast = await parseHost([], 'export a')
+      should(() => compileHost(env, ast)).throw('export called without `var or `fn')
+    })
   })
 
   describe('compileTick', () => {
@@ -674,6 +681,53 @@ describe.only('compile', () => {
       let r = await execHost(env, `, 1 2 3\n_.map add1`)
       r
     })
+  })
+
+  describe('compileModule', () => {
+    it('should return an object with only exported references', async () => {
+      let ast = ["tabSize=2",
+        ['`', '`export', '`var', '`a', 1],
+        ['`', '`var', '`b', 2],
+        ["`","`export","`fn","`add2", [],
+          ['`', '`add', '`a', '`b']]
+      ]
+      const m = await compileModule({add}, ast);
+      m.a.should.equal(1)
+      Object.keys(m).includes('b').should.equal(false)
+      m.add2().should.equal(3)
+      m.a = 2;
+      m.add2().should.equal(4)
+    })
+
+    it('should work with an empty list environment', async () => {
+      const m = await compileModule([], [['`', '`export', '`var', '`a', 1]]);
+      m.a.should.equal(1)      
+    })
+
+    it('should work with an empty object environment', async () => {
+      const m = await compileModule({}, [['`', '`export', '`var', '`a', 1]]);
+      m.a.should.equal(1)      
+    })
+
+    it('should protect existing env lists passed in', async () => {
+      const exports = {a:2}
+      const env = [{exports}]
+      const m = await compileModule(env, [['`', '`export', '`var', '`a', 1]]);
+      m.a.should.equal(1)
+      m.should.not.equal(exports)
+      exports.a.should.equal(2)
+      env[0].exports.should.equal(exports)
+    })
+
+    it('should protect existing env objects passed in', async () => {
+      const exports = {a:2}
+      const env = {exports}
+      const m = await compileModule(env, [['`', '`export', '`var', '`a', 1]]);
+      m.a.should.equal(1)
+      m.should.not.equal(exports)
+      exports.a.should.equal(2)
+      env.exports.should.equal(exports)
+    })    
   })
 })
 

@@ -125,9 +125,9 @@ export function compileExport(refs:any[], stack:any[], expr:any[]) {
   if(exportCtx.exports[name] !== undefined || exportCtx[name] !== undefined) throw new Error(`export already exists: ${name}`);
   if(stack.find(scope => scope[name] !== undefined)) throw new Error(`export cannot be declared because something with that name already exists: ${name}`);
   exportCtx.exports[name] = null;
-  const exportRef = compileSym(refs, stack, sym(name));
-    
   const op = untick(expr[2]);
+  if(!['var', 'fn'].includes(op)) throw new Error('export called without `var or `fn')
+  const exportRef = compileSym(refs, stack, sym(name));  
   let code = '';
   if (op == 'fn') {
     expr.splice(1,1) // remove '`export`
@@ -314,8 +314,19 @@ export function compileHost(env:any, ast:any[], refs:any[]=[]) {
   return { code, f, exec, env, ast }
 }
 
-export function load() {
-
+export async function compileModule(env:any, ast:any[], refs:any[]=[]) {
+  if(isList(env)) env = [...env];
+  else env = [env];
+  if(env[0]) env[0] = {...env[0]}
+  else env.push({})
+  const exports:any = {}
+  env[0].exports = exports
+  const r = compileHost(env, ast, refs);
+  await r.exec(); // code has to be run to generate module
+  return exports
 }
 
-
+const moduleCache:any = {}
+async function load(path:string) {
+  // it should work with both js and host files
+}

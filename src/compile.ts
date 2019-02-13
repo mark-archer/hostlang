@@ -319,14 +319,9 @@ export async function compileModule(env:any, ast:any[], refs:any[]=[]) {
   else env = [env];
   if(env[0]) env[0] = {...env[0]}
   else env.push({})
-  const exports:any = {}
+  const exports:any = env[0].exports || {}
   env[0].exports = exports
   const r = compileHost(env, ast, refs);
   await r.exec(); // code has to be run to generate module
   return exports
-}
-
-const moduleCache:any = {}
-async function load(path:string) {
-  // it should work with both js and host files
 }

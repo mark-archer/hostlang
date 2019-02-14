@@ -5,22 +5,24 @@ var should = require('should');
 
 describe('parseHost', () => {
 
-  it('should parse empty strings', () => 
-    parseHost([], '').then(ast => ast.should.eql([])))
+  it('should parse empty strings', () => {
+    parseHost([], '').then(ast => ast.should.eql([]))
+  })
 
-  it('should parse only whitespaces', () => 
+  it('should parse only whitespaces', () => {
     parseHost([], '  \n \t \n ').then(ast => 
-      ast.should.eql([])))
+      ast.should.eql([]))
+  })
 
-  it('should throw an error if no parsers are proceeding', () => 
+  it('should throw an error if no parsers are proceeding', () => {
     parseHost([], '☺').should.be
     .rejectedWith('parse error at line 1, col 1:\n☺\nno parsers are proceeding')    
-  )
+  })
 
-  it('should throw an error with the starting line and column if possible', () => 
+  it('should throw an error with the starting line and column if possible', () => {
     parseHost([], '\n\n\na b c d: ☺').should.be
     .rejectedWith('parse error at line 4, col 8:\na b c d: ☺\nno parsers are proceeding')
-  )
+  })
 
   describe('custom parsers', () => {
     it('should pick up and use custom parsers in the stack', () => {
@@ -948,5 +950,5 @@ else
           1 ] ] ])
       }) 
     )
-  })
+  })  
 })

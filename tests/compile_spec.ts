@@ -1,5 +1,5 @@
 import { compileSym, compileFn, compileExpr, compileExprBlock, compileHost, compileMacro, defineVar, compileSet, compileModule } from "../src/compile";
-import { add } from "../src/common";
+import { add, list } from "../src/common";
 import { Fn, objectInfo } from "../src/typeInfo";
 import { parseHost } from "../src/parse";
 import { cleanCopyList, stringify } from "../src/utils";
@@ -709,25 +709,111 @@ describe('compile', () => {
       m.a.should.equal(1)      
     })
 
-    it('should preserve existing env lists passed in', async () => {
+    it('should use existing export in list env passed in', async () => {
       const exports:any = {b:2}
       const env = [{exports}]
       const env0 = env[0];
       const m = await compileModule(env, [['`', '`export', '`var', '`a', 1]]);
-      m.should.not.equal(exports)
+      m.should.equal(exports)
       m.a.should.equal(1)
       env.length.should.equal(1)
       env[0].should.equal(env0)
     })
 
-    it('should preserve existing env objects passed in', async () => {
+    it('should use existing export in object env passed in', async () => {
       const exports:any = {b:2}
       const env = {exports}
       const m = await compileModule(env, [['`', '`export', '`var', '`a', 1]]);
       m.a.should.equal(1)
-      m.should.not.equal(exports)
+      m.should.equal(exports)
       env.exports.should.equal(exports)
     })    
+  })
+
+  describe('compileAwait', () => {
+    it('should mark the wrapping scope as async', async () => {
+      const env = {load: list}
+      const r = compileHost(env, [['`', '`await', '`load', 'simple.hl']]);
+      linesJoinedShouldEqual(r.code, `
+        function(_,env,){
+          return (async function(_){
+            _=await env['load']("simple.hl");
+            return _;
+          })(_);
+        }
+      `)
+    })
+    
+    it('should allow it in nested scopes', async () => {
+      const env = {load: list, add}
+      const r = compileHost(env, [
+        ['`', '`do', ['`', '`await', '`load', 'simple.hl', ['`', '`a', '`b']]],
+        ['`', '`add', '`_', 1]
+      ]);
+      linesJoinedShouldEqual(r.code, `
+        function(_,env,){
+          return (function(_){
+            _=(async function(_){
+              _=await env['load']("simple.hl");let{a,b,}=_;
+              return _;
+            })(_);;
+            _=env['add'](_,1);
+            return _;
+          })(_);
+        }
+      `)
+    })
+
+    it('should allow awaiting the results of nested scopes', async () => {
+      const env = {load: list, add}
+      const r = compileHost(env, [
+        ['`', '`do', ['`', '`await', '`load', 'simple.hl', ['`', '`a', '`b']]],
+        ['`', '`await', '`_'],
+        ['`', '`add', '`_', 1]
+      ]);
+      linesJoinedShouldEqual(r.code, `
+        function(_,env,){
+          return (async function(_){
+            _=(async function(_){
+              _=await env['load']("simple.hl");let{a,b,}=_;
+              return _;
+            })(_);;
+            _=await _;
+            _=env['add'](_,1);
+            return _;
+          })(_);
+        }
+      `)
+    })
+  })
+
+  describe('compileLoad', () => {
+    it('should allow importing names individually', async () => {
+      const env = {load: list}
+      const r = compileHost(env, [['`', '`await', '`load', 'simple.hl', ['`', '`a', '`b']]]);
+      linesJoinedShouldEqual(r.code, `
+        function(_,env,){
+          return (async function(_){
+            _=await env['load']("simple.hl");let{a,b,}=_;
+            return _;
+          })(_);
+        }
+      `)
+    })
+
+    // it should automatically use await
+    it('should allow importing names individually', async () => {
+      const env = {load: list}
+      const r = compileHost(env, [['`', '`load', 'simple.hl', ['`', '`a', '`b']]]);
+      linesJoinedShouldEqual(r.code, `
+        function(_,env,){
+          return (async function(_){
+            _=await env['load']("simple.hl");let{a,b,}=_;
+            return _;
+          })(_);
+        }
+      `)
+    })
   })
 })
 

@@ -2,7 +2,7 @@ import { isSym, untick, isExpr, isList, guid, sym, last, skip, tick, unquote, qu
 import { js, copy } from "./utils";
 import { getName } from "./host";
 import { Fn, makeFn } from "./typeInfo";
-import { isString, isObject, isFunction } from "util";
+import { isString, isObject, isFunction, isArray } from "util";
 
 
 export function getRef(refs:any[], ctx:any) {
@@ -226,12 +226,51 @@ export function compileSetr(refs:any[], stack:any[], expr:any) {
   return code
 }
 
+export function compileLoad(refs:any[], stack:any[], expr:any[]) {
+  // @ts-ignore
+  if(!expr.isAwait) {
+    expr.splice(1,0,'`await')
+    return compileExpr(refs, stack, expr);
+  }
+
+  let names;
+  if(expr.length == 4) names = untick(expr.pop());
+  expr
+  if(expr.length == 2) expr = expr[1]
+  expr.splice(1,1)
+  expr
+
+  let code = compileSym(refs, stack, 'load')
+  let arg = compileExpr(refs, stack, expr[1])
+  arg
+  code = `${code}(${arg})`
+  code
+  if(names && names.length) {
+    names = untick(names);
+    if(!isArray(names)) names = [names]
+    code += ';let{'
+    names.forEach(name => {
+      defineVar(stack, name)
+      code += untick(name) + ','
+    })
+    code += '}=_';
+    code
+  }
+  return code
+}
+
 export function compileAwait(refs:any[], stack:any[], expr:any[]) {
   expr.splice(1,1)
   expr
-  let code = `(await ${compileExpr(refs, stack, expr)})`;
+  if(expr.length == 2) expr = expr[1]
+  if(isArray(expr)){
+    //@ts-ignore
+    expr.isAwait = true;
+  }
+    
+  let code = `await ${compileExpr(refs, stack, expr)}`;
   last(stack)['%isAwait'] = true;
-  code
+  code  
   return code
 }
 
@@ -265,10 +304,9 @@ export function compileExprBlock(refs:any[], stack:any[], expr:any) {
   if(expr[0] === '`do') expr.shift()
   expr
   let code = `(function(_){`
-  stack = [...stack, {}]
+  stack = [...stack, {}]  
   code += ''
   expr.forEach(i => {
-    i
     let exprCode;
     if(i[1] === sym('var')) exprCode = compileVar(refs, stack, i)
     else if(i[1] === sym('fn') && isSym(i[2])) {
@@ -305,7 +343,8 @@ function loadDefaultCompilers(stack:any[]) {
     'export': compileExport,
     '`': compileTick,
     "'": compileQuote,
-    'await': compileAwait
+    'await': compileAwait,
+    'load': compileLoad
   }
   Object.keys(defaultCompilers).map(key => {
     env.compilers[key] = env.compilers[key] || defaultCompilers[key];
@@ -324,6 +363,7 @@ export function compileHost(env:any, ast:any[], refs:any[]=[]) {
   let code = 'function(_,env,'
   code += refs.map((v,i) => `r${i}`).join();
   code += `){\n\treturn ${innerCode}\n}`
+  code
   let f = js(code)
   const _ = getName(stack, '_')  
   let exec = () => f.apply(null, [ _, env, ...refs])
@@ -335,21 +375,10 @@ export async function compileModule(env:any, ast:any[], refs:any[]=[]) {
   else env = [env];
   if(env[0]) env[0] = {...env[0]}
   else env.push({})
-  const exports:any = {}
+  const exports:any = env[0].exports || {}
   env[0].exports = exports
   const r = compileHost(env, ast, refs);
   console.log(r.code);
   await r.exec(); // code has to be run to generate module
   return exports
 }
-
-// ( function(_,env,r0,r1){
-//   return (async function(_){
-//     let simple=_=(await r0);
-//     let common=_=(await r1);
-//     let add=_=common["add"];
-//     let a=_=simple["a"];
-//     _=env.exports.b=add(simple["a"],1);
-//     return _;
-//   })(_);
-// })

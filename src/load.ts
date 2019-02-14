@@ -1,44 +1,48 @@
-import { readFile, lstat, lstatSync, readdir, readdirSync } from "fs";
+import * as fs from 'fs'
+import * as fsPath from 'path';
 import { parseHost } from "./parse";
 import { compileHost, compileModule } from "./compile";
 
 
 const moduleCache:any = {}
-export async function load(path:string, options:any={}) {
-  let dir:any = path.split('/')
-  dir.pop()
-  dir = dir.join('/')
-  const ls = readdirSync('./tests/host/')
-  ls
-  if(moduleCache[path]) return moduleCache[path];  
-  if(path.toLowerCase().endsWith('.js')) {
+export async function load(path:string, options:any={type:null}) {
+  // if(!fsPath.isAbsolute(path)) {
+  //   path = fsPath.resolve(process.cwd() + '/' + path);
+  //   path
+  //   let dir:any = path.split('/');
+  //   dir.pop();
+  //   dir = dir.join('/')
+  //   let ls = fs.readdirSync(dir)
+  //   ls
+  // }
+  // const wd = process.cwd()
+  // wd  
+  //const projectDir = process.cwd()
+  //projectDir
+  
+  if(moduleCache[path]) return moduleCache[path];
+  if((options.type && options.type.js) || path.toLowerCase().endsWith('.js')) {
     const m = require(path)
     moduleCache[path] = m;
     return m
   }
-  let resolveModule, rejectModule;
-  moduleCache[path] = new Promise((_resolve, _reject) => {
-    resolveModule = _resolve;
-    rejectModule = _reject;
-  })
+  const exports = {}
+  moduleCache[path] = exports
   let code
   code = await (new Promise((resolve, reject) => 
-    readFile(path, 'utf8', async (err, code) => {
+    fs.readFile(path, 'utf8', async (err, code) => {
       if(err) {
-        rejectModule(err);
+        //rejectModule(err);
         return reject(err);
       }
       resolve(code);
     })
   ))
-  const stack = [{load}]
+  const stack = [{load, exports}]
   const ast = await parseHost(stack, code)
   const refs = []
   let module = await compileModule(stack, ast, refs)
-  resolveModule(module)
+  //resolveModule(module)
   return module
 }
 
-
-//compileFile('./src/host/parseParens.host').catch(console.error);
-//load('./src/host/greet.host').catch(console.error);

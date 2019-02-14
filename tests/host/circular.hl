@@ -1,0 +1,2 @@
+load "./tests/host/circular.hl"
+export var a 1

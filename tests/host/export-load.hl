@@ -1,0 +1,5 @@
+var simple: await load "./tests/host/export-simple.hl"
+var common: await load "./common.js"
+var add common.add
+var a: simple.a
+export var b: add a 1

@@ -226,6 +226,15 @@ export function compileSetr(refs:any[], stack:any[], expr:any) {
   return code
 }
 
+export function compileAwait(refs:any[], stack:any[], expr:any[]) {
+  expr.splice(1,1)
+  expr
+  let code = `(await ${compileExpr(refs, stack, expr)})`;
+  last(stack)['%isAwait'] = true;
+  code
+  return code
+}
+
 export function compileExpr(refs:any[], stack:any[], expr:any) : string {  
   if(!isExpr(expr)) {
     if(isSym(expr)) return compileSym(refs, stack, expr);
@@ -259,6 +268,7 @@ export function compileExprBlock(refs:any[], stack:any[], expr:any) {
   stack = [...stack, {}]
   code += ''
   expr.forEach(i => {
+    i
     let exprCode;
     if(i[1] === sym('var')) exprCode = compileVar(refs, stack, i)
     else if(i[1] === sym('fn') && isSym(i[2])) {
@@ -271,10 +281,15 @@ export function compileExprBlock(refs:any[], stack:any[], expr:any) {
       exprCode = '_=' + compileExpr(refs, stack, i);
     }    
     exprCode = `\n\t${exprCode};`
+    exprCode
     code += exprCode
     return exprCode;
   })
   code += '\n\treturn _;\n})(_);'
+  if(last(stack)['%isAwait']) {
+    code = '(async ' + code.substr(1)
+    code
+  }
   return code
 }
 
@@ -290,6 +305,7 @@ function loadDefaultCompilers(stack:any[]) {
     'export': compileExport,
     '`': compileTick,
     "'": compileQuote,
+    'await': compileAwait
   }
   Object.keys(defaultCompilers).map(key => {
     env.compilers[key] = env.compilers[key] || defaultCompilers[key];
@@ -311,7 +327,7 @@ export function compileHost(env:any, ast:any[], refs:any[]=[]) {
   let f = js(code)
   const _ = getName(stack, '_')  
   let exec = () => f.apply(null, [ _, env, ...refs])
-  return { code, f, exec, env, ast }
+  return { code, f, exec, env, ast }  
 }
 
 export async function compileModule(env:any, ast:any[], refs:any[]=[]) {
@@ -319,9 +335,21 @@ export async function compileModule(env:any, ast:any[], refs:any[]=[]) {
   else env = [env];
   if(env[0]) env[0] = {...env[0]}
   else env.push({})
-  const exports:any = env[0].exports || {}
+  const exports:any = {}
   env[0].exports = exports
   const r = compileHost(env, ast, refs);
+  console.log(r.code);
   await r.exec(); // code has to be run to generate module
   return exports
 }
+
+// ( function(_,env,r0,r1){
+//   return (async function(_){
+//     let simple=_=(await r0);
+//     let common=_=(await r1);
+//     let add=_=common["add"];
+//     let a=_=simple["a"];
+//     _=env.exports.b=add(simple["a"],1);
+//     return _;
+//   })(_);
+// })

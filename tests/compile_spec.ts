@@ -709,23 +709,24 @@ describe('compile', () => {
       m.a.should.equal(1)      
     })
 
-    it('should use existing env lists passed in', async () => {
+    it('should preserve existing env lists passed in', async () => {
       const exports:any = {b:2}
       const env = [{exports}]
+      const env0 = env[0];
       const m = await compileModule(env, [['`', '`export', '`var', '`a', 1]]);
-      m.should.equal(exports)
-      exports.a.should.equal(1)
-      exports.b.should.equal(2)
+      m.should.not.equal(exports)
+      m.a.should.equal(1)
       env.length.should.equal(1)
+      env[0].should.equal(env0)
     })
 
-    it('should use existing env objects passed in', async () => {
+    it('should preserve existing env objects passed in', async () => {
       const exports:any = {b:2}
       const env = {exports}
       const m = await compileModule(env, [['`', '`export', '`var', '`a', 1]]);
-      m.should.equal(exports)
-      exports.a.should.equal(1)
-      exports.b.should.equal(2)
+      m.a.should.equal(1)
+      m.should.not.equal(exports)
+      env.exports.should.equal(exports)
     })    
   })
 })

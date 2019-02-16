@@ -226,7 +226,7 @@ export function compileSetr(refs:any[], stack:any[], expr:any) {
   return code
 }
 
-export function compileLoad(refs:any[], stack:any[], expr:any[]) {
+export function compileImport(refs:any[], stack:any[], expr:any[]) {
   // @ts-ignore
   if(!expr.isAwait) {
     expr.splice(1,0,'`await')
@@ -240,7 +240,7 @@ export function compileLoad(refs:any[], stack:any[], expr:any[]) {
   expr.splice(1,1)
   expr
 
-  let code = compileSym(refs, stack, 'load')
+  let code = compileSym(refs, stack, 'import')
   let arg = compileExpr(refs, stack, expr[1])
   arg
   code = `${code}(${arg})`
@@ -344,7 +344,7 @@ function loadDefaultCompilers(stack:any[]) {
     '`': compileTick,
     "'": compileQuote,
     'await': compileAwait,
-    'load': compileLoad
+    'import': compileImport
   }
   Object.keys(defaultCompilers).map(key => {
     env.compilers[key] = env.compilers[key] || defaultCompilers[key];

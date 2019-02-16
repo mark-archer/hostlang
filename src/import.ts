@@ -5,7 +5,7 @@ import { compileHost, compileModule } from "./compile";
 
 
 const moduleCache:any = {}
-export async function load(path:string, options:any={type:null}) {
+export async function $import(path:string, options:any={type:null}) {
   // if(!fsPath.isAbsolute(path)) {
   //   path = fsPath.resolve(process.cwd() + '/' + path);
   //   path
@@ -31,18 +31,14 @@ export async function load(path:string, options:any={type:null}) {
   let code
   code = await (new Promise((resolve, reject) => 
     fs.readFile(path, 'utf8', async (err, code) => {
-      if(err) {
-        //rejectModule(err);
-        return reject(err);
-      }
+      if(err) return reject(err);
       resolve(code);
     })
   ))
-  const stack = [{load, exports}]
+  const stack = [{import: $import, exports}]
   const ast = await parseHost(stack, code)
   const refs = []
   let module = await compileModule(stack, ast, refs)
-  //resolveModule(module)
   return module
 }
 

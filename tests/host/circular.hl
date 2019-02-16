@@ -1,2 +1,2 @@
-load "./tests/host/circular.hl"
+import "./tests/host/circular.hl"
 export var a 1

@@ -1,0 +1,4 @@
+import "./tests/host/export-simple.hl": a
+import "./common.js": add
+
+export var b: add a 1

@@ -1,4 +1,0 @@
-load "./tests/host/export-simple.hl": a
-load "./common.js": add
-
-export var b: add a 1

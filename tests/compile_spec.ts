@@ -732,12 +732,12 @@ describe('compile', () => {
 
   describe('compileAwait', () => {
     it('should mark the wrapping scope as async', async () => {
-      const env = {load: list}
-      const r = compileHost(env, [['`', '`await', '`load', 'simple.hl']]);
+      const env = {import: list}
+      const r = compileHost(env, [['`', '`await', '`import', 'simple.hl']]);
       linesJoinedShouldEqual(r.code, `
         function(_,env,){
           return (async function(_){
-            _=await env['load']("simple.hl");
+            _=await env['import']("simple.hl");
             return _;
           })(_);
         }
@@ -745,16 +745,16 @@ describe('compile', () => {
     })
     
     it('should allow it in nested scopes', async () => {
-      const env = {load: list, add}
+      const env = {import: list, add}
       const r = compileHost(env, [
-        ['`', '`do', ['`', '`await', '`load', 'simple.hl', ['`', '`a', '`b']]],
+        ['`', '`do', ['`', '`await', '`import', 'simple.hl', ['`', '`a', '`b']]],
         ['`', '`add', '`_', 1]
       ]);
       linesJoinedShouldEqual(r.code, `
         function(_,env,){
           return (function(_){
             _=(async function(_){
-              _=await env['load']("simple.hl");let{a,b,}=_;
+              _=await env['import']("simple.hl");let{a,b,}=_;
               return _;
             })(_);;
             _=env['add'](_,1);
@@ -765,17 +765,17 @@ describe('compile', () => {
     })
 
     it('should allow awaiting the results of nested scopes', async () => {
-      const env = {load: list, add}
+      const env = {import: list, add}
       const r = compileHost(env, [
-        ['`', '`do', ['`', '`await', '`load', 'simple.hl', ['`', '`a', '`b']]],
+        ['`', '`do', ['`', '`await', '`import', 'simple.hl', ['`', '`a', '`b']]],
         ['`', '`await', '`_'],
         ['`', '`add', '`_', 1]
-      ]);
+      ]);      
       linesJoinedShouldEqual(r.code, `
         function(_,env,){
           return (async function(_){
             _=(async function(_){
-              _=await env['load']("simple.hl");let{a,b,}=_;
+              _=await env['import']("simple.hl");let{a,b,}=_;
               return _;
             })(_);;
             _=await _;
@@ -787,14 +787,14 @@ describe('compile', () => {
     })
   })
 
-  describe('compileLoad', () => {
+  describe('compileImport', () => {
     it('should allow importing names individually', async () => {
-      const env = {load: list}
-      const r = compileHost(env, [['`', '`await', '`load', 'simple.hl', ['`', '`a', '`b']]]);
+      const env = {import: list}
+      const r = compileHost(env, [['`', '`await', '`import', 'simple.hl', ['`', '`a', '`b']]]);
       linesJoinedShouldEqual(r.code, `
         function(_,env,){
           return (async function(_){
-            _=await env['load']("simple.hl");let{a,b,}=_;
+            _=await env['import']("simple.hl");let{a,b,}=_;
             return _;
           })(_);
         }
@@ -803,12 +803,12 @@ describe('compile', () => {
 
     // it should automatically use await
     it('should allow importing names individually', async () => {
-      const env = {load: list}
-      const r = compileHost(env, [['`', '`load', 'simple.hl', ['`', '`a', '`b']]]);
+      const env = {import: list}
+      const r = compileHost(env, [['`', '`import', 'simple.hl', ['`', '`a', '`b']]]);
       linesJoinedShouldEqual(r.code, `
         function(_,env,){
           return (async function(_){
-            _=await env['load']("simple.hl");let{a,b,}=_;
+            _=await env['import']("simple.hl");let{a,b,}=_;
             return _;
           })(_);
         }

@@ -39,7 +39,7 @@ export function detectTabSize(stack, code, options) {
 }
 
 export function parseInfo(stack:any[], code:string, options:ParseInfoOptions={}) {
-  options.tabSize = detectTabSize(stack, code, options);
+  //options.tabSize = detectTabSize(stack, code, options);
   const root:any[] = []
   const pi:ParseInfo = {
     code,
@@ -54,7 +54,7 @@ export function parseInfo(stack:any[], code:string, options:ParseInfoOptions={})
       pi.i += s.length;
       return s;
     }, 
-    terminators: options.terminators || /[^\$a-zA-Z0-9_`'-]/, // anything not allowed in names
+    terminators: options.terminators || /[^\$%a-zA-Z0-9_`'-]/, // anything not allowed in names
     maxSymLength: options.maxSymLength || 100,
     tabSize: options.tabSize || 4,
     peekWord: (terminators?:RegExp, maxSymLength?:number) => {

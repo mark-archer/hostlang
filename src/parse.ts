@@ -1,6 +1,6 @@
-import { tick, last, range, sym, nvp, isSym, untick, isNumber, isList} from "./common";
+import { tick, last, range, sym, nvp, isSym, untick, isNumber, isList, first, isExpr, skip} from "./common";
 import { js } from "./utils";
-import { apply } from "./host";
+import { apply, getName } from "./host";
 import { meta } from "./typeInfo";
 import { ParseInfo, ParseInfoOptions, parseInfo } from "./parseInfo";
 
@@ -17,8 +17,14 @@ export function parseHost(stack:any[], code:string, options:ParseInfoOptions={})
     if(scopeMeta && scopeMeta.parsers)
     parsers.push.apply(parsers, scopeMeta.parsers);
   }
+  if(!first(stack)) stack.push({});
   
   const pi = parseInfo(stack, code, options);
+  first(stack)['$%tabSize'] = first(stack)['$%tabSize'] || (n => {
+    n
+    pi.tabSize = Number(n)
+  })
+
   
   // immediately start a new list to represent to first line of code
   pi.newList();
@@ -68,13 +74,19 @@ export function parseHost(stack:any[], code:string, options:ParseInfoOptions={})
     let parseProgress = Promise.resolve(true);
     let iParser = parsers.length - 1;
     const next = (proceeding:(boolean | undefined)) => {
+      // check for parseMacro
+      const llist:any = last(pi.clist)
+      if(isExpr(llist) && isSym(llist[1]) && llist[1].startsWith('`$%')) {
+        pi.clist.pop();
+        const parseMacro = getName(stack, untick(llist[1]))
+        const args = skip(llist, 2)
+        parseMacro.apply(null, args)
+      }
+
       // if we've reached the end of the code, return
       if(pi.i >= pi.code.length) {
-        //while(pi.stack.length > 1 && !pi.clist.explicit) pi.endList();
         if(pi.stack.length > 1) return parseError('parser did not end on root list, probably missing right parens ")"');
         let ast = implicitLogic(pi.root);
-        // default behavior is if there is more than one item of code, wrap it in an evalBlock 
-        //if(ast.length > 1) ast = ['`','`evalBlock', ast]
         return resolveParse(ast);
       }      
       if(!proceeding) {
@@ -155,7 +167,7 @@ function parseSymbols(pi:ParseInfo){
 
   // test for symbol (with optional leading quotes and ticks)
   //var aSym:any = maybeSymbol.match(/^['`]*[a-zA-Z_][a-zA-Z_0-9-]*[^a-zA-Z?*&]/);
-  var aSym:any = maybeSymbol.match(/^['`]*[\$a-zA-Z_][a-zA-Z_0-9-]*/);
+  var aSym:any = maybeSymbol.match(/^['`]*[\$%a-zA-Z_][%a-zA-Z_0-9-]*/);
   if(aSym){
     aSym = aSym[0];
     //aSym = aSym.substr(0,aSym.length-1);

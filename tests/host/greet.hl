@@ -1,4 +1,4 @@
-"tabSize=2"
+%tabSize 2
 
 export fn greet (who)
   if who

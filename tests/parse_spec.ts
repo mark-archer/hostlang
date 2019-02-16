@@ -950,5 +950,12 @@ else
           1 ] ] ])
       }) 
     )
-  })  
+  })
+
+  describe('parseMacro [$%]', () => {
+    it('should detect percent sign symbols in the fn position', async () => {
+      const ast = await parseHost([], '$%tabSize 2\nlist\n  ^ 1 2').then(cleanCopyList);
+      ast.should.eql([ [ '`', '`list', 1, 2 ] ])      
+    })
+  })
 })

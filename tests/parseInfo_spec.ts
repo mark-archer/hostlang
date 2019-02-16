@@ -190,14 +190,14 @@ describe('parseInfo', () => {
     })
   })
 
-  describe('tabSize', () => {
-    it('should detect tabSize as first line in code', () => {
-      let pi = parseInfo([], '"tabSize=2"\na\n\nline to get\n\nc');
-      pi.tabSize.should.equal(2);
-      pi = parseInfo([], '"tabSize=1"\na\n\nline to get\n\nc');
-      pi.tabSize.should.equal(1);
-      pi = parseInfo([], '"tabSize=999"\na\n\nline to get\n\nc');
-      pi.tabSize.should.equal(999);
-    })
-  })
+  // describe('tabSize', () => {
+  //   it('should detect tabSize as first line in code', () => {
+  //     let pi = parseInfo([], '"tabSize=2"\na\n\nline to get\n\nc');
+  //     pi.tabSize.should.equal(2);
+  //     pi = parseInfo([], '"tabSize=1"\na\n\nline to get\n\nc');
+  //     pi.tabSize.should.equal(1);
+  //     pi = parseInfo([], '"tabSize=999"\na\n\nline to get\n\nc');
+  //     pi.tabSize.should.equal(999);
+  //   })
+  // })
 })

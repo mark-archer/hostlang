@@ -720,7 +720,7 @@ else
           '`divide',
           '`set'
          ])
-      })
+      })            
     )
 
     it('should parse a basic op prefix', () => 
@@ -954,8 +954,8 @@ else
 
   describe('parseMacro [$%]', () => {
     it('should detect percent sign symbols in the fn position', async () => {
-      const ast = await parseHost([], '$%tabSize 2\nlist\n  ^ 1 2').then(cleanCopyList);
-      ast.should.eql([ [ '`', '`list', 1, 2 ] ])      
+      const ast = await parseHost([], 'tabSize 2\nlist\n  ^ 1 2').then(cleanCopyList);
+      ast.should.eql([ [ '`', '`list', 1, 2 ] ])
     })
   })
 })

@@ -3,6 +3,7 @@ import { js } from "./utils";
 import { apply, getName } from "./host";
 import { meta } from "./typeInfo";
 import { ParseInfo, ParseInfoOptions, parseInfo } from "./parseInfo";
+import * as _ from 'lodash'
 
 export type ParseFn = (pi:ParseInfo) => any
 
@@ -10,20 +11,29 @@ export function parseHost(stack:any[], code:string, options:ParseInfoOptions={})
   code += '\n'; // add newline to code to easy in matching logic
   const parsers:ParseFn[] = [
     parseSymbols, parseIndents, parseLists, parseMetaList, parseStrings, parseNumbers, parseComments, parseNvp,
-    parseDots, parsePipes, parseIfElifElse, parseBasicOps, parseNew, parseTryCatch, parseFnArrow, parseSpread
+    parseDots, parsePipes, parseIfElifElse, parseBasicOps, parseNew, parseTryCatch, parseFnArrow, parseSpread,
+    setTabSize
   ]
   for(let i = stack.length-1; i>=0; i--) {
     const scopeMeta = stack[i].meta;
     if(scopeMeta && scopeMeta.parsers)
     parsers.push.apply(parsers, scopeMeta.parsers);
   }
-  if(!first(stack)) stack.push({});
+  // if(!first(stack)) stack.push({});
+  // const env = first(stack);
+  // const parseMacros = _.get(env, 'meta.parseMacros') || {}
+  // if(!_.get(env, 'meta.parseMacros'))
+  //   _.set(env, 'meta.parseMacros', parseMacros)
+  // parseMacros.tabSize = parseMacros.tabSize || (n => {
+  //   n
+  //   pi.tabSize = Number(n)
+  // })
   
   const pi = parseInfo(stack, code, options);
-  first(stack)['$%tabSize'] = first(stack)['$%tabSize'] || (n => {
-    n
-    pi.tabSize = Number(n)
-  })
+  // first(stack)['$%tabSize'] = first(stack)['$%tabSize'] || (n => {
+  //   n
+  //   pi.tabSize = Number(n)
+  // })
 
   
   // immediately start a new list to represent to first line of code
@@ -74,14 +84,24 @@ export function parseHost(stack:any[], code:string, options:ParseInfoOptions={})
     let parseProgress = Promise.resolve(true);
     let iParser = parsers.length - 1;
     const next = (proceeding:(boolean | undefined)) => {
-      // check for parseMacro
-      const llist:any = last(pi.clist)
-      if(isExpr(llist) && isSym(llist[1]) && llist[1].startsWith('`$%')) {
-        pi.clist.pop();
-        const parseMacro = getName(stack, untick(llist[1]))
-        const args = skip(llist, 2)
-        parseMacro.apply(null, args)
-      }
+      // // check for parseMacro
+      // const llist:any = last(pi.clist)
+      // if(isExpr(llist) && isSym(llist[1]) && llist[1].startsWith('`$%')) {
+      //   pi.clist.pop();
+      //   const parseMacro = getName(stack, untick(llist[1]))
+      //   const args = skip(llist, 2)
+      //   parseMacro.apply(null, args)
+      // }
+      // for(var i = stack.length - 1; i >= 0; i--) {
+      //   const scope = stack[i];
+      //   const parseMacros = _.get(stack, `${i}.meta.parseMacros`)
+      //   if(parseMacros) {
+      //     for(const key of Object.keys(parseMacros)) {
+      //       const r = parseMacros[key](stack, pi);
+
+      //     }
+      //   }
+      // }
 
       // if we've reached the end of the code, return
       if(pi.i >= pi.code.length) {
@@ -804,4 +824,12 @@ function parseSpread(pi: ParseInfo) {
   pi.clist.push(expr);
   return true;  
   */  
+}
+
+function setTabSize(pi: ParseInfo) {
+  const llist:any = last(pi.clist)
+  if(isExpr(llist) && llist[1] === '`tabSize') {
+    pi.clist.pop();
+    pi.tabSize = Number(llist[2]) // TODO: this should be an expression evaluated     
+  }
 }

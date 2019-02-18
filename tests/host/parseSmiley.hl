@@ -1,11 +1,10 @@
-tabSize 2
 import "common": EQ
 
 export fn %parseSmiley (pi) 
-  var c pi.peek!
-  if (c == "☺")
-    pi.pop!
-    pi.clist.push "Smiley!"
-    true
-  else
-    null  
+    var c pi.peek!
+    if (c == "☺")
+        pi.pop!
+        pi.clist.push "Smiley!"
+        true
+    else
+        null  

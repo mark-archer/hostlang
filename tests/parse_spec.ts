@@ -223,9 +223,10 @@ describe('parseHost', () => {
 
     it('should let carets be used to break a long list into multipule lines', () => 
       parseHost([], `
+tabSize 2
 f 1 2
-    ^ 3 4 5
-    ^ 6 7 8
+  ^ 3 4 5
+  ^ 6 7 8
       `).then(cleanCopyList).then(ast => {
         ast.should.eql([ ['`', '`f',  1, 2, 3, 4, 5, 6, 7, 8 ] ])
       })

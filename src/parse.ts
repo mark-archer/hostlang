@@ -2,39 +2,28 @@ import { tick, last, range, sym, nvp, isSym, untick, isNumber, isList, first, is
 import { js } from "./utils";
 import { apply, getName } from "./host";
 import { meta } from "./typeInfo";
-import { ParseInfo, ParseInfoOptions, parseInfo } from "./parseInfo";
+import { ParseInfo, ParseInfoOptions, parseInfo, ParseFn } from "./parseInfo";
 import * as _ from 'lodash'
+import * as std from './common'
 
-export type ParseFn = (pi:ParseInfo) => any
-
-export function parseHost(stack:any[], code:string, options:ParseInfoOptions={}) : Promise<any> {
-  code += '\n'; // add newline to code to easy in matching logic
+function getParsers(stack) {
   const parsers:ParseFn[] = [
     parseSymbols, parseIndents, parseLists, parseMetaList, parseStrings, parseNumbers, parseComments, parseNvp,
     parseDots, parsePipes, parseIfElifElse, parseBasicOps, parseNew, parseTryCatch, parseFnArrow, parseSpread,
-    setTabSize
+    parseTabSize, parseParseTimeLoad
   ]
   for(let i = stack.length-1; i>=0; i--) {
     const scopeMeta = stack[i].meta;
     if(scopeMeta && scopeMeta.parsers)
     parsers.push.apply(parsers, scopeMeta.parsers);
   }
-  // if(!first(stack)) stack.push({});
-  // const env = first(stack);
-  // const parseMacros = _.get(env, 'meta.parseMacros') || {}
-  // if(!_.get(env, 'meta.parseMacros'))
-  //   _.set(env, 'meta.parseMacros', parseMacros)
-  // parseMacros.tabSize = parseMacros.tabSize || (n => {
-  //   n
-  //   pi.tabSize = Number(n)
-  // })
-  
-  const pi = parseInfo(stack, code, options);
-  // first(stack)['$%tabSize'] = first(stack)['$%tabSize'] || (n => {
-  //   n
-  //   pi.tabSize = Number(n)
-  // })
+  return parsers
+}
 
+export function parseHost(stack:any[], code:string, options:ParseInfoOptions={}) : Promise<any> {
+  code += '\n'; // add newline to code to easy in matching logic
+  const pi = parseInfo(stack, code, options);
+  pi.parsers = getParsers(stack);
   
   // immediately start a new list to represent to first line of code
   pi.newList();
@@ -77,32 +66,15 @@ export function parseHost(stack:any[], code:string, options:ParseInfoOptions={})
         colNum = pi.clist && pi.clist._sourceColumn || colNum;
         line = pi.getLine(lineNum);
       }
-      if(line && line.trim()) line = '\n' + line;      
+      if(line && line.trim()) line = '\n' + line;
+      //console.error(err.stack)
       rejectParse(new Error(`parse error at line ${lineNum}, col ${colNum}:${line}${'\n'+err}`));
+      //rejectParse(new Error(`parse error at line ${lineNum}, col ${colNum}:${line}${'\n'+err.stack}`));
     }
     
     let parseProgress = Promise.resolve(true);
-    let iParser = parsers.length - 1;
+    let iParser = pi.parsers.length - 1;
     const next = (proceeding:(boolean | undefined)) => {
-      // // check for parseMacro
-      // const llist:any = last(pi.clist)
-      // if(isExpr(llist) && isSym(llist[1]) && llist[1].startsWith('`$%')) {
-      //   pi.clist.pop();
-      //   const parseMacro = getName(stack, untick(llist[1]))
-      //   const args = skip(llist, 2)
-      //   parseMacro.apply(null, args)
-      // }
-      // for(var i = stack.length - 1; i >= 0; i--) {
-      //   const scope = stack[i];
-      //   const parseMacros = _.get(stack, `${i}.meta.parseMacros`)
-      //   if(parseMacros) {
-      //     for(const key of Object.keys(parseMacros)) {
-      //       const r = parseMacros[key](stack, pi);
-
-      //     }
-      //   }
-      // }
-
       // if we've reached the end of the code, return
       if(pi.i >= pi.code.length) {
         if(pi.stack.length > 1) return parseError('parser did not end on root list, probably missing right parens ")"');
@@ -113,10 +85,10 @@ export function parseHost(stack:any[], code:string, options:ParseInfoOptions={})
         iParser--;
         if(iParser < 0) return parseError('no parsers are proceeding');
       } else {
-        iParser = parsers.length - 1;
+        iParser = pi.parsers.length - 1;
       }
       
-      var parser = parsers[iParser];
+      var parser = pi.parsers[iParser];
       
       parseProgress.then(() => <Promise<boolean | undefined>>apply(stack, parser, [pi]))
       .then(next).catch(parseError);      
@@ -826,10 +798,22 @@ function parseSpread(pi: ParseInfo) {
   */  
 }
 
-function setTabSize(pi: ParseInfo) {
+function parseTabSize(pi: ParseInfo) {
   const llist:any = last(pi.clist)
   if(isExpr(llist) && llist[1] === '`tabSize') {
     pi.clist.pop();
-    pi.tabSize = Number(llist[2]) // TODO: this should be an expression evaluated     
+    pi.tabSize = Number(llist[2]) // MAYBE: this should be an expression evaluated     
+  }
+}
+
+async function parseParseTimeLoad(pi: ParseInfo) {
+  let llist:any = last(pi.clist)
+  if(isExpr(llist) && llist[1] === '`%load') {    
+    pi.clist.pop();
+    llist = skip(llist, 2)
+    const $import = getName(pi.runtimeStack, 'import');
+    const r = await $import.apply(null, llist)
+    console.log(r)
+    pi.runtimeStack.push(r);  
   }
 }

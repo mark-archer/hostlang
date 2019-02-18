@@ -1,6 +1,10 @@
 import { last } from "./common";
 
+export type ParseFn = (pi:ParseInfo) => any
+
 export type ParseInfo = {
+  runtimeStack: any[]
+  parsers: ParseFn[]
   code: string
   i: number
   indent: number
@@ -29,19 +33,12 @@ export type ParseInfoOptions = {
   sourceMap?:boolean
 }
 
-export function detectTabSize(stack, code, options) {
-  let tabSizeInCode = code.trim().split('\n')[0].trim().match(/"tabSize=\d+"/)
-  if (tabSizeInCode) {
-    tabSizeInCode = tabSizeInCode[0].match(/\d+/);
-    tabSizeInCode = Number(tabSizeInCode);
-  }
-  return (tabSizeInCode || options.tabSize);
-}
-
 export function parseInfo(stack:any[], code:string, options:ParseInfoOptions={}) {
   //options.tabSize = detectTabSize(stack, code, options);
   const root:any[] = []
   const pi:ParseInfo = {
+    parsers: [],
+    runtimeStack: stack,
     code,
     i:0,
     indent:0,

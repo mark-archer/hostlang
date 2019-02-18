@@ -1,5 +1,9 @@
 import { parseHost, ParseFn } from "../src/parse";
 import { cleanCopyList } from "../src/utils";
+import { $import } from "../src/import";
+import { ParseInfo } from "../src/parseInfo";
+import * as _ from 'lodash'
+import { EQ } from "../src/common";
 
 var should = require('should');
 
@@ -950,12 +954,109 @@ else
           1 ] ] ])
       }) 
     )
+
+    it('should parse if statements with EQ', async () => {
+      const ast = await parseHost([], `
+tabSize 2
+import "./common.js": EQ
+export var a EQ
+export fn parseSmiley (pi) 
+  var c pi.next!
+  if (c == "☺")
+    pi.pop!
+    "Smiley!"
+  else
+    null  
+      
+`).then(cleanCopyList);
+      ast.should.eql([ [ '`', '`import', './common.js', '`EQ' ],
+      [ '`', '`export', '`var', '`a', '`EQ' ],
+      [ '`',
+        '`export',
+        '`fn',
+        '`parseSmiley',
+        [ '`', '`pi' ],
+        [ '`', '`var', '`c', [ '`', [ '`', '`getr', '`pi', '`next' ] ] ],
+        [ '`',
+          '`cond',
+          [ [ '`', '`EQ', '`c', '☺' ],
+            [ '`', [ '`', '`getr', '`pi', '`pop' ] ],
+            'Smiley!' ],
+          [ true, null ] ] ] ],
+      )
+    })
   })
 
-  describe('parseMacro [$%]', () => {
+  describe('parseTabSize', () => {
     it('should detect percent sign symbols in the fn position', async () => {
       const ast = await parseHost([], 'tabSize 2\nlist\n  ^ 1 2').then(cleanCopyList);
       ast.should.eql([ [ '`', '`list', 1, 2 ] ])
     })
+  })
+
+  describe('parseTime exectution', () => {
+    it('should allow custom parsers', async () => {
+      let firstCall = true;
+      const load = (pi:ParseInfo) => {        
+        if(firstCall) {
+          pi.newList()
+          pi.clist.push('`list')
+          pi.clist.push(1)
+          pi.clist.push(2)
+          pi.endList()
+          firstCall = false
+        }
+      }
+      const scope = []
+      _.set(scope, '0.meta.parsers', [load])
+      
+      const ast = await parseHost(scope, '').then(cleanCopyList);
+      ast.should.eql([ [ '`', '`list', 1, 2 ] ])
+    })
+
+    it('should allow calling %load to load modules at parsetime', async () => {
+      const scope = [{ import: $import }]      
+      const ast = await parseHost(scope, '%load "./tests/host/export-simple.hl"\n, 1 2').then(cleanCopyList);
+      scope.length.should.equal(2)
+      scope[1].should.eql({a:1})
+      ast.should.eql([ [ '`', '`list', 1, 2 ] ])
+    })
+
+    it.skip('should allow update parsers after %load', async () => {
+      const scope = [{ import: $import, EQ }]      
+      const ast = await parseHost(scope, '%load "./tests/host/parseSmiley.hl"\n, 1 2').then(cleanCopyList);
+      scope.length.should.equal(2)
+      scope[1].should.eql({a:1})
+      ast.should.eql([ [ '`', '`list', 1, 2 ] ])
+
+    })
+
+    // it('should work with expressions with null', async () => {
+    //   const ast = [ [ '`', '`import', './common.js', '`EQ' ],
+    //   [ '`', '`export', '`var', '`a', '`EQ' ],
+    //   [ '`',
+    //     '`export',
+    //     '`fn',
+    //     '`parseSmiley',
+    //     [ '`', '`pi' ],
+    //     [ '`', '`var', '`c', [ '`', [ '`', '`getr', '`pi', '`next' ] ] ],
+    //     [ '`',
+    //       '`cond',
+    //       [ [ '`', '`EQ', '`c', '☺' ],
+    //         [ '`', [ '`', '`getr', '`pi', '`pop' ] ],
+    //         'Smiley!' ],
+    //       [ true, null ] ] ] ]
+    //   const env = { import: $import, exports:{}}
+    //   const r = await compileHost(env, ast)
+    //   r
+    //   const parseSmiley = await r.exec()
+    //   const pi = {
+    //     next: () => "",
+    //     pop: () => ""
+    //   }
+    //   should(parseSmiley(pi)).equal(null)
+    //   pi.next = () => '☺';
+    //   should(parseSmiley(pi)).equal("Smiley!")
+    // })
   })
 })

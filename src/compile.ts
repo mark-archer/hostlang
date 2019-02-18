@@ -68,6 +68,7 @@ export function compileFn(refs:any[], stack:any[], expr:(any[] | Fn)) {
     let params = untick(args.shift()).map(untick);
     let body = args
     fn = makeFn(name, params, undefined, body, stack);
+    fn    
   } else {
     // @ts-ignore
     fn = expr
@@ -239,7 +240,6 @@ export function compileImport(refs:any[], stack:any[], expr:any[]) {
   if(expr.length == 2) expr = expr[1]
   expr.splice(1,1)
   expr
-
   let code = compileSym(refs, stack, 'import')
   let arg = compileExpr(refs, stack, expr[1])
   arg
@@ -308,13 +308,14 @@ export function compileExprBlock(refs:any[], stack:any[], expr:any) {
   code += ''
   expr.forEach(i => {
     let exprCode;
-    if(i[1] === sym('var')) exprCode = compileVar(refs, stack, i)
-    else if(i[1] === sym('fn') && isSym(i[2])) {
+    console.log(i)
+    if(i && i[1] === sym('var')) exprCode = compileVar(refs, stack, i)
+    else if(i && i[1] === sym('fn') && isSym(i[2])) {
       const fnName = i[2];
       exprCode = '_=' + compileExpr(refs, stack, i);
       exprCode += ';' + compileVar(refs, stack, ['`', '`var', fnName, '`_'])
     }
-    else if(i[1] === sym('cond')) exprCode = compileCond(refs, stack, i)
+    else if(i && i[1] === sym('cond')) exprCode = compileCond(refs, stack, i)
     else {
       exprCode = '_=' + compileExpr(refs, stack, i);
     }    
@@ -370,7 +371,7 @@ export function compileHost(env:any, ast:any[], refs:any[]=[]) {
   return { code, f, exec, env, ast }  
 }
 
-export async function compileModule(env:any, ast:any[], refs:any[]=[]) {
+export async function compileModule(env:any, ast:any[], refs:any[]=[]) {  
   if(isList(env)) env = [...env];
   else env = [env];
   if(env[0]) env[0] = {...env[0]}

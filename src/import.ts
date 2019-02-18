@@ -2,6 +2,7 @@ import * as fs from 'fs'
 import * as fsPath from 'path';
 import { parseHost } from "./parse";
 import { compileHost, compileModule } from "./compile";
+import { cleanCopyList } from './utils';
 
 
 const moduleCache:any = {}
@@ -36,9 +37,19 @@ export async function $import(path:string, options:any={type:null}) {
     })
   ))
   const stack = [{import: $import, exports}]
-  const ast = await parseHost(stack, code)
+  let ast:any;
+  try {
+    ast = await parseHost(stack, code)
+  } catch (err) {
+    throw new Error(`import - failed to parse ${path}:\n${err}`)
+  }
+  console.log(cleanCopyList(ast)[2])
   const refs = []
-  let module = await compileModule(stack, ast, refs)
-  return module
+  let _module;
+  try {
+    _module = await compileModule(stack, ast, refs)
+  } catch (err) {
+    throw new Error(`import - failed to compile ${path}:\n${err}`)
+  }
+  return _module
 }
-

@@ -4,6 +4,7 @@ import { Fn, objectInfo } from "../src/typeInfo";
 import { parseHost } from "../src/parse";
 import { cleanCopyList, stringify } from "../src/utils";
 import { readFileSync } from "fs";
+import { $import } from "../src/import";
 
 var should = require('should');
 
@@ -277,6 +278,14 @@ describe('compile', () => {
     it('should ensure a valid env is the first item in the stack', async () => {
       let r = await execHost([], 'env');
       r.env.should.not.be.null()
+    })
+
+    it('should work with expressions with null', async () => {
+      const ast = [ null ]
+      const env = { list }
+      const r = await compileHost(env, ast)
+      r.code.should.equal('function(_,env,){\n\treturn (function(_){\n\t_=null;\n\treturn _;\n})(_);\n}')
+      should(r.exec()).equal(null)
     })
   })
 

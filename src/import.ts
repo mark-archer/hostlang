@@ -3,6 +3,7 @@ import * as fsPath from 'path';
 import { parseHost } from "./parse";
 import { compileHost, compileModule } from "./compile";
 import { cleanCopyList } from './utils';
+import * as common from './common'
 
 
 const moduleCache:any = {}
@@ -20,8 +21,8 @@ export async function $import(path:string, options:any={type:null}) {
   // wd  
   //const projectDir = process.cwd()
   //projectDir
-  
-  if(moduleCache[path]) return moduleCache[path];
+  if(path === "common") return common;
+  if(moduleCache[path]) return moduleCache[path];  
   if((options.type && options.type.js) || path.toLowerCase().endsWith('.js')) {
     const m = require(path)
     moduleCache[path] = m;

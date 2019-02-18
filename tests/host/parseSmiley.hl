@@ -1,5 +1,5 @@
 tabSize 2
-import "./common.js": EQ
+import "common": EQ
 
 export fn %parseSmiley (pi) 
   var c pi.peek!

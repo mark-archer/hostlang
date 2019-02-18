@@ -2,6 +2,7 @@ import { $import } from "../src/import";
 import * as path from 'path';
 import * as fs from 'fs'
 import { isFunction } from "util";
+import * as common from '../src/common'
 
 var should = require('should');
 
@@ -48,6 +49,11 @@ describe('import', () => {
     const path = './tests/host/circular.hl';
     const m1 = await $import(path)    
     m1.a.should.equal(1)    
+  })
+
+  it('should allow importing common lib directly', async () => {
+    const m = await $import('common');
+    should(m).equal(common)
   })
 
 })

@@ -31,7 +31,7 @@ describe('compile', () => {
     it('should return the symbol as an import reference if it is in the first scope in the stack', () => {
       const stack:any[] = [{ a:1 }]
       const r = compileSym([], stack, '`a');
-      r.should.equal("env['a']");
+      r.should.equal(`env["a"]`);
     })
 
     it('should return the symbol as a string if it exists', () => {
@@ -200,7 +200,7 @@ describe('compile', () => {
       const refs:any[] = []
       const stack:any[] = [{ add }, { a: 1 }]
       let r = compileExpr(refs, stack, ['`', '`add', '`a', 1]);
-      linesJoinedShouldEqual(r, `env['add'](a,1)`)
+      linesJoinedShouldEqual(r, `env["add"](a,1)`)
     })
 
     it('should maintain references', async () => {
@@ -265,7 +265,7 @@ describe('compile', () => {
             _=function(){
               let _=null;
               return(function(_){
-                _=env['add'](env['a'],1);
+                _=env["add"](env["a"],1);
                 return _;
               })(_);
             };
@@ -539,7 +539,7 @@ describe('compile', () => {
       const r = await compileMacro(refs, stack, ['`', '`$myMacro', 2])
       linesJoinedShouldEqual(r, `
         (function(){
-          const ast = env['$myMacro'](2);
+          const ast = env["$myMacro"](2);
           const exe = env.compileHost(r0.stack, [ast], r0.refs)
           return exe.exec()
         })()
@@ -746,7 +746,7 @@ describe('compile', () => {
       linesJoinedShouldEqual(r.code, `
         function(_,env,){
           return (async function(_){
-            _=await env['import']("simple.hl");
+            _=await env["import"]("simple.hl");
             return _;
           })(_);
         }
@@ -763,10 +763,10 @@ describe('compile', () => {
         function(_,env,){
           return (function(_){
             _=(async function(_){
-              _=await env['import']("simple.hl");let{a,b,}=_;
+              _=await env["import"]("simple.hl");let{a,b,}=_;
               return _;
             })(_);;
-            _=env['add'](_,1);
+            _=env["add"](_,1);
             return _;
           })(_);
         }
@@ -784,11 +784,11 @@ describe('compile', () => {
         function(_,env,){
           return (async function(_){
             _=(async function(_){
-              _=await env['import']("simple.hl");let{a,b,}=_;
+              _=await env["import"]("simple.hl");let{a,b,}=_;
               return _;
             })(_);;
             _=await _;
-            _=env['add'](_,1);
+            _=env["add"](_,1);
             return _;
           })(_);
         }
@@ -803,7 +803,7 @@ describe('compile', () => {
       linesJoinedShouldEqual(r.code, `
         function(_,env,){
           return (async function(_){
-            _=await env['import']("simple.hl");let{a,b,}=_;
+            _=await env["import"]("simple.hl");let{a,b,}=_;
             return _;
           })(_);
         }
@@ -817,7 +817,7 @@ describe('compile', () => {
       linesJoinedShouldEqual(r.code, `
         function(_,env,){
           return (async function(_){
-            _=await env['import']("simple.hl");let{a,b,}=_;
+            _=await env["import"]("simple.hl");let{a,b,}=_;
             return _;
           })(_);
         }

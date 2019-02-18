@@ -1,7 +1,7 @@
-import { parseHost, ParseFn } from "../src/parse";
+import { parseHost } from "../src/parse";
 import { cleanCopyList } from "../src/utils";
 import { $import } from "../src/import";
-import { ParseInfo } from "../src/parseInfo";
+import { ParseInfo, ParseFn } from "../src/parseInfo";
 import * as _ from 'lodash'
 import { EQ } from "../src/common";
 

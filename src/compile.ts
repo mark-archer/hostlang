@@ -308,7 +308,6 @@ export function compileExprBlock(refs:any[], stack:any[], expr:any) {
   code += ''
   expr.forEach(i => {
     let exprCode;
-    console.log(i)
     if(i && i[1] === sym('var')) exprCode = compileVar(refs, stack, i)
     else if(i && i[1] === sym('fn') && isSym(i[2])) {
       const fnName = i[2];
@@ -327,7 +326,6 @@ export function compileExprBlock(refs:any[], stack:any[], expr:any) {
   code += '\n\treturn _;\n})(_);'
   if(last(stack)['%isAwait']) {
     code = '(async ' + code.substr(1)
-    code
   }
   return code
 }
@@ -350,7 +348,6 @@ function loadDefaultCompilers(stack:any[]) {
   Object.keys(defaultCompilers).map(key => {
     env.compilers[key] = env.compilers[key] || defaultCompilers[key];
   })
-  //console.log(env.compilers)
 }
 
 export function compileHost(env:any, ast:any[], refs:any[]=[]) {
@@ -379,7 +376,6 @@ export async function compileModule(env:any, ast:any[], refs:any[]=[]) {
   const exports:any = env[0].exports || {}
   env[0].exports = exports
   const r = compileHost(env, ast, refs);
-  console.log(r.code);
   await r.exec(); // code has to be run to generate module
   return exports
 }

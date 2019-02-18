@@ -37,11 +37,11 @@ export function compileSym(refs:any[], stack:any[], sym:string) {
   if(sym == '_') return sym;
   for(let i = stack.length-1; i >= 0; i--) {
     if(stack[i].exports && stack[i].exports[sym] !== undefined) {
-      let code = `env.exports.${sym}`
+      let code = `env.exports["${sym}"]`
       return code;
     }
     if(stack[i][sym] !== undefined) {
-      if(i == 0) return `env['${sym}']`
+      if(i == 0) return `env["${sym}"]`
       return sym;
     }
   }

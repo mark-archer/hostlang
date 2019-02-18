@@ -1,10 +1,11 @@
 tabSize 2
 import "./common.js": EQ
-export var a EQ
-export fn parseSmiley (pi) 
-  var c pi.next!
+
+export fn %parseSmiley (pi) 
+  var c pi.peek!
   if (c == "☺")
     pi.pop!
-    "Smiley!"
+    pi.clist.push "Smiley!"
+    true
   else
     null  

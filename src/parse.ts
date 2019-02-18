@@ -5,6 +5,7 @@ import { meta } from "./typeInfo";
 import { ParseInfo, ParseInfoOptions, parseInfo, ParseFn } from "./parseInfo";
 import * as _ from 'lodash'
 import * as std from './common'
+import { isFunction } from "util";
 
 function getParsers(stack) {
   const parsers:ParseFn[] = [
@@ -13,9 +14,16 @@ function getParsers(stack) {
     parseTabSize, parseParseTimeLoad
   ]
   for(let i = stack.length-1; i>=0; i--) {
+    // add parsers from the 'meta.parsers' path
     const scopeMeta = stack[i].meta;
     if(scopeMeta && scopeMeta.parsers)
     parsers.push.apply(parsers, scopeMeta.parsers);
+    
+    // add and functions starting with %
+    const scope = stack[i];
+    Object.keys(scope).forEach(key => {
+      if(key.startsWith('%') && isFunction(scope[key])) parsers.push(scope[key]);
+    })
   }
   return parsers
 }
@@ -814,6 +822,9 @@ async function parseParseTimeLoad(pi: ParseInfo) {
     const $import = getName(pi.runtimeStack, 'import');
     const r = await $import.apply(null, llist)
     console.log(r)
-    pi.runtimeStack.push(r);  
+    pi.runtimeStack.push(r);
+    pi.parsers = getParsers(pi.runtimeStack)
+    //pi.parsers.push(r['%parseSmiley'])
+    return true
   }
 }

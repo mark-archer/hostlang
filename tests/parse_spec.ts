@@ -952,7 +952,7 @@ else
             [ '`', '`EQ', [ '`', '`getr', '`evt', '`keyCode' ], 13 ],
             [ '`', '`not', [ '`', '`getr', '`evt', '`ctrl' ] ] ],
           1 ] ] ])
-      }) 
+      })
     )
 
     it('should parse if statements with EQ', async () => {
@@ -1022,41 +1022,12 @@ export fn parseSmiley (pi)
       ast.should.eql([ [ '`', '`list', 1, 2 ] ])
     })
 
-    it.skip('should allow update parsers after %load', async () => {
+    it('should allow update parsers after %load', async () => {
       const scope = [{ import: $import, EQ }]      
-      const ast = await parseHost(scope, '%load "./tests/host/parseSmiley.hl"\n, 1 2').then(cleanCopyList);
+      const ast = await parseHost(scope, '%load "./tests/host/parseSmiley.hl"\n, 1 ☺').then(cleanCopyList);
       scope.length.should.equal(2)
-      scope[1].should.eql({a:1})
-      ast.should.eql([ [ '`', '`list', 1, 2 ] ])
-
+      //scope[1].should.eql({a:1})
+      ast.should.eql([ [ '`', '`list', 1, "Smiley!" ] ])      
     })
-
-    // it('should work with expressions with null', async () => {
-    //   const ast = [ [ '`', '`import', './common.js', '`EQ' ],
-    //   [ '`', '`export', '`var', '`a', '`EQ' ],
-    //   [ '`',
-    //     '`export',
-    //     '`fn',
-    //     '`parseSmiley',
-    //     [ '`', '`pi' ],
-    //     [ '`', '`var', '`c', [ '`', [ '`', '`getr', '`pi', '`next' ] ] ],
-    //     [ '`',
-    //       '`cond',
-    //       [ [ '`', '`EQ', '`c', '☺' ],
-    //         [ '`', [ '`', '`getr', '`pi', '`pop' ] ],
-    //         'Smiley!' ],
-    //       [ true, null ] ] ] ]
-    //   const env = { import: $import, exports:{}}
-    //   const r = await compileHost(env, ast)
-    //   r
-    //   const parseSmiley = await r.exec()
-    //   const pi = {
-    //     next: () => "",
-    //     pop: () => ""
-    //   }
-    //   should(parseSmiley(pi)).equal(null)
-    //   pi.next = () => '☺';
-    //   should(parseSmiley(pi)).equal("Smiley!")
-    // })
   })
 })

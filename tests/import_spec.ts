@@ -41,12 +41,12 @@ describe('import', () => {
     const path = './tests/host/export-simple.hl';
     const m1 = await $import(path)
     const m2 = await $import(path)
-    m1.should.equal(m2)
+    m1.should.equal(m2)    
   })
 
   // it should allow circular references
   it('it should allow circular references', async () => {
-    const path = './tests/host/circular.hl';
+    const path = './tests/host/circular.hl';    
     const m1 = await $import(path)    
     m1.a.should.equal(1)    
   })

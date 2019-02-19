@@ -5,6 +5,7 @@ import { parseHost } from "../src/parse";
 import { cleanCopyList, stringify } from "../src/utils";
 import { readFileSync } from "fs";
 import { $import } from "../src/import";
+import * as common from "../src/common"
 
 var should = require('should');
 
@@ -120,7 +121,7 @@ describe('compile', () => {
     it('should maintain closures between multipule instances of a function', async () => {
       const exports:any = {}
       const env = { add, exports }
-      const ast = await parseHost([], 'n => () => n + 1')      
+      const ast = await parseHost([common], 'n => () => n + 1')      
       const c = compileHost(env, ast);
       const f = c.exec()
       const f1 = f(1);

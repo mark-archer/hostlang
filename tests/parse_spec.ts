@@ -992,13 +992,13 @@ export fn parseSmiley (pi)
     it('should detect percent sign symbols in the fn position', async () => {
       const ast = await parseHost([], 'tabSize 2\nlist\n  ^ 1 2').then(cleanCopyList);
       ast.should.eql([ [ '`', '`list', 1, 2 ] ])
-    })
+    })    
   })
 
   describe('parseTime exectution', () => {
-    it('should allow custom parsers', async () => {
+    it.skip('should allow custom parsers', async () => {
       let firstCall = true;
-      const load = (pi:ParseInfo) => {        
+      const testParser = (pi:ParseInfo) => {        
         if(firstCall) {
           pi.newList()
           pi.clist.push('`list')
@@ -1009,7 +1009,7 @@ export fn parseSmiley (pi)
         }
       }
       const scope = []
-      _.set(scope, '0.meta.parsers', [load])
+      _.set(scope, '0.meta.parsers', [testParser])
       
       const ast = await parseHost(scope, '').then(cleanCopyList);
       ast.should.eql([ [ '`', '`list', 1, 2 ] ])

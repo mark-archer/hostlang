@@ -3,6 +3,11 @@ import { Fn, makeFn, isMeta, isFn, isObjectInfo, ObjectInfo, TypeInfo, FieldInfo
 import { evalHost, getName, evalHostBlock, evalSym, execHost, execHostInScope, apply } from './host';
 import { copy, stringify } from './utils';
 import * as uuid from 'uuid';
+import { parsers } from './commonParsers'
+
+export const meta = {
+    parsers
+}
 
 export const {
     isString,
@@ -804,41 +809,41 @@ function hostInline(stack:any[], url:string) : Promise<any> {
 hostInline.isMeta = true;
 module.exports.inline = hostInline;
 
-let hostModuleCache:any = {};
-export function clearModuleCache () {
-    hostModuleCache = {};
-}
-function hostRequire(stack:any[], url:string, reload:boolean=false) : Promise<any> {
-    url = url.toLowerCase();
-    if (hostModuleCache[url] && !reload) {
-        return Promise.resolve(hostModuleCache[url]);
-    }
-    let exs:any = {};
-    hostModuleCache[url] = exs;
-    const newTop:any = { exports: exs };
-    const newCtx = {}; // any other vars will go here and be discarded
-    const newStack = [newTop, ...stack, newCtx];
-    return hostInline(newStack, url).then(() => {
-        return exs;
-    });
-}
-//@ts-ignore
-hostRequire.isMeta = true;
-module.exports.require = hostRequire;
+// let hostModuleCache:any = {};
+// export function clearModuleCache () {
+//     hostModuleCache = {};
+// }
+// function hostRequire(stack:any[], url:string, reload:boolean=false) : Promise<any> {
+//     url = url.toLowerCase();
+//     if (hostModuleCache[url] && !reload) {
+//         return Promise.resolve(hostModuleCache[url]);
+//     }
+//     let exs:any = {};
+//     hostModuleCache[url] = exs;
+//     const newTop:any = { exports: exs };
+//     const newCtx = {}; // any other vars will go here and be discarded
+//     const newStack = [newTop, ...stack, newCtx];
+//     return hostInline(newStack, url).then(() => {
+//         return exs;
+//     });
+// }
+// //@ts-ignore
+// hostRequire.isMeta = true;
+// module.exports.require = hostRequire;
 
-function hostImport(stack:any[], url:string) {
-    return hostRequire(stack, url).then((exported:any) => {
-        const ctx = last(stack);
-        keys(exported).map(n => {
-            if(ctx[n] !== undefined) console.warn(`import - overwritting ${n}`)
-            ctx[n] = exported[n];
-        });
-        return exported;
-    });
-}
-//@ts-ignore
-hostImport.isMeta = true;
-module.exports.import = hostImport;
+// function hostImport(stack:any[], url:string) {
+//     return hostRequire(stack, url).then((exported:any) => {
+//         const ctx = last(stack);
+//         keys(exported).map(n => {
+//             if(ctx[n] !== undefined) console.warn(`import - overwritting ${n}`)
+//             ctx[n] = exported[n];
+//         });
+//         return exported;
+//     });
+// }
+// //@ts-ignore
+// hostImport.isMeta = true;
+// module.exports.import = hostImport;
 
 export function spread(stack:any[], expr:any[], spreadArg:any, ...addArgs:any[]) {
     return evalHost(stack, spreadArg)

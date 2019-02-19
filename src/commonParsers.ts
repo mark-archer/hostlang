@@ -501,7 +501,7 @@ function parseTabSize(pi: ParseInfo) {
   }
 }
 
-export const parsers = [
+export const _parsers = [
   parseIndents, parseMetaList, parseNumbers, parseComments, parseNvp,
   parseDots, parsePipes, parseIfElifElse, parseBasicOps, parseNew, parseTryCatch, parseFnArrow, parseSpread,
   parseTabSize

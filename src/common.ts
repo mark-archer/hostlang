@@ -3,11 +3,9 @@ import { Fn, makeFn, isMeta, isFn, isObjectInfo, ObjectInfo, TypeInfo, FieldInfo
 import { evalHost, getName, evalHostBlock, evalSym, execHost, execHostInScope, apply } from './host';
 import { copy, stringify } from './utils';
 import * as uuid from 'uuid';
-import { parsers } from './commonParsers'
+import * as commonParsers from './commonParsers'
 
-export const meta = {
-    parsers
-}
+export const _parsers = commonParsers._parsers
 
 export const {
     isString,

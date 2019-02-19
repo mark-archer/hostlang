@@ -1,6 +1,7 @@
-import "common": EQ
+import "common" 
+    EQ list
 
-export fn %parseSmiley (pi) 
+fn parseSmiley (pi) 
     var c pi.peek!
     if (c == "☺")
         pi.pop!
@@ -8,3 +9,7 @@ export fn %parseSmiley (pi)
         true
     else
         null  
+
+export var _parsers: list
+    parseSmiley
+

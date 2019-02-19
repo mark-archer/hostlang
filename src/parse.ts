@@ -14,21 +14,14 @@ function getParsers(stack) {
   if(load_common && !stack.includes(common)){
     stack = [common, ...stack]
   } 
-  for(let i = stack.length-1; i>=0; i--) {
-    // add parsers from the 'meta.parsers' path
-    const scopeMeta = stack[i].meta;
-    if(scopeMeta && scopeMeta.parsers)
-    parsers.push.apply(parsers, scopeMeta.parsers);
-    
-    // add any functions starting with %
-    const scope = stack[i];
-    Object.keys(scope).forEach(key => {
-      if(key.startsWith('%') && isFunction(scope[key])) parsers.push(scope[key]);
-    })
+  for(let i = stack.length-1; i>=0; i--) {    
+    const scope = stack[i]
+    if(scope && isList(scope._parsers)) {
+      parsers.push.apply(parsers, scope._parsers)
+    }
   }
+  // load always goes on last so it maximizes it's chance to see something it needs to execute at parsetime
   parsers.push(getName(stack, '%load') || parseParseTimeLoad);  
-  parsers
-  
   return parsers
 }
 

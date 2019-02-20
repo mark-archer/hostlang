@@ -1,6 +1,3 @@
-import "common" 
-    EQ list
-
 fn parseSmiley (pi) 
     var c pi.peek!
     if (c == "☺")

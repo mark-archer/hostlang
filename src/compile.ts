@@ -3,7 +3,7 @@ import { js, copy } from "./utils";
 import { getName } from "./host";
 import { Fn, makeFn } from "./typeInfo";
 import { isString, isObject, isFunction, isArray } from "util";
-
+import * as common from './common';
 
 export function getRef(refs:any[], ctx:any) {
   let ref = refs.indexOf(ctx);
@@ -330,9 +330,7 @@ export function compileExprBlock(refs:any[], stack:any[], expr:any) {
   return code
 }
 
-function loadDefaultCompilers(stack:any[]) {
-  const env = stack[0]
-  if(!env.compilers) env.compilers = {};
+function loadCommon(stack:any[]) {
   const defaultCompilers = {
     'getr': compileGetr,
     'setr': compileSetr,
@@ -345,9 +343,18 @@ function loadDefaultCompilers(stack:any[]) {
     'await': compileAwait,
     'import': compileImport
   }
-  Object.keys(defaultCompilers).map(key => {
+  const env = stack[0]
+  if(!env.compilers) env.compilers = {};
+  Object.keys(defaultCompilers).forEach(key => {
     env.compilers[key] = env.compilers[key] || defaultCompilers[key];
   })
+
+  if(!getName(stack, 'dont_load_common')) {
+    Object.keys(common).forEach(key => {
+      if(key === '_parsers') return;
+      if (env[key] === undefined) env[key] = common[key]
+    })
+  }  
 }
 
 export function compileHost(env:any, ast:any[], refs:any[]=[]) {
@@ -356,7 +363,7 @@ export function compileHost(env:any, ast:any[], refs:any[]=[]) {
   if(isList(env)) env = env[0] || {};
   stack[0] = env;
   env.env = env;
-  loadDefaultCompilers(stack)
+  loadCommon(stack)
   let innerCode = compileExprBlock(refs, stack, ast)
   let code = 'function(_,env,'
   code += refs.map((v,i) => `r${i}`).join();

@@ -1021,13 +1021,12 @@ export fn parseSmiley (pi)
       scope.length.should.equal(2)
       scope[1].should.eql({a:1})
       ast.should.eql([ [ '`', '`list', 1, 2 ] ])
-    })
+    })    
 
     it('should allow update parsers after %load', async () => {
       const scope = [{ import: $import, EQ }]      
       const ast = await parseHost(scope, '%load "./tests/host/parseSmiley.hl"\n, 1 ☺').then(cleanCopyList);
       scope.length.should.equal(2)      
-      //scope[1].should.eql({a:1})
       ast.should.eql([ [ '`', '`list', 1, "Smiley!" ] ])
     })
   })

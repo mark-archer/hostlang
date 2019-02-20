@@ -30,8 +30,7 @@ export async function $import(path:string, options:any={type:null}) {
   }
   const exports = {}
   moduleCache[path] = exports
-  let code
-  code = await (new Promise((resolve, reject) => 
+  const code:any = await (new Promise((resolve, reject) => 
     fs.readFile(path, 'utf8', async (err, code) => {
       if(err) return reject(err);
       resolve(code);
@@ -44,7 +43,6 @@ export async function $import(path:string, options:any={type:null}) {
   } catch (err) {
     throw new Error(`import - failed to parse ${path}:\n${err}`)
   }
-  console.log(cleanCopyList(ast)[2])
   const refs = []
   let _module;
   try {

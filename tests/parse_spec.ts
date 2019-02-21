@@ -269,10 +269,10 @@ f 1 2
       }),
     );
 
-    it('should throw an error if no end terminator *" is found is found', () =>
-      parseHost([], '"*some text').should.be
-       .rejectedWith('parse error at line 1, col 1:\n"*some text\nparseStrings - did not find a matching terminator: (*")'),
-    );
+    it('should throw an error if no end terminator *" is found is found', async () => {
+      await parseHost([], '"*some text').should.be
+        .rejectedWith('parse error at line 1, col 1:\n"*some text\nError: parseStrings - did not find a matching terminator: (*")')
+    });
 
     it("should treat backslash as a normal character", () =>
       parseHost([], '"*some\\ntext*"').then(cleanCopyList).then((ast) => {
@@ -284,7 +284,7 @@ f 1 2
       parseHost([], `"string/a weird string "*"\`'/string"`).then(cleanCopyList).then((ast) => {
         ast.should.eql([ 'a weird string "*"`\'' ]);
       }),
-    );
+    );    
   });
 
   describe("parseNumbers", () => {

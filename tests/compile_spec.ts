@@ -324,16 +324,13 @@ describe("compile", () => {
     it("should allow assigning expression results to variable names", async () => {
       const env = { add, a: 1, b: 0 };
       const ast = await parseHost([], "a =: add a 1\nb");
-      console.log(cleanCopyList(ast));
       const r = compileHost(env, ast);
-      console.log(r.code);
       r.exec().should.equal(0);
     });
 
     it("should error if given too many arguments", async () => {
       const env = { add, a: 1, b: 0 };
       const ast = await parseHost([], "a = b c");
-      console.log(cleanCopyList(ast));
       should(() => compileSet([], [], ast[0])).throw("set called with too many arguments: `set,`a,`b,`c");
     });
   });
@@ -343,7 +340,6 @@ describe("compile", () => {
       const env = { add, a: 1 };
       const ast = await parseHost([], "if a : add a 1");
       const r = compileHost(env, ast);
-      console.log(r.code);
       r.exec().should.equal(2);
     });
 
@@ -351,7 +347,6 @@ describe("compile", () => {
       const env = { add, a: 1 };
       const ast = await parseHost([], "if a : add a 1, add _ 3");
       const r = compileHost(env, ast);
-      console.log(r.code);
       r.exec().should.equal(5);
     });
 
@@ -366,7 +361,6 @@ describe("compile", () => {
       const env = { add, a: 0, b: 2, c: 3 };
       const ast = await parseHost([], "if a : add a 1\nelif (add b 1) b\nelse c");
       const r = compileHost(env, ast);
-      console.log(r.code);
       r.exec().should.equal(2);
     });
 
@@ -374,7 +368,6 @@ describe("compile", () => {
       const env = { add, a: 0, b: -1, c: 5 };
       const ast = await parseHost([], "if a : add a 1\nelif (add b 1) b\nelse c");
       const r = compileHost(env, ast);
-      console.log(r.code);
       r.exec().should.equal(5);
     });
   });
@@ -505,7 +498,6 @@ describe("compile", () => {
     it("should work with nested expressions", async () => {
       const env = { add, f: "add" };
       const r = await execHost(env, "n => ' f n `a (f n)");
-      console.log(r.toString());
       r(1).should.eql([ "`", "`add", 1, "`a", ["`", "`add", 1]]);
       env.f = "add2";
       r(2).should.eql([ "`", "`add2", 2, "`a", ["`", "`add2", 2]]);
@@ -514,7 +506,6 @@ describe("compile", () => {
     it("should work with nested and ticked expressions", async () => {
       const env = { add, f: "add", m: "o" };
       const r = await execHost(env, "n => ' f n `a (` f n) (f m 'm `a)");
-      console.log(r.toString());
       r(1).should.eql([ "`", "`add", 1, "`a", ["`", "`f", "`n"], ["`", "`add", "`o", "``o", "`a"]]);
       env.f = "add2";
       env.m = "`p";
@@ -524,7 +515,6 @@ describe("compile", () => {
     it("should work with nested and ticked expressions deeper", async () => {
       const env = { add, f: "add", m: "o" };
       const r = await execHost(env, "n => ' f n `a (` f n (f n)) (f m 'm `a (f n))");
-      console.log(r.toString());
       r(1).should.eql([ "`", "`add", 1, "`a", ["`", "`f", "`n", ["`", "`f", "`n"]], ["`", "`add", "`o", "``o", "`a", ["`", "`add", 1]]]);
       env.f = "add2";
       env.m = "`p";

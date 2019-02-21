@@ -7,7 +7,9 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "lint": "tslint --fix -c tslint.json -p .",
+    "lint:ci": "tslint -c tslint.json -p ."
   },
   "repository": {
     "type": "git",

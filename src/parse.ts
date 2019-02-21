@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 import { isFunction } from "util";
-import { isExpr, isList, isNumber, last, range, skip, tick} from "./common";
+import { isExpr, isList, isNumber, last, range, skip, tick } from "./common";
 import * as common from "./common";
 import { apply, getName } from "./host";
 import { ParseFn, ParseInfo, parseInfo, ParseInfoOptions } from "./parseInfo";
@@ -25,7 +25,7 @@ function getParsers(stack) {
   return parsers;
 }
 
-export function parseHost(stack: any[], code: string, options: ParseInfoOptions= {}): Promise<any> {
+export function parseHost(stack: any[], code: string, options: ParseInfoOptions = {}): Promise<any> {
   code += "\n"; // add newline to code to easy in matching logic
   const pi = parseInfo(stack, code, options);
   pi.parsers = getParsers(stack);
@@ -36,12 +36,12 @@ export function parseHost(stack: any[], code: string, options: ParseInfoOptions=
   function implicitLogic(ast: any) {
     // if it's not a list were done
     if (!isList(ast)) {
-    return ast;
+      return ast;
     }
     delete ast.indent;
 
     // for each item in the list
-    for (let i = ast.length - 1; i >= 0 ; i--) {
+    for (let i = ast.length - 1; i >= 0; i--) {
       let subEx = ast[i];
       // convert implicit lists with one item to just the item
       if (isList(subEx) && subEx.length === 2 && subEx[0] === "`" && !subEx.explicit) { subEx = subEx[1]; }
@@ -97,7 +97,7 @@ export function parseHost(stack: any[], code: string, options: ParseInfoOptions=
       const parser = pi.parsers[iParser];
 
       parseProgress.then(() => apply(stack, parser, [pi]) as Promise<boolean | undefined>)
-      .then(next).catch(parseError);
+        .then(next).catch(parseError);
     };
     parseProgress.then(next).catch(parseError);
 
@@ -117,58 +117,47 @@ function parseSymbols(pi: ParseInfo) {
   const maybeSymbol = pi.peekWord();
 
   // undefined
-  // if (maybeSymbol.match(/^undefined[^a-zA-Z_0-9-]/)) {
   if (maybeSymbol === "undefined") {
     pi.i += 9;
     pi.clist.push(undefined);
     return true;
   }
   // null
-  // if(maybeSymbol.match(/^null[^a-zA-Z_0-9-]/)){
   if (maybeSymbol === "null") {
-      pi.i += 4;
-      pi.clist.push(null);
-      return true;
+    pi.i += 4;
+    pi.clist.push(null);
+    return true;
   }
   // true
-  // if(maybeSymbol.match(/^true[^a-zA-Z_0-9-]/)){
   if (maybeSymbol === "true") {
-      pi.i += 4;
-      pi.clist.push(true);
-      return true;
+    pi.i += 4;
+    pi.clist.push(true);
+    return true;
   }
   // false
-  // if(maybeSymbol.match(/^false[^a-zA-Z_0-9-]/)){
   if (maybeSymbol === "false") {
-      pi.i += 5;
-      pi.clist.push(false);
-      return true;
+    pi.i += 5;
+    pi.clist.push(false);
+    return true;
   }
   // tick
-  // if(maybeSymbol.match(/^`[^a-zA-Z?`]/)){
-  // if(maybeSymbol.match(/^`[^a-zA-Z?`']/)){
   if (maybeSymbol === "`") {
-      pi.i += 1;
-      pi.clist.push("`");
-      return true;
+    pi.i += 1;
+    pi.clist.push("`");
+    return true;
   }
   // quote
-  // if(maybeSymbol.match(/^'[^a-zA-Z?']/)){
-  // if(maybeSymbol.match(/^'[^a-zA-Z?`']/)){
   if (maybeSymbol === "'") {
-      pi.i += 1;
-      pi.clist.push("'");
-      return true;
+    pi.i += 1;
+    pi.clist.push("'");
+    return true;
   }
 
   // test for symbol (with optional leading quotes and ticks)
-  // var aSym:any = maybeSymbol.match(/^['`]*[a-zA-Z_][a-zA-Z_0-9-]*[^a-zA-Z?*&]/);
-  let aSym: any = maybeSymbol.match(/^['`]*[\$%a-zA-Z_][%a-zA-Z_0-9-]*/);
+  let aSym: any = maybeSymbol.match(/^['`]*[\$%a-zA-Z_][a-zA-Z_0-9-]*/);
   if (aSym) {
     aSym = aSym[0];
-    // aSym = aSym.substr(0,aSym.length-1);
     pi.i += aSym.length;
-    // if(aSym[0] !== "'") aSym = tick(aSym); pi.clist.push(aSym);
     pi.clist.push(tick(aSym));
     return true;
   }
@@ -181,7 +170,6 @@ function parseSymbols(pi: ParseInfo) {
   //     pi.clist.push(nmeta(meta));
   //     return callback(true);
   // }
-
 }
 
 function parseLists(pi: ParseInfo) {
@@ -190,36 +178,32 @@ function parseLists(pi: ParseInfo) {
 
   // open list
   if (c === "(") {
-      pi.newList(true);
-      pi.i++;
-      return true;
+    pi.newList(true);
+    pi.i++;
+    return true;
   }
-
   // close list
   if (c === ")") {
-      pi.endList(true);
-      pi.i++;
-      return true;
+    pi.endList(true);
+    pi.i++;
+    return true;
   }
-
   // item separator (whitespace that's not a newline) newlines are indents' domain
   if (c.match(/[^\S\n]/)) {
-      pi.i++;
-      return true;
+    pi.i++;
+    return true;
   }
-
   // comma
   if (c === ",") {
-    // @ts-ignore
-    if (pi.clist.length === 1 && !pi.commaWaiting) { // syntactic sugar for (, ...) === (list ...)
+    // @ts-ignore // syntactic sugar for (, ...) === (list ...)
+    if (pi.clist.length === 1 && !pi.commaWaiting) {
       pi.clist.push("`list");
       pi.i++;
       return true;
     }
     // @ts-ignore
     if (!pi.commaWaiting) {
-      // give other code a chance to see end list
-      // @ts-ignore
+      // @ts-ignore // give other code a chance to see end list
       pi.commaWaiting = true;
       pi.endList();
       return true;
@@ -236,10 +220,10 @@ function parseLists(pi: ParseInfo) {
 
   // colon
   if (c === ":") {
-      pi.i++;
-      pi.newList();
-      pi.clist.indent = pi.indent + 1;
-      return true;
+    pi.i++;
+    pi.newList();
+    pi.clist.indent = pi.indent + 1;
+    return true;
   }
 
   // bang
@@ -255,16 +239,10 @@ function parseLists(pi: ParseInfo) {
 
   // caret
   if (c === "^") {
-      pi.i++;
-      // if(pi.clist.length !== 1){
-      //     pi.endList();
-      //     pi.newList();
-      // }
-      // pi.clist.isCaret = true;
-      // return true;
-      pi.endList();
-      pi.indent = pi.clist.indent;
-      return true;
+    pi.i++;
+    pi.endList();
+    pi.indent = pi.clist.indent;
+    return true;
   }
 }
 

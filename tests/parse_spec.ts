@@ -16,7 +16,7 @@ describe("parseHost", () => {
   it("should parse only whitespaces", () => {
     parseHost([], "  \n \t \n ").then((ast) =>
       ast.should.eql([]));
-  });
+  });  
 
   it("should throw an error if no parsers are proceeding", () => {
     parseHost([], "☺").should.be

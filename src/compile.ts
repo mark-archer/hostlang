@@ -122,7 +122,7 @@ export function compileExport(refs: any[], stack: any[], expr: any[]) {
     }
   }
   if (!exportCtx) { throw new Error(`no export object found: ${expr.map(untick).join(" ")}`); }
-
+  
   const name = untick(expr[3]);
   if (exportCtx.exports[name] !== undefined || exportCtx[name] !== undefined) { throw new Error(`export already exists: ${name}`); }
   if (stack.find((scope) => scope[name] !== undefined)) { throw new Error(`export cannot be declared because something with that name already exists: ${name}`); }
@@ -310,7 +310,6 @@ export function compileExpr(refs: any[], stack: any[], expr: any): string {
 export function compileExprBlock(refs: any[], stack: any[], expr: any) {
   expr = untick(expr);
   if (expr[0] === "`do") { expr.shift(); }
-  expr;
   let code = `(function(_){`;
   stack = [...stack, {}];
   code += "";
@@ -324,7 +323,6 @@ export function compileExprBlock(refs: any[], stack: any[], expr: any) {
       exprCode = "_=" + compileExpr(refs, stack, i);
     }
     exprCode = `\n\t${exprCode};`;
-    exprCode;
     code += exprCode;
     return exprCode;
   });
@@ -356,8 +354,12 @@ function loadCommon(stack: any[]) {
   });
 
   if (!getName(stack, "dont_load_common")) {
+    // if (!stack.includes(common)) {
+    //   stack.push(common);
+    //   stack.push({});
+    // }
     Object.keys(common).forEach((key) => {
-      if (key === "_parsers") { return; }
+      if (["_parsers", "exports"].includes(key)) { return; }
       if (env[key] === undefined) { env[key] = common[key]; }
     });
   }
@@ -365,7 +367,6 @@ function loadCommon(stack: any[]) {
 
 export function compileHost(env: any, ast: any[], refs: any[]= []) {
   const stack: any[] = isList(env) ? [...env] : [env];
-  stack;
   if (isList(env)) { env = env[0] || {}; }
   stack[0] = env;
   env.env = env;
@@ -374,7 +375,6 @@ export function compileHost(env: any, ast: any[], refs: any[]= []) {
   let code = "function(_,env,";
   code += refs.map((v, i) => `r${i}`).join();
   code += `){\n\treturn ${innerCode}\n}`;
-  code;
   const f = js(code);
   const _ = getName(stack, "_");
   const exec = () => f.apply(null, [ _, env, ...refs]);

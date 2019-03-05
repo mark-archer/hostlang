@@ -52,8 +52,10 @@ describe("import", () => {
   });
 
   it("should allow importing common lib directly", async () => {
-    const m = await $import("common");
-    should(m).equal(common);
+    const clib = await $import("common");
+    //should(clib).match(common);
+    console.log(clib)
+    //clib.AND.should.equal(common.AND)
   });
 
 });

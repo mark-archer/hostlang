@@ -7,23 +7,29 @@ import { cleanCopyList } from "./utils";
 
 const moduleCache: any = {};
 export async function $import(path: string, options: any= {type: null}) {
-  // if(!fsPath.isAbsolute(path)) {
-  //   path = fsPath.resolve(process.cwd() + '/' + path);
-  //   path
-  //   let dir:any = path.split('/');
-  //   dir.pop();
-  //   dir = dir.join('/')
-  //   let ls = fs.readdirSync(dir)
-  //   ls
-  // }
-  // const wd = process.cwd()
-  // wd
-  // const projectDir = process.cwd()
-  // projectDir
-  if (path === "common") { return common; }
   if (moduleCache[path]) { return moduleCache[path]; }
+  
+  if (path === "common") { 
+    if (options && options.loadCommon) {
+      return await options.loadCommon(options);
+    }
+    //return common;
+
+    return await $import('./src/common.hl');
+
+    //const commonHl = await $import('./src/common.hl');
+    // Object.keys(common).map(key => {
+    //   if (commonHl[key] === undefined) commonHl[key] = common[key]
+    // });    
+    // return commonHl;
+    //const _common = {};
+    //Object.assign(_common, commonHl, common); // NOTE
+    //return _common;
+  }
+  
   if ((options.type && options.type.js) || path.toLowerCase().endsWith(".js")) {
-    const m = require(path);
+    // TODO require doesn't seem to treat path the same as fs.readFile
+    const m = await require(path); // NOTE the await here allows returning a promise which will resolve to a module
     moduleCache[path] = m;
     return m;
   }

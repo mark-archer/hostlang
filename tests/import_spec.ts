@@ -51,6 +51,14 @@ describe("import", () => {
     m1.a.should.equal(1);
   });
 
+  // it should allow circular references
+  it("it should allow overloading common functions", async () => {
+    const path = "./tests/host/AND.hl";
+    const m1 = await $import(path);    
+    m1.AND.should.equal(1);    
+    m1._AND.should.equal(common.AND);
+  });
+
   it("should allow importing common lib directly", async () => {
     const clib = await $import("common");
     //should(clib).match(common);

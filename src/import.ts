@@ -8,14 +8,14 @@ import { cleanCopyList } from "./utils";
 const moduleCache: any = {};
 export async function $import(path: string, options: any= {type: null}) {
   if (moduleCache[path]) { return moduleCache[path]; }
-  
+
   if (path === "common") { 
     if (options && options.loadCommon) {
       return await options.loadCommon(options);
     }
-    //return common;
+    return common;
 
-    return await $import('./src/common.hl');
+    //return await $import('./src/common.hl');
 
     //const commonHl = await $import('./src/common.hl');
     // Object.keys(common).map(key => {

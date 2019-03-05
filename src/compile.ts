@@ -45,6 +45,9 @@ export function compileSym(refs: any[], stack: any[], sym: string) {
       return sym;
     }
   }
+  if(!getName(stack, "dont_load_common") && common[sym]) {
+    return getRef(refs, common[sym])
+  }
   throw new Error(`${sym} is not defined`);
 }
 
@@ -117,7 +120,7 @@ export function compileExport(refs: any[], stack: any[], expr: any[]) {
   let exportCtx;
   for (let i = stack.length - 1; i >= 0; i--) {
     if (stack[i].exports !== undefined) {
-      exportCtx = stack[i];
+      exportCtx = stack[i];      
       break;
     }
   }
@@ -352,17 +355,6 @@ function loadCommon(stack: any[]) {
   Object.keys(defaultCompilers).forEach((key) => {
     env.compilers[key] = env.compilers[key] || defaultCompilers[key];
   });
-
-  if (!getName(stack, "dont_load_common")) {
-    // if (!stack.includes(common)) {
-    //   stack.push(common);
-    //   stack.push({});
-    // }
-    Object.keys(common).forEach((key) => {
-      if (["_parsers", "exports"].includes(key)) { return; }
-      if (env[key] === undefined) { env[key] = common[key]; }
-    });
-  }
 }
 
 export function compileHost(env: any, ast: any[], refs: any[]= []) {
@@ -385,7 +377,7 @@ export async function compileModule(env: any, ast: any[], refs: any[]= []) {
   if (isList(env)) { env = [...env]; } else { env = [env]; }
   if (env[0]) { env[0] = {...env[0]}; } else { env.push({}); }
   const exports: any = env[0].exports || {};
-  env[0].exports = exports;
+  env[0].exports = exports;  
   const r = compileHost(env, ast, refs);
   await r.exec(); // code has to be run to generate module
   return exports;

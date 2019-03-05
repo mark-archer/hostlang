@@ -847,9 +847,9 @@ describe("compile", () => {
       const env = {import: list};
       const r = compileHost(env, [["`", "`return", ['`', '`add', 1, 1]]]);
       linesJoinedShouldEqual(r.code, `
-        function(_,env,){
+        function(_,env,r0){
           return (function(_){
-            _=env["add"](1,1);return _;
+            _=r0(1,1);return _;
             return _;
           })(_);
         }

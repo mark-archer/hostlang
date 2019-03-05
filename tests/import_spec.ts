@@ -44,26 +44,28 @@ describe("import", () => {
     m1.should.equal(m2);
   });
 
-  // it should allow circular references
   it("it should allow circular references", async () => {
     const path = "./tests/host/circular.hl";
     const m1 = await $import(path);
-    m1.a.should.equal(1);        
+    m1.a.should.equal(1);            
   });
 
-  // it should allow circular references
   it("it should allow overloading common functions", async () => {
     const path = "./tests/host/AND.hl";
     const m1 = await $import(path);    
-    m1.AND.should.equal(1);    
+    m1.AND.should.equal(1);
     m1._AND.should.equal(common.AND);
   });
 
   it("should allow importing common lib directly", async () => {
     const clib = await $import("common");
-    //should(clib).match(common);
-    console.log(clib)    
-    //clib.AND.should.equal(common.AND)
+    clib.AND.should.equal(common.AND)
+    clib["common-lib-version"].should.be.ok()
+    // todo check it has combined parsers and compilers from both
+  });
+
+  it("should automaticaly make common.hl lib available when doing imports", async () => {
+    const clib = await $import("./tests/host/depends-on-common-hl.hl");    
   });
 
 });

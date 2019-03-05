@@ -1,6 +1,1 @@
-;;export var _parsers : list
-
-;;export var AND 1
-;;export var e exports
-
-export var zzz 1
+export var common-lib-version 1

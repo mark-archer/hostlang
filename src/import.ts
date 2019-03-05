@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as fsPath from "path";
 import * as common from "./common";
+import * as compile from "./compile";
 import { compileHost, compileModule } from "./compile";
 import { parseHost } from "./parse";
 import { cleanCopyList } from "./utils";
@@ -10,12 +11,12 @@ export async function $import(path: string, options: any= {type: null}) {
   if (moduleCache[path]) { return moduleCache[path]; }
 
   if (path === "common") { 
-    if (options && options.loadCommon) {
-      return await options.loadCommon(options);
+    if (options && options.importCommonLib) {
+      return await options.importCommonLib(options);
     }
-    const commonHl = await $import('./src/common.hl');
+    const commonLib = await $import('./src/common.hl');
     const _common = {};
-    Object.assign(_common, common, commonHl); // NOTE
+    Object.assign(_common, common, commonLib); // TODO combine parsers and compilers
     return _common;
   }
   
@@ -43,6 +44,8 @@ export async function $import(path: string, options: any= {type: null}) {
   const refs = [];
   let _module;
   try {
+    // @ts-ignore
+    compile.commonLib = await $import('./src/common.hl');
     _module = await compileModule(stack, ast, refs);
   } catch (err) {
     throw new Error(`import - failed to compile ${path}:\n${err}`);    

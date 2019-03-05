@@ -23,6 +23,7 @@ export function defineVar(stack: any[], sym: string) {
   ctx[sym] = null;
 }
 
+let commonLib = common;
 export function compileSym(refs: any[], stack: any[], sym: string) {
   sym = untick(sym);
   // tick logic
@@ -45,8 +46,8 @@ export function compileSym(refs: any[], stack: any[], sym: string) {
       return sym;
     }
   }
-  if(!getName(stack, "dont_load_common") && common[sym]) {
-    return getRef(refs, common[sym])
+  if(!getName(stack, "dont_load_common") && commonLib && commonLib[sym]) {
+    return getRef(refs, commonLib[sym])
   }
   throw new Error(`${sym} is not defined`);
 }
@@ -368,11 +369,13 @@ export function compileHost(env: any, ast: any[], refs: any[]= []) {
 }
 
 export async function compileModule(env: any, ast: any[], refs: any[]= []) {
+  let $import = env.import || getName(env, "import");
+  if ($import) commonLib = await $import("common"); // load commonLib if we have an import
   if (isList(env)) { env = [...env]; } else { env = [env]; }
   if (env[0]) { env[0] = {...env[0]}; } else { env.push({}); }
-  const exports: any = env[0].exports || {};
-  env[0].exports = exports;  
+  const $exports: any = env[0].exports || {};
+  env[0].exports = $exports;  
   const r = compileHost(env, ast, refs);
   await r.exec(); // code has to be run to generate module
-  return exports;
+  return $exports;
 }

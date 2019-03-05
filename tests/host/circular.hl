@@ -1,5 +1,2 @@
-;;%load "common"
 import "./tests/host/circular.hl"
 export var a 1
-
-add 1 zzz

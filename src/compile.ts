@@ -240,15 +240,11 @@ export function compileImport(refs: any[], stack: any[], expr: any[]) {
 
   let names;
   if (expr.length == 4) { names = untick(expr.pop()); }
-  expr;
   if (expr.length == 2) { expr = expr[1]; }
   expr.splice(1, 1);
-  expr;
   let code = compileSym(refs, stack, "import");
   const arg = compileExpr(refs, stack, expr[1]);
-  arg;
   code = `${code}(${arg})`;
-  code;
   if (names && names.length) {
     names = untick(names);
     if (!isArray(names)) { names = [names]; }
@@ -272,7 +268,6 @@ export function compileReturn(refs: any[], stack: any[], expr: any[]) {
 
 export function compileAwait(refs: any[], stack: any[], expr: any[]) {
   expr.splice(1, 1);
-  expr;
   if (expr.length == 2) { expr = expr[1]; }
   if (isArray(expr)) {
     // @ts-ignore
@@ -281,7 +276,6 @@ export function compileAwait(refs: any[], stack: any[], expr: any[]) {
 
   const code = `await ${compileExpr(refs, stack, expr)}`;
   last(stack)["%isAwait"] = true;
-  code;
   return code;
 }
 

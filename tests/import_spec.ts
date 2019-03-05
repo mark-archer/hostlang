@@ -30,7 +30,7 @@ describe("import", () => {
     });
   });
 
-  //// not workint with `yarn test` and covered by other tests
+  //// not working with `yarn test` and covered by other tests
   // it('should allow a module to load other modules', async () => {
   //   const path = './tests/host/export-load.hl';
   //   const module = await load(path)
@@ -48,7 +48,7 @@ describe("import", () => {
   it("it should allow circular references", async () => {
     const path = "./tests/host/circular.hl";
     const m1 = await $import(path);
-    m1.a.should.equal(1);
+    m1.a.should.equal(1);        
   });
 
   // it should allow circular references
@@ -62,7 +62,7 @@ describe("import", () => {
   it("should allow importing common lib directly", async () => {
     const clib = await $import("common");
     //should(clib).match(common);
-    console.log(clib)
+    console.log(clib)    
     //clib.AND.should.equal(common.AND)
   });
 

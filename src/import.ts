@@ -13,18 +13,10 @@ export async function $import(path: string, options: any= {type: null}) {
     if (options && options.loadCommon) {
       return await options.loadCommon(options);
     }
-    return common;
-
-    //return await $import('./src/common.hl');
-
-    //const commonHl = await $import('./src/common.hl');
-    // Object.keys(common).map(key => {
-    //   if (commonHl[key] === undefined) commonHl[key] = common[key]
-    // });    
-    // return commonHl;
-    //const _common = {};
-    //Object.assign(_common, commonHl, common); // NOTE
-    //return _common;
+    const commonHl = await $import('./src/common.hl');
+    const _common = {};
+    Object.assign(_common, common, commonHl); // NOTE
+    return _common;
   }
   
   if ((options.type && options.type.js) || path.toLowerCase().endsWith(".js")) {
@@ -53,7 +45,7 @@ export async function $import(path: string, options: any= {type: null}) {
   try {
     _module = await compileModule(stack, ast, refs);
   } catch (err) {
-    throw new Error(`import - failed to compile ${path}:\n${err}`);
+    throw new Error(`import - failed to compile ${path}:\n${err}`);    
   }
   return _module;
 }

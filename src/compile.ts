@@ -260,6 +260,13 @@ export function compileImport(refs: any[], stack: any[], expr: any[]) {
   return code;
 }
 
+export function compileReturn(refs: any[], stack: any[], expr: any[]) {
+  let valueExpr = expr[2];
+  if (valueExpr === undefined) valueExpr = '`_';
+  let valueCode = compileExpr(refs, stack, valueExpr);
+  return `${valueCode};return _`
+}
+
 export function compileAwait(refs: any[], stack: any[], expr: any[]) {
   expr.splice(1, 1);
   expr;
@@ -340,6 +347,7 @@ function loadCommon(stack: any[]) {
     "'": compileQuote,
     "await": compileAwait,
     "import": compileImport,
+    "return": compileReturn,
   };
   const env = stack[0];
   if (!env.compilers) { env.compilers = {}; }

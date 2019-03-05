@@ -815,6 +815,47 @@ describe("compile", () => {
       `);
     });
   });
+
+  describe("compileReturn", () => {
+    it("should return _ if not value specified", async () => {
+      const env = {import: list};
+      const r = compileHost(env, [["`", "`return"]]);
+      linesJoinedShouldEqual(r.code, `
+        function(_,env,){
+          return (function(_){
+            _=_;return _;
+            return _;
+          })(_);
+        }
+      `);
+    });
+    
+    it("should allow returning simple values", async () => {
+      const env = {import: list};
+      const r = compileHost(env, [["`", "`return", 1]]);
+      linesJoinedShouldEqual(r.code, `
+        function(_,env,){
+          return (function(_){
+            _=1;return _;
+            return _;
+          })(_);
+        }
+      `);
+    });
+
+    it("should allow returning expr results", async () => {
+      const env = {import: list};
+      const r = compileHost(env, [["`", "`return", ['`', '`add', 1, 1]]]);
+      linesJoinedShouldEqual(r.code, `
+        function(_,env,){
+          return (function(_){
+            _=env["add"](1,1);return _;
+            return _;
+          })(_);
+        }
+      `);
+    });
+  });
 });
 
 function linesJoinedShouldEqual(a: string, b: string) {

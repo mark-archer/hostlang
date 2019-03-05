@@ -4,7 +4,9 @@ import { meta } from "./typeInfo";
 import { js } from "./utils";
 
 function parseIndents(pi: ParseInfo) {
-  if (pi.clist.explicit) { return; }
+  if (pi.clist.explicit) { 
+    return; 
+  }
 
   const code = pi.code;
   let i = pi.i;
@@ -90,6 +92,18 @@ function parseMetaList(pi: ParseInfo) {
   pi.clist.isMetaList = true;
   return true;
 }
+
+const parseMetaListHost = `
+tabSize 2
+if(pi.peek! == "]")
+  pi.pop!
+  pi.endList!
+  var metaList pi.clist.pop!
+  metaList =: untick metaList
+  metaList =: apply meta metaList
+  pi.clist.push metaList
+  return true
+`
 
 function parseNumbers(pi: ParseInfo) {
 

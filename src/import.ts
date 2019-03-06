@@ -15,14 +15,28 @@ export async function $import(path: string, options: any= {type: null}) {
       return await options.importCommonLib(options);
     }
     const commonLib = await $import('./src/common.hl');
-    const _common = {};
-    Object.assign(_common, common, commonLib); // TODO combine parsers and compilers
+    const _common:any = {};
+    Object.assign(_common, common, commonLib); // NOTE common.hl takes precidence
+    console.log(_common.parsers);
+    // _common._parsers 
+    // for(let i = 0; i < Math.max(commonLib._parsers.length, common._parsers.length); i++) {
+    // }
+    // _common._parsers = [common._parsers, ...commonLib._parsers];
     return _common;
-  }
+  }  
+
+  // console.log(path)
+  // const absPath = fsPath.resolve(path)
+  // console.log(absPath);
+  // console.log({path, absPath})
+  // path = absPath
   
   if ((options.type && options.type.js) || path.toLowerCase().endsWith(".js")) {
-    // TODO require doesn't seem to treat path the same as fs.readFile
-    const m = await require(path); // NOTE the await here allows returning a promise which will resolve to a module
+    // NOTE: requiring a js file will always be with respoct to the location of the file require is in
+    // TODO pathRoot should probably be configurable
+    if(path.startsWith('./')) path = '.' + path;
+    const m = await require(path); // NOTE the await here allows returning a promise which will resolve to a module    
+    //const m = await require.main.require(path); // NOTE the await here allows returning a promise which will resolve to a module
     moduleCache[path] = m;
     return m;
   }
@@ -39,16 +53,16 @@ export async function $import(path: string, options: any= {type: null}) {
   try {
     ast = await parseHost(stack, code);
   } catch (err) {
-    throw new Error(`import - failed to parse ${path}:\n${err}`);
+    throw new Error(`import - failed to parse ${path}:\n${err}`);    
   }
   const refs = [];
   let _module;
   try {
-    // @ts-ignore
-    compile.commonLib = await $import('./src/common.hl');
+    // // @ts-ignore
+    // compile.commonLib = await $import('./src/common.hl');
     _module = await compileModule(stack, ast, refs);
   } catch (err) {
-    throw new Error(`import - failed to compile ${path}:\n${err}`);    
+    throw new Error(`import - failed to compile ${path}:\n${err}`);        
   }
   return _module;
 }

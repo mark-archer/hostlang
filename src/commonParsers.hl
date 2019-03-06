@@ -1,0 +1,13 @@
+(fn parseParens (pi) 
+    (cond
+        (== (pi.peek) "(" ) (
+            (log "saw parens")
+            ;(throw "boom")
+        )
+    )
+    null
+)
+
+(export var _parsers (list
+    parseParens
+))

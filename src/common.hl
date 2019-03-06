@@ -1,1 +1,13 @@
 export var common-lib-version 1
+
+var parsersHost: import "./src/commonParsers.hl"
+var parsersJS: import "./src/commonParsers.js"
+
+;*
+export var _parsers : list
+  ...parsersHost._parsers 
+  ...parsersJS._parsers
+*;
+
+export var _parsers parsersJS._parsers
+;;_parsers = _parsers.concat parsersHost._parsers

@@ -72,7 +72,6 @@ export function compileFn(refs: any[], stack: any[], expr: (any[] | Fn)) {
     const params = untick(args.shift()).map(untick);
     const body = args;
     fn = makeFn(name, params, undefined, body, stack);
-    fn;
   } else {
     // @ts-ignore
     fn = expr;
@@ -209,7 +208,6 @@ export function compileMacro(refs: any[], stack: any[], expr: any) {
 export function compileGetr(refs: any[], stack: any[], expr: any) {
   expr.shift();
   expr.shift();
-  expr;
   let code = compileExpr(refs, stack, expr.shift());
   while (expr.length) {
     const prop = compileExpr(refs, stack, untick(expr.shift()));
@@ -255,7 +253,6 @@ export function compileImport(refs: any[], stack: any[], expr: any[]) {
       code += untick(name) + ",";
     });
     code += "}=_";
-    code;
   }
   return code;
 }
@@ -265,6 +262,13 @@ export function compileReturn(refs: any[], stack: any[], expr: any[]) {
   if (valueExpr === undefined) valueExpr = '`_';
   let valueCode = compileExpr(refs, stack, valueExpr);
   return `${valueCode};return _`
+}
+
+export function compileThrow(refs: any[], stack: any[], expr: any[]) {
+  let valueExpr = expr[2];
+  if (valueExpr === undefined) valueExpr = '`_';
+  let valueCode = compileExpr(refs, stack, valueExpr);
+  return `${valueCode};throw _`
 }
 
 export function compileAwait(refs: any[], stack: any[], expr: any[]) {
@@ -344,6 +348,7 @@ function loadCommon(stack: any[]) {
     "await": compileAwait,
     "import": compileImport,
     "return": compileReturn,
+    "throw": compileThrow
   };
   const env = stack[0];
   if (!env.compilers) { env.compilers = {}; }
@@ -376,6 +381,7 @@ export async function compileModule(env: any, ast: any[], refs: any[]= []) {
   const $exports: any = env[0].exports || {};
   env[0].exports = $exports;  
   const r = compileHost(env, ast, refs);
+  console.log(r.code)
   await r.exec(); // code has to be run to generate module
   return $exports;
 }

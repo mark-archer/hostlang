@@ -5,14 +5,16 @@ import * as common from "./common";
 import { apply, getName } from "./host";
 import { ParseFn, ParseInfo, parseInfo, ParseInfoOptions } from "./parseInfo";
 import { js } from "./utils";
+import { $import } from "./import";
 
+let commonLib = common;
 function getParsers(stack) {
   const parsers: ParseFn[] = [
     parseSymbols, parseLists, parseStrings,
   ];
   const load_common = !getName(stack, "dont_load_common");
-  if (load_common && !stack.includes(common)) {
-    stack = [common, ...stack];
+  if (load_common && !stack.includes(commonLib)) {
+    stack = [commonLib, ...stack];
   }
   for (let i = stack.length - 1; i >= 0; i--) {
     const scope = stack[i];
@@ -25,7 +27,9 @@ function getParsers(stack) {
   return parsers;
 }
 
-export function parseHost(stack: any[], code: string, options: ParseInfoOptions = {}): Promise<any> {
+export async function parseHost(stack: any[], code: string, options: ParseInfoOptions = {}): Promise<any> {
+  const $import = getName(stack, "common")
+  if($import) commonLib = await $import("common")
   code += "\n"; // add newline to code to easy in matching logic
   const pi = parseInfo(stack, code, options);
   pi.parsers = getParsers(stack);

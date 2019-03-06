@@ -1,7 +1,0 @@
-(fn parseParens (pi) 
-  (cond
-    (== (pi.peek) "(" )
-      (log "saw parens")
-  )
-  null
-)

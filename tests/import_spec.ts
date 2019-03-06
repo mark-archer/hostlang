@@ -3,6 +3,7 @@ import * as path from "path";
 import { isFunction } from "util";
 import * as common from "../src/common";
 import { $import } from "../src/import";
+import { _parsers } from "../src/commonParsers";
 
 const should = require("should");
 
@@ -10,14 +11,14 @@ describe("import", () => {
   it("should take a file path and return a module", async () => {
     const path = "./tests/host/export-simple.hl";
     const module = await $import(path);
-    module.should.eql({a: 1});
+    module.should.eql({a: 1});    
   });
 
   // not working with `yarn test`
-  describe.skip("importing js files", () => {
+  describe("importing js files", () => {
     it("should work with host files that import js files", async () => {
-      const common = require("../src/common");
-      const module = await $import("./common.js", {type: "js"});
+      //const common = require("./src/common");
+      const module = await $import("./src/common.js", {type: "js"});
       should(common).equal(module);
       common.add.should.equal(module.add);
     });
@@ -25,17 +26,10 @@ describe("import", () => {
     it("should work with js files", async () => {
       const path = "./tests/host/import-js.hl";
       const module = await $import(path);
-      module.b.should.equal(6);
+      module.b.should.equal(6);            
       isFunction(module.add).should.equal(true);
     });
   });
-
-  //// not working with `yarn test` and covered by other tests
-  // it('should allow a module to load other modules', async () => {
-  //   const path = './tests/host/export-load.hl';
-  //   const module = await load(path)
-  //   module.should.eql({b:2})
-  // })
 
   it("it should return the same module object for subsequent load calls", async () => {
     const path = "./tests/host/export-simple.hl";
@@ -64,8 +58,27 @@ describe("import", () => {
     // todo check it has combined parsers and compilers from both
   });
 
-  it("should automaticaly make common.hl lib available when doing imports", async () => {
-    const clib = await $import("./tests/host/depends-on-common-hl.hl");    
+  it("should combine _parsers and ", async () => {
+    const clib = await $import("common");
+    clib.AND.should.equal(common.AND)    
+    clib["common-lib-version"].should.be.ok()
+    // todo check it has combined parsers and compilers from both
+    console.log(clib._parsers)     
   });
 
+  it("should allow throwing errors inside functions", async () => {
+    const clib = await $import("./tests/host/fn-throw.hl");
+    clib.testThrow.should.be.ok()
+    let err;
+    try {
+      clib.testThrow()
+    } catch (_err) {
+      err = _err
+    }
+    err.should.equal('error msg');
+  });
+
+  it("should automaticaly make common.hl lib available when doing imports", async () => {
+    const clib = await $import("./tests/host/depends-on-common-hl.hl");
+  });
 });

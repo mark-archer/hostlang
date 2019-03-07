@@ -2,7 +2,7 @@ import { $compile, compiler } from "../../src/meta/meta-compiler";
 import { expr } from "../../src/meta/meta-common";
 const should = require("should");
 
-describe.only("meta-compiler", () => {
+describe("meta-compiler", () => {
   describe("compiler", () => {
     it("should throw an error if overwritting an existing value", () => {
       
@@ -31,28 +31,30 @@ describe.only("meta-compiler", () => {
     });
   
     it("should allow overriding default behavior", async () => {
-      const stack = [{}]
-      compiler(stack, "noCompilerMatched", 
-        () => true,
-        (stack, ast) => { throw new Error(`No compiler matched: ${JSON.stringify(ast)}`)},
-        1000000
-      );    
+      const stack = [{
+        noCompilerMatched: compiler("noCompilerMatched", 
+          () => true,
+          (stack, ast) => { throw new Error(`No compiler matched: ${JSON.stringify(ast)}`)},
+          1000000
+        ),
+      }]      
       const ast = []
       await $compile(stack, ast).should.be.rejectedWith('No compiler matched: []')    
     })
   
     it("should allow multipule overrides to default behavior", async () => {
-      const stack = [{}]
-      compiler(stack, "noCompilerMatched", 
-        () => true,
-        (stack, ast) => { throw new Error(`No compiler matched: ${JSON.stringify(ast)}`)},
-        1000000
-      );
-      compiler(stack, "matchAnything", 
-        () => true,
-        (stack, ast) => "defaultMatch",
-        9999
-      );    
+      const stack = [{
+        noCompilerMatched: compiler("noCompilerMatched", 
+          () => true,
+          (stack, ast) => { throw new Error(`No compiler matched: ${JSON.stringify(ast)}`)},
+          1000000
+        ),
+        matchAnything: compiler("matchAnything", 
+          () => true,
+          (stack, ast) => "defaultMatch",
+          9999
+        )
+      }]
       const ast = []
       const r = await $compile(stack, ast)
       r.should.equal("defaultMatch")

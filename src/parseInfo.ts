@@ -33,7 +33,7 @@ export interface ParseInfoOptions {
   sourceMap?: boolean;
 }
 
-export function parseInfo(stack: any[], code: string, options: ParseInfoOptions= {}) {
+export function parseInfo(stack: any[], code: string, options: ParseInfoOptions = {}) {
   // options.tabSize = detectTabSize(stack, code, options);
   const root: any[] = [];
   const pi: ParseInfo = {
@@ -101,3 +101,16 @@ export function parseInfo(stack: any[], code: string, options: ParseInfoOptions=
   };
   return pi;
 }
+
+export function parseError (pi: ParseInfo, err: any) {
+  let lineNum = pi.getCurrentLineNum();
+  let colNum = pi.getCurrentColNum();
+  let line = pi.getLine(lineNum);
+  if (line.trim()) {
+    lineNum = pi.clist && pi.clist._sourceLine || lineNum;
+    colNum = pi.clist && pi.clist._sourceColumn || colNum;
+    line = pi.getLine(lineNum);
+  }
+  if (line && line.trim()) { line = "\n" + line; }
+  return new Error(`parse error at line ${lineNum}, col ${colNum}:${line}${"\n" + err}`);  
+};

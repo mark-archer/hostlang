@@ -1,6 +1,7 @@
 import { flatten, sortBy } from 'lodash'
 import { js } from "../utils";
 import { isExpr, sym, untick } from './meta-common';
+import { $eval, $apply } from './eval-apply';
 
 export function isCompiler(x:any) : boolean {
   return x && x.ICompiler === true;
@@ -17,7 +18,7 @@ interface ICompiler {
   apply: CompilerApplyFn
 }
 
-export function compiler(stack: any[], name:string, match: CompilerMatchFn, apply: CompilerApplyFn, priority: number = 1000): ICompiler {
+export function compiler(name:string, match: CompilerMatchFn, apply: CompilerApplyFn, priority: number = 1000): ICompiler {
   // create compiler
   const compiler: ICompiler = {
     ICompiler: true,
@@ -25,14 +26,7 @@ export function compiler(stack: any[], name:string, match: CompilerMatchFn, appl
     priority,
     match,
     apply
-  }
-  // check for overwritting existing value
-  const existingValue = stack[stack.length-1][name]
-  // if (!existingValue === undefined) {
-  //   throw new Error(`adding compiler "${name}" would overwrite an existing value: ${existingValue}`);
-  // }  
-  // add to stack
-  stack[stack.length-1][name] = compiler;
+  }  
   // return compiler
   return compiler
 }
@@ -46,32 +40,43 @@ const compilerCompiler: ICompiler = {
     // if(![5,6].includes(ast.length)) {
     //   throw new Error(`compiler expected 3-4 arguments, given: ${ast.length - 2}`)
     // }
-    const name = await $compile(stack, untick(ast[2]));
-    const match = await $compile(stack, ast[3]);
-    const apply = await $compile(stack, ast[4]);
+    const name = await $eval(stack, untick(ast[2]));
+    const match = await $eval(stack, ast[3]);
+    const apply = await $eval(stack, ast[4]);
     let priority = ast[5];
-    return compiler(stack, name, match, apply, priority);
+
+    const _compiler = compiler(name, match, apply, priority);
+    // check for overwritting existing value
+    // const existingValue = stack[stack.length-1][name]
+    // if (!existingValue === undefined) {
+    //   throw new Error(`adding compiler "${name}" would overwrite an existing value: ${existingValue}`);
+    // }  
+    // add to stack
+    stack[stack.length-1][name] = _compiler;
+    return _compiler
   }
 }
 
+// ast -> f
 export async function $compile(stack:any[], ast:any[]): Promise<any> {
   // get compilers
   let compilers: ICompiler[] = flatten(stack.map(ctx => Object.values(ctx).filter(isCompiler) as ICompiler[]));
+  compilers.push(compilerCompiler);
   compilers = sortBy(compilers, c => c.priority);
-  compilers.unshift(compilerCompiler);
     
   // get first matching compiler and apply it
   let compiler: ICompiler;
-  for(let c of compilers) {
-    const match = await c.match(stack, ast);
+  for(let _compiler of compilers) {
+    const match = await _compiler.match(stack, ast);
     if (match) {
-      compiler = c;
+      compiler = _compiler;
       break;
     }
   }
   if(compiler) {
-    return await compiler.apply(stack, ast);
-  }  
+    //return compiler.apply(stack, ast);
+    return $apply(stack, compiler, [stack, ast])
+  } 
   return ast
 }
 
@@ -82,6 +87,7 @@ export async function $compile(stack:any[], ast:any[]): Promise<any> {
 //   run: () => any
 // }
 
+// machine code -> value
 // export async function $build(code): Promise<IApp> {
 //   const apply: ((args:any[]) => any) = js(code);
 //   const refs = [] // [ _, env, ...refs]

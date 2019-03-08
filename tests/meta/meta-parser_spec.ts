@@ -10,11 +10,11 @@ describe.only("meta-parser", () => {
     r.should.eql([]);
   })
 
-  it('should have a default parser for basic lisp syntax', async () => {
+  it('should have a default parser for basic lisp syntax (parens, symbols, numbers)', async () => {
     const stack = [{}];
-    const code = `(f x)`;
+    const code = `(f x 1)`;
     const r = await $parse(stack, code)
-    cleanCopyList(r).should.eql([['`', '`f', '`x']])
+    cleanCopyList(r).should.eql([['`', '`f', '`x', 1]])
   })
 
   it('should throw an error if too many close parens are detected', async () => {
@@ -35,7 +35,7 @@ describe.only("meta-parser", () => {
     cleanCopyList(r).should.eql(['a', 'b', 'c'])
   })
 
-  // hilariously, I can't get this to fail - after trying for an hour I've decided to just leave it
+  // hilariously, I can't get lispParser to fail - after trying for an hour I've decided to just leave it
   // Note this means all parsers must have a priority less than 1000
   // it('should throw an error if no parsers are proceeding', async () => {
   
@@ -53,24 +53,22 @@ describe.only("meta-parser", () => {
     const stack: any[] = [{
       a: (stack, pi) => (pi.push("a"), false),
     }];
-    const code = `(parser b a)`;
+    const code = `(parser b a 1)`;
     const r = await $parse(stack, code)
     cleanCopyList(r).should.eql(['a'])
-    stack[0].b.should.be.ok();
-    stack[0].b.apply.should.equal(stack[0].a);
+    const bParser = stack[0].b
+    bParser.should.be.ok();
+    bParser.apply.should.equal(stack[0].a);
+    bParser.priority.should.equal(1);
   })
 
-  it('should allow defining functions at parsetime', async () => {
-    const stack: any[] = [{
-      //a: (stack, pi) => (pi.push("a"), false),
-    }];
-    const code = `(eval (fn a () 1))`;
-    const r = await $parse(stack, code)
-    isFunction(r[0]).should.equal(true)
-    r[0]().should.equal(1)
-    //(typeof r[0]).should.equal('function')
-    // cleanCopyList(r).should.eql(['a'])
-    // stack[0].b.should.be.ok();
-    // stack[0].b.apply.should.equal(stack[0].a);
-  })
+  // it('should allow defining functions at parsetime', async () => {
+  //   const stack: any[] = [{
+  //     //a: (stack, pi) => (pi.push("a"), false),
+  //   }];
+  //   const code = `(eval (fn a () 1))`;
+  //   const r = await $parse(stack, code)
+  //   isFunction(r[0]).should.equal(true)
+  //   r[0]().should.equal(1)    
+  // })
 });

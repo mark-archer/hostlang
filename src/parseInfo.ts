@@ -60,7 +60,7 @@ export function parseInfo(stack: any[], code: string, options: ParseInfoOptions 
     peekWord: (terminators?: RegExp, maxSymLength?: number) => {
       terminators = terminators || pi.terminators;
       let i = pi.i;
-      let s = pi.code[i] === undefined ? "" : pi.code[i];
+      let s = pi.code[i] || "";
       if (s.match(terminators)) { return s; }
       i++;
       while (i < pi.code.length) {

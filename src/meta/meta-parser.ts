@@ -50,25 +50,34 @@ const lispParser: IParser = {
   priority: 1001,
   apply: async (stack: any[], pi: ParseInfo) => {
     const word = pi.peekWord();
+    if (!word) return false;    
+    // open list
     if (word == "(") {
       pi.newList(true);
       pi.popWord();
       return true;
     }
+    // close list
     if (word == ")") {
       pi.endList(true);
       pi.popWord();
       return true;
     }
-    if (word.match(/[^\S\n]/)) {
+    // consume whitespace
+    if (word.match(/[^\S]/)) {
       pi.pop()
       return true;
     }
-    if(word.length) {
-      pi.push(tick(word));
+    // add number
+    if (!isNaN(Number(word))) {
+      pi.push(Number(word))
       pi.popWord();
-      return true;
-    }    
+      return true
+    }
+    // add symbol
+    pi.push(tick(word));
+    pi.popWord();
+    return true;
   }
 }
 
@@ -107,11 +116,10 @@ export async function $parse(stack: any[], code:string, options?: ParseInfoOptio
     throw parseError(pi, err);
   } 
 
-  // // if we're not at end of code throw error
-  // if (pi.i < pi.code.length) {
-  //   console.log(pi.i)
-  //   throw parseError(pi, "no parsers are proceeding");
-  // }
+  // if we're not at end of code throw error
+  if (pi.i < pi.code.length) {
+    throw parseError(pi, "no parsers are proceeding");
+  }
 
   return pi.root;
 }

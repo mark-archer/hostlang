@@ -31,7 +31,9 @@ export function $apply(stack:any[], f:any, args:any[]) {
   if (f && isFunction(f.apply)) {
     return f.apply(...args)
   }
-
+  
   // any other types of apply?  Maybe allow custom ones?
-  throw new Error(`cannot apply ${f} to ${args}`)
+  const fStr = (f && f.name) || (f && f.toString && f.toString()) || JSON.stringify(f, null, 2);
+  const argsStr = JSON.stringify(args, null, 2)
+  throw new Error(`cannot apply ${fStr} to ${argsStr}`)
 }

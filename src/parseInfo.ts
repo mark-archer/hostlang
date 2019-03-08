@@ -4,18 +4,19 @@ export type ParseFn = (pi: ParseInfo) => any;
 
 export interface ParseInfo {
   runtimeStack: any[];
-  parsers: ParseFn[];
+  //parsers: ParseFn[];
+  parsers: any[];
   code: string;
   i: number;
   indent: number;
   clist: any;
   root: any[];
   stack: any[];
-  peek: (n?: number) => string;
-  pop: (n?: number) => string;
   terminators: RegExp;
   maxSymLength: number;
   tabSize: number;
+  peek: (n?: number) => string;
+  pop: (n?: number) => string;
   peekWord: (terminators?: RegExp, maxSymLength?: number) => string;
   popWord: (terminators?: RegExp, maxSymLength?: number) => string;
   newList: (explicit?: boolean) => any;

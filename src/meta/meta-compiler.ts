@@ -9,7 +9,7 @@ export function isCompiler(x:any) : boolean {
 
 type CompilerApplyFn = (stack: any[], ci: ICompileInfo) => (boolean|Promise<boolean>)
 
-interface ICompiler {
+export interface ICompiler {
   ICompiler: true
   name: string
   priority: number

@@ -1,13 +1,13 @@
 import { flatten, sortBy, last } from 'lodash';
 import { ParseFn, ParseInfo, parseInfo, ParseInfoOptions, parseError } from "../parseInfo";
-import { isExpr, untick } from './meta-common';
+import { isExpr, untick, tick } from './meta-common';
 import { $eval, $apply } from './eval-apply';
 
 export function isParser(x:any) {
   return x && x.IParser
 }
 
-type ParserApplyFn = (stack: any[], pi: ParseInfo) => any
+type ParserApplyFn = (stack: any[], pi: ParseInfo) => (boolean|Promise<boolean>)
 
 interface IParser {
   IParser: true
@@ -25,21 +25,13 @@ export function parser(name: string, apply: ParserApplyFn, priority: number = 10
   }
 }
 
-export function getParsers(stack: any[]) {
-  // get parsers
-  let parsers: IParser[] = flatten(stack.map(ctx => Object.values(ctx).filter(isParser) as IParser[]));
-  parsers.push(parserParser);
-  parsers = sortBy(parsers, c => c.priority);
-  return parsers;
-}
-
 const parserParser: IParser = {
   IParser: true,
   name: "parserParser",
   priority: 1000,
   apply: async (stack: any[], pi: ParseInfo) => {
     let llist: any = last(pi.clist);
-    if (!isExpr(llist) && llist[1] === "`parser") {
+    if (isExpr(llist) && llist[1] === "`parser") {
       pi.clist.pop(); // remove from ast
       const name = await $eval(stack, untick(llist[2]));
       const apply = await $eval(stack, llist[3]);
@@ -48,7 +40,45 @@ const parserParser: IParser = {
       pi.parsers = getParsers(stack);
       return true;
     }
+    return false;
   }
+}
+
+const lispParser: IParser = {
+  IParser: true,
+  name: "lispParser",
+  priority: 1001,
+  apply: async (stack: any[], pi: ParseInfo) => {
+    const word = pi.peekWord();
+    if (word == "(") {
+      pi.newList(true);
+      pi.popWord();
+      return true;
+    }
+    if (word == ")") {
+      pi.endList(true);
+      pi.popWord();
+      return true;
+    }
+    if (word.match(/[^\S\n]/)) {
+      pi.pop()
+      return true;
+    }
+    if(word.length) {
+      pi.push(tick(word));
+      pi.popWord();
+      return true;
+    }    
+  }
+}
+
+export function getParsers(stack: any[]) {
+  // get parsers
+  let parsers: IParser[] = flatten(stack.map(ctx => Object.values(ctx).filter(isParser) as IParser[]));
+  parsers.push(parserParser);
+  parsers.push(lispParser);
+  parsers = sortBy(parsers, c => c.priority);
+  return parsers;
 }
 
 // source code -> ast
@@ -60,7 +90,7 @@ export async function $parse(stack: any[], code:string, options?: ParseInfoOptio
   // pi.newList(); // immediately start a new list to represent to first line of code
 
   try {
-    while (true) {      
+    while (true) {
       // get first matching compiler and apply it
       let matched = false;
       for(let parser of pi.parsers) {
@@ -77,10 +107,11 @@ export async function $parse(stack: any[], code:string, options?: ParseInfoOptio
     throw parseError(pi, err);
   } 
 
-  // if we're not at end of code throw error
-  if (pi.i < pi.code.length) {
-    throw parseError(pi, "no parsers are proceeding");
-  }
+  // // if we're not at end of code throw error
+  // if (pi.i < pi.code.length) {
+  //   console.log(pi.i)
+  //   throw parseError(pi, "no parsers are proceeding");
+  // }
 
   return pi.root;
 }

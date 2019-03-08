@@ -2,7 +2,7 @@ import { $compile, compiler, ICompileInfo } from "../../src/meta/meta-compiler";
 import { expr } from "../../src/meta/meta-common";
 const should = require("should");
 
-describe.only("meta-compiler", () => {
+describe("meta-compiler", () => {
   it("should return an empty string for an empty list", async () => {
     const r = await $compile([], [])
     r.code.should.equal("");

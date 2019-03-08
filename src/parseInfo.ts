@@ -15,6 +15,7 @@ export interface ParseInfo {
   terminators: RegExp;
   maxSymLength: number;
   tabSize: number;
+  push: (x: any) => any;
   peek: (n?: number) => string;
   pop: (n?: number) => string;
   peekWord: (terminators?: RegExp, maxSymLength?: number) => string;
@@ -46,19 +47,20 @@ export function parseInfo(stack: any[], code: string, options: ParseInfoOptions 
     clist: root,
     root,
     stack: [],
+    terminators: options.terminators || /[^\$%a-zA-Z0-9_`'-]/, // anything not allowed in names
+    maxSymLength: options.maxSymLength || 100,
+    tabSize: options.tabSize || 4,
+    push: (x: any) => pi.clist.push(x),
     peek: (n?: number) => pi.code.substr(pi.i, n || 1),
     pop: (n?: number) => {
       const s = pi.code.substr(pi.i, n || 1);
       pi.i += s.length;
       return s;
     },
-    terminators: options.terminators || /[^\$%a-zA-Z0-9_`'-]/, // anything not allowed in names
-    maxSymLength: options.maxSymLength || 100,
-    tabSize: options.tabSize || 4,
     peekWord: (terminators?: RegExp, maxSymLength?: number) => {
       terminators = terminators || pi.terminators;
       let i = pi.i;
-      let s = pi.code[i];
+      let s = pi.code[i] === undefined ? "" : pi.code[i];
       if (s.match(terminators)) { return s; }
       i++;
       while (i < pi.code.length) {

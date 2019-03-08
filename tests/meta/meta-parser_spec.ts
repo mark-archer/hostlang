@@ -35,9 +35,23 @@ describe.only("meta-parser", () => {
     cleanCopyList(r).should.eql(['a', 'b', 'c'])
   })
 
-  // hilariously, I can't get lispParser to fail - after trying for an hour I've decided to just leave it
-  // Note this means all parsers must have a priority less than 1000
   // it('should throw an error if no parsers are proceeding', async () => {
+  //  hilariously, I can't get this error to throw because lispParser will consume any text
+  //  after trying for an hour I've decided to just leave it and consider this a feature ha.
+  //  Note this means any parsers behind lispParser will only take effect after all text is consumed
+  //  to future self: this can probably be done by removing the lispParser with another parser, 
+  //      then adding another parser after that
+  // }
+
+  it('should only call parsers with a higher priority than lispParser after all text is consumed', async () => {
+    const stack = [{
+      a: parser("a", (stack, pi) => (pi.push("a"), false), 1002),      
+      b: parser("b", (stack, pi) => (pi.push("b"), false), 1),
+    }];
+    const code = `c`;
+    const r = await $parse(stack, code)
+    cleanCopyList(r).should.eql(['b', '`c', 'b', 'a'])
+  })
   
   it('should allow parsers to throw errors and give information when that happens', async () => {
     const stack = [{
@@ -61,14 +75,4 @@ describe.only("meta-parser", () => {
     bParser.apply.should.equal(stack[0].a);
     bParser.priority.should.equal(1);
   })
-
-  // it('should allow defining functions at parsetime', async () => {
-  //   const stack: any[] = [{
-  //     //a: (stack, pi) => (pi.push("a"), false),
-  //   }];
-  //   const code = `(eval (fn a () 1))`;
-  //   const r = await $parse(stack, code)
-  //   isFunction(r[0]).should.equal(true)
-  //   r[0]().should.equal(1)    
-  // })
 });

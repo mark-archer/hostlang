@@ -1,11 +1,8 @@
 import * as _ from "lodash";
 import * as uuid from "uuid";
-import * as commonParsers from "./commonParsers";
 import { apply, evalHost, evalHostBlock, evalSym, execHost, execHostInScope, getName } from "./host";
 import { Fn, IFieldInfo, IObjectInfo, isFn, isMeta, isObjectInfo, makeFn, TypeInfo } from "./typeInfo";
 import { copy, stringify } from "./utils";
-
-export const _parsers = commonParsers._parsers;
 
 export const {
   isString,

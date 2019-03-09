@@ -1,11 +1,253 @@
-import { isExpr, isList, isNumber, isSym, last, nvp, range, sym, untick } from "./common";
-import { ParseInfo } from "./parseInfo";
-import { meta } from "./typeInfo";
-import { js } from "./utils";
+import { range, isNumber, last } from "lodash";
+import { js } from "../utils";
+import { ParseInfoOptions, ParseInfo, parser, $parse } from "../meta/meta-parser";
+import { nameLookup, tick, untick, isSym, sym, isExpr } from "../meta/meta-common";
+import { nvp, isList } from "../common";
+
+export function parseHost(stack: any[], code: string, options: ParseInfoOptions = {}): Promise<any> {
+  const $import = nameLookup(stack, "common")
+  // if($import) commonLib = await $import("common")
+  code += "\n"; // add newline to code to ease matching logic
+  //const pi = parseInfo(stack, code, options);
+  // pi.parsers = getParsers(stack);
+
+  function init(pi: ParseInfo) {
+    // immediately start a new list to represent to first line of code
+    if (pi.i === 0 && pi.root.length === 0) {
+      pi.newList();
+      return true;
+    } 
+  }
+  const parseCtx = {
+    parseSymbols, parseLists, parseStrings,
+    parseIndents, //parseMetaList, 
+    parseNumbers, parseComments, parseNvp,
+    parseDots, parsePipes, parseIfElifElse, parseBasicOps, parseNew, parseTryCatch, parseFnArrow, parseSpread,
+    parseTabSize,
+    init
+  }
+  const parserNames = Object.keys(parseCtx);
+  Object.values(parseCtx).map((p, i) => parseCtx[parserNames[i]] = parser(parserNames[i], p, 900 - i))
+  //@ts-ignore
+  parseCtx.parserCleanup = parser("parserCleanup", parserCleanup, 1002);
+  stack = [parseCtx, ...stack] 
+  
+  return $parse(stack, code, options);
+}
+
+function parserCleanup(pi: ParseInfo) {    
+  function implicitLogic(ast: any) {
+    // if it's not a list were done
+    if (!isList(ast)) {
+      return ast;
+    }
+    delete ast.indent;
+
+    // for each item in the list
+    for (let i = ast.length - 1; i >= 0; i--) {
+      let subEx = ast[i];
+      // convert implicit lists with one item to just the item
+      //if (isList(subEx) && subEx.length === 2 && subEx[0] === "`" && !subEx.explicit) { subEx = subEx[1]; }
+      if (isExpr(subEx) && subEx.length === 2 && !subEx.explicit) { subEx = subEx[1]; }
+      ast[i] = implicitLogic(subEx);
+    }
+
+    // filter out empty lists
+    for (let i = ast.length - 1; i >= 0; i--) {
+      const item = ast[i];
+      if (isList(item) && item.length === 1 && !item.explicit && item[0] === "`") {
+        ast.splice(i, 1);
+      }
+    }
+    return ast;
+  }
+  pi.root = implicitLogic(pi.root);
+  return false;
+}
+
+function parseSymbols(pi: ParseInfo) {
+
+  // whitespace - consume and move on
+  if (pi.peek().match(/\s/)) {
+    pi.i++;
+    return true;
+  }
+
+  const maybeSymbol = pi.peekWord();
+
+  // undefined
+  if (maybeSymbol === "undefined") {
+    pi.i += 9;
+    pi.clist.push(undefined);
+    return true;
+  }
+  // null
+  if (maybeSymbol === "null") {
+    pi.i += 4;
+    pi.clist.push(null);
+    return true;
+  }
+  // true
+  if (maybeSymbol === "true") {
+    pi.i += 4;
+    pi.clist.push(true);
+    return true;
+  }
+  // false
+  if (maybeSymbol === "false") {
+    pi.i += 5;
+    pi.clist.push(false);
+    return true;
+  }
+  // tick
+  if (maybeSymbol === "`") {
+    pi.i += 1;
+    pi.clist.push("`");
+    return true;
+  }
+  // quote
+  if (maybeSymbol === "'") {
+    pi.i += 1;
+    pi.clist.push("'");
+    return true;
+  }
+
+  // test for symbol (with optional leading quotes and ticks)
+  let aSym: any = maybeSymbol.match(/^['`]*[\$%a-zA-Z_][a-zA-Z_0-9-]*/);
+  if (aSym) {
+    aSym = aSym[0];
+    pi.i += aSym.length;
+    pi.clist.push(tick(aSym));
+    return true;
+  }
+
+  // test for meta
+  // var meta:any = maybeSymbol.match(/^['`]*\??[a-zA-Z_][a-zA-Z_0-9-]*&?\*?\??/);
+  // if(meta){
+  //     meta = meta[0];
+  //     pi.i+= meta.length;
+  //     pi.clist.push(nmeta(meta));
+  //     return callback(true);
+  // }
+}
+
+function parseLists(pi: ParseInfo) {
+  // console.log('parselist');
+  const c = pi.peek();
+
+  // open list
+  if (c === "(") {
+    pi.newList(true);
+    pi.i++;
+    return true;
+  }
+  // close list
+  if (c === ")") {
+    pi.endList(true);
+    pi.i++;
+    return true;
+  }
+  // item separator (whitespace that's not a newline) newlines are indents' domain
+  if (c.match(/[^\S\n]/)) {
+    pi.i++;
+    return true;
+  }
+  // comma
+  if (c === ",") {
+    // @ts-ignore // syntactic sugar for (, ...) === (list ...)
+    if (pi.clist.length === 1 && !pi.commaWaiting) {
+      pi.clist.push("`list");
+      pi.i++;
+      return true;
+    }
+    // @ts-ignore
+    if (!pi.commaWaiting) {
+      // @ts-ignore // give other code a chance to see end list
+      pi.commaWaiting = true;
+      pi.endList();
+      return true;
+    }
+    // @ts-ignore
+    delete pi.commaWaiting;
+    pi.i++;
+    // @ts-ignore
+    const indent = last(pi.clist).indent;
+    pi.newList();
+    pi.clist.indent = indent;
+    return true;
+  }
+
+  // colon
+  if (c === ":") {
+    pi.i++;
+    pi.newList();
+    pi.clist.indent = pi.indent + 1;
+    return true;
+  }
+
+  // bang
+  if (c === "!") {
+    pi.i++;
+    const item = pi.clist.pop();
+    pi.newList(true);
+    pi.clist.isBang = true;
+    pi.clist.push(item);
+    pi.endList();
+    return true;
+  }
+
+  // caret
+  if (c === "^") {
+    pi.i++;
+    pi.endList();
+    pi.indent = pi.clist.indent;
+    return true;
+  }
+}
+
+function parseStrings(pi: ParseInfo) {
+  if (pi.code[pi.i] != '"') { return; }
+
+  const code = pi.code;
+  const i = pi.i;
+
+  let terminator = null;
+  if (code.substr(i, 8) === '"string/') { terminator = '/string"'; } else if (code[i] === '"' && code[i + 1] === "*") { terminator = '*"'; } else { terminator = '"'; }
+  pi.i += terminator.length;
+
+  if (terminator === '"') {
+    let txt = '"';
+    let iEnd = pi.i;
+    while (true) {
+      if (code.length <= iEnd) { throw new Error("parseStrings - did not find end quote: (" + terminator + ")"); }
+      if (code[iEnd] === "\\") {
+        txt += "\\" + code[iEnd + 1];
+        iEnd += 2;
+      } else if (code[iEnd] === "\n") {
+        txt += "\\n";
+        iEnd++;
+      } else {
+        txt += code[iEnd];
+        iEnd++;
+        if (code[iEnd - 1] === '"') { break; }
+      }
+    }
+    pi.i = iEnd;
+    txt = js(txt); // TODO maybe could use `with` here for template strings
+    pi.clist.push(txt);
+  } else {
+    const iEnd = code.indexOf(terminator, pi.i);
+    if (iEnd < pi.i) { throw new Error("parseStrings - did not find a matching terminator: (" + terminator + ")"); }
+    const text = code.substring(pi.i, iEnd);
+    pi.i += text.length + terminator.length;
+    pi.clist.push(text);
+  }
+  return true;
+}
 
 function parseIndents(pi: ParseInfo) {
-  if (pi.clist.explicit) { 
-    return; 
+  if (pi.clist.explicit) {
+    return;
   }
 
   const code = pi.code;
@@ -74,36 +316,24 @@ function parseIndents(pi: ParseInfo) {
   return true;
 }
 
-function parseMetaList(pi: ParseInfo) {
-  if (pi.peek() === "]") {
-    pi.i++;
-    pi.endList();
-    let metaList = pi.clist.pop();
-    metaList = untick(metaList);
-    metaList = meta.apply(null, metaList);
-    pi.clist.push(metaList);
-    return true;
-  }
+// function parseMetaList(pi: ParseInfo) {
+//   if (pi.peek() === "]") {
+//     pi.i++;
+//     pi.endList();
+//     let metaList = pi.clist.pop();
+//     metaList = untick(metaList);
+//     metaList = meta.apply(null, metaList);
+//     pi.clist.push(metaList);
+//     return true;
+//   }
 
-  if (pi.peek() !== "[") { return; }
-  pi.i++;
+//   if (pi.peek() !== "[") { return; }
+//   pi.i++;
 
-  pi.newList();
-  pi.clist.isMetaList = true;
-  return true;
-}
-
-const parseMetaListHost = `
-tabSize 2
-if(pi.peek! == "]")
-  pi.pop!
-  pi.endList!
-  var metaList pi.clist.pop!
-  metaList =: untick metaList
-  metaList =: apply meta metaList
-  pi.clist.push metaList
-  return true
-`
+//   pi.newList();
+//   pi.clist.isMetaList = true;
+//   return true;
+// }
 
 function parseNumbers(pi: ParseInfo) {
 
@@ -146,11 +376,11 @@ function parseComments(pi: ParseInfo) {
 
   // ;* *; - block comment
   if (code.substr(i, 2) === ";*") {
-      const iEnd = code.indexOf("*;", i + 2);
-      if (iEnd < i) { throw new Error("parseComments - did not find a matching terminator: *;"); }
-      comment = code.substring(i, iEnd + 2);
-      pi.i += comment.length;
-      return true;
+    const iEnd = code.indexOf("*;", i + 2);
+    if (iEnd < i) { throw new Error("parseComments - did not find a matching terminator: *;"); }
+    comment = code.substring(i, iEnd + 2);
+    pi.i += comment.length;
+    return true;
   }
 
   // else line comment
@@ -230,47 +460,47 @@ function parseDots(pi: ParseInfo) {
 function parsePipes(pi: ParseInfo) {
 
   if (pi.clist.pipeNext && pi.clist.length >= 2 && pi.peek() !== ".") { // if next value is dot things will be done differently
-      pi.clist.splice(2, 0, sym("_"));
-      delete pi.clist.pipeNext;
+    pi.clist.splice(2, 0, sym("_"));
+    delete pi.clist.pipeNext;
   }
 
   if (pi.clist.minLength == 4 && pi.clist.length >= 3) {
-      pi.clist.splice(3, 0, sym("_"));
-      // delete pi.clist.pipeThird;
+    pi.clist.splice(3, 0, sym("_"));
+    // delete pi.clist.pipeThird;
   }
 
   // >>> pipe to second arg
   if (pi.code.substr(pi.i, 3) === ">>>") {
-      pi.i += 3;
-      const indent = pi.clist.indent;
-      pi.endList();
-      pi.newList();
-      pi.clist.minLength = 4;
-      pi.clist.indent = indent;
-      return true;
+    pi.i += 3;
+    const indent = pi.clist.indent;
+    pi.endList();
+    pi.newList();
+    pi.clist.minLength = 4;
+    pi.clist.indent = indent;
+    return true;
   }
 
   // >> pipe to first arg
   if (pi.code.substr(pi.i, 2) === ">>") {
-      pi.i += 2;
-      const indent = pi.clist.indent;
-      pi.endList();
-      pi.newList();
-      pi.clist.indent = indent;
-      pi.clist.pipeNext = true;
-      return true;
+    pi.i += 2;
+    const indent = pi.clist.indent;
+    pi.endList();
+    pi.newList();
+    pi.clist.indent = indent;
+    pi.clist.pipeNext = true;
+    return true;
   }
 
   // << evalBlock
   if (pi.code.substr(pi.i, 2) === "<<") {
-      pi.i += 2;
-      // if(pi.clist.length != 1){
-      if (last(pi.clist) !== "`") {
-          pi.newList();
-          pi.clist.indent = pi.indent + 1;
-      }
-      pi.clist.push(sym("evalBlock"));
-      return true;
+    pi.i += 2;
+    // if(pi.clist.length != 1){
+    if (last(pi.clist) !== "`") {
+      pi.newList();
+      pi.clist.indent = pi.indent + 1;
+    }
+    pi.clist.push(sym("evalBlock"));
+    return true;
   }
 
   // -> pipe to varSet
@@ -352,38 +582,38 @@ function parseBasicOps(pi: ParseInfo) {
   let word = pi.peek(2);
 
   function opFound(op: string) {
-      pi.i += word.length;
+    pi.i += word.length;
 
-      // infix logic - if past second position (first sym) treat as infix
-      if (pi.clist.length > 1) {
+    // infix logic - if past second position (first sym) treat as infix
+    if (pi.clist.length > 1) {
 
-          // first check for getr; o.i = 1
-          if (op === "set" && pi.clist.length == 2 && pi.clist[1].length && pi.clist[1][1] === sym("getr")) {
-              pi.clist.splice(1, 0, sym("set"));
-              return true;
-          }
-
-          // 1 + 2 * 3
-          // ===
-          // (* 3 (+ 1 2))
-          pi.endList(); // end whatever the last expression is
-          let lexpr = pi.clist.pop(); // remove the last expression
-          const indent = lexpr.indent;
-          const explicit = lexpr.explicit;
-          // convert implicity lists of 1 or 0 items to just the item or undefined
-          // if(!lexpr.explicit && lexpr.length < 1 || (lexpr[0] === '`' && lexpr.length < 2))
-          if (lexpr.length < 2 || (lexpr[0] === "`" && lexpr.length < 3)) {
-              lexpr = untick(lexpr)[0];
-          }
-          pi.newList(); // start a new expression
-          pi.clist.indent = indent; // it's still at the same level
-          pi.clist.explicit = explicit;
-          pi.clist.push(sym(op)); // make this op the function of the expression
-          pi.clist.push(lexpr); // make the last expression the first argument of the current one
-      } else {
-          pi.clist.push(sym(op));
+      // first check for getr; o.i = 1
+      if (op === "set" && pi.clist.length == 2 && pi.clist[1].length && pi.clist[1][1] === sym("getr")) {
+        pi.clist.splice(1, 0, sym("set"));
+        return true;
       }
-      return true;
+
+      // 1 + 2 * 3
+      // ===
+      // (* 3 (+ 1 2))
+      pi.endList(); // end whatever the last expression is
+      let lexpr = pi.clist.pop(); // remove the last expression
+      const indent = lexpr.indent;
+      const explicit = lexpr.explicit;
+      // convert implicity lists of 1 or 0 items to just the item or undefined
+      // if(!lexpr.explicit && lexpr.length < 1 || (lexpr[0] === '`' && lexpr.length < 2))
+      if (lexpr.length < 2 || (lexpr[0] === "`" && lexpr.length < 3)) {
+        lexpr = untick(lexpr)[0];
+      }
+      pi.newList(); // start a new expression
+      pi.clist.indent = indent; // it's still at the same level
+      pi.clist.explicit = explicit;
+      pi.push(sym(op)); // make this op the function of the expression
+      pi.push(lexpr); // make the last expression the first argument of the current one
+    } else {
+      pi.push(sym(op));
+    }
+    return true;
   }
 
   // && || == !=  <= >=
@@ -423,7 +653,7 @@ function parseNew(pi: ParseInfo) {
   }
   pi.clist.push(sym("new"));
   // pi.newList();// automatically start a new list after that as that's a the most common scenario
-
+  return true;
 }
 
 function parseTryCatch(pi: ParseInfo) {
@@ -509,11 +739,6 @@ function parseTabSize(pi: ParseInfo) {
   if (isExpr(llist) && llist[1] === "`tabSize") {
     pi.clist.pop();
     pi.tabSize = Number(llist[2]); // MAYBE: this should be an expression evaluated
+    return true;
   }
 }
-
-export const _parsers = [
-  parseIndents, parseMetaList, parseNumbers, parseComments, parseNvp,
-  parseDots, parsePipes, parseIfElifElse, parseBasicOps, parseNew, parseTryCatch, parseFnArrow, parseSpread,
-  parseTabSize,
-];

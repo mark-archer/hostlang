@@ -4,7 +4,7 @@ import { isFunction } from "../../src/common";
 
 const should = require("should");
 
-describe.only("meta-parser", () => {
+describe("meta-parser", () => {
   it('should return an empty array for a blank string', async () => {
     const r = await $parse([], '')
     r.should.eql([]);
@@ -26,9 +26,9 @@ describe.only("meta-parser", () => {
 
   it('should detect parsers in the stack and sort them by priority', async () => {
     const stack = [{
-      c: parser("c", (stack, pi) => (pi.push("c"), false), 3),
-      a: parser("a", (stack, pi) => (pi.push("a"), false), 1),
-      b: parser("b", (stack, pi) => (pi.push("b"), false), 2),
+      c: parser("c", pi => (pi.push("c"), false), 3),
+      a: parser("a", pi => (pi.push("a"), false), 1),
+      b: parser("b", pi => (pi.push("b"), false), 2),
     }];
     const code = ``;
     const r = await $parse(stack, code)
@@ -41,12 +41,13 @@ describe.only("meta-parser", () => {
   //  Note this means any parsers behind lispParser will only take effect after all text is consumed
   //  to future self: this can probably be done by removing the lispParser with another parser, 
   //      then adding another parser after that
-  // }
+  //      also it should probably be easier to just remove all default parsers
+  // })
 
   it('should only call parsers with a higher priority than lispParser after all text is consumed', async () => {
     const stack = [{
-      a: parser("a", (stack, pi) => (pi.push("a"), false), 1002),      
-      b: parser("b", (stack, pi) => (pi.push("b"), false), 1),
+      a: parser("a", pi => (pi.push("a"), false), 1002),      
+      b: parser("b", pi => (pi.push("b"), false), 1),
     }];
     const code = `c`;
     const r = await $parse(stack, code)
@@ -55,7 +56,7 @@ describe.only("meta-parser", () => {
   
   it('should allow parsers to throw errors and give information when that happens', async () => {
     const stack = [{
-      c: parser("c", (stack, pi) => {
+      c: parser("c", pi => {
         throw new Error('test')
       })
     }];
@@ -65,7 +66,7 @@ describe.only("meta-parser", () => {
 
   it('should allow adding parsers at parsetime', async () => {
     const stack: any[] = [{
-      a: (stack, pi) => (pi.push("a"), false),
+      a: pi => (pi.push("a"), false),
     }];
     const code = `(parser b a 1)`;
     const r = await $parse(stack, code)

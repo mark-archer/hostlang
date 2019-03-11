@@ -1,5 +1,5 @@
 import { clone, isExpr, isJS, isList, isNvp, isSym, INvp, promiseAll, tick, unquote, untick, without } from "./common";
-import { parseHost } from "./parse";
+import { parseHost } from "./host/host-parser";
 import { ParseInfoOptions } from "./parseInfo";
 import { Fn, IParamInfo, isFn, isMeta, validate } from "./typeInfo";
 import { copy } from "./utils";

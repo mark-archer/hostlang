@@ -3,6 +3,7 @@ import { js } from "../utils";
 import { ParseInfoOptions, ParseInfo, parser, $parse } from "../meta/meta-parser";
 import { nameLookup, tick, untick, isSym, sym, isExpr } from "../meta/meta-common";
 import { nvp, isList } from "../common";
+import { meta } from "../typeInfo";
 
 export function parseHost(stack: any[], code: string, options: ParseInfoOptions = {}): Promise<any> {
   const $import = nameLookup(stack, "common")
@@ -20,16 +21,18 @@ export function parseHost(stack: any[], code: string, options: ParseInfoOptions 
   }
   const parseCtx = {
     parseSymbols, parseLists, parseStrings,
-    parseIndents, //parseMetaList, 
+    parseIndents, parseMetaList, 
     parseNumbers, parseComments, parseNvp,
     parseDots, parsePipes, parseIfElifElse, parseBasicOps, parseNew, parseTryCatch, parseFnArrow, parseSpread,
     parseTabSize,
-    init
+    init    
   }
   const parserNames = Object.keys(parseCtx);
   Object.values(parseCtx).map((p, i) => parseCtx[parserNames[i]] = parser(parserNames[i], p, 900 - i))
-  //@ts-ignore
+  // @ts-ignore
   parseCtx.parserCleanup = parser("parserCleanup", parserCleanup, 1002);
+  // @ts-ignore
+  parseCtx.exclude_default_parsers = true;
   stack = [parseCtx, ...stack] 
   
   return $parse(stack, code, options);
@@ -316,24 +319,24 @@ function parseIndents(pi: ParseInfo) {
   return true;
 }
 
-// function parseMetaList(pi: ParseInfo) {
-//   if (pi.peek() === "]") {
-//     pi.i++;
-//     pi.endList();
-//     let metaList = pi.clist.pop();
-//     metaList = untick(metaList);
-//     metaList = meta.apply(null, metaList);
-//     pi.clist.push(metaList);
-//     return true;
-//   }
+function parseMetaList(pi: ParseInfo) {
+  if (pi.peek() === "]") {
+    pi.i++;
+    pi.endList();
+    let metaList = pi.clist.pop();
+    metaList = untick(metaList);
+    metaList = meta.apply(null, metaList);
+    pi.clist.push(metaList);
+    return true;
+  }
 
-//   if (pi.peek() !== "[") { return; }
-//   pi.i++;
+  if (pi.peek() !== "[") { return; }
+  pi.i++;
 
-//   pi.newList();
-//   pi.clist.isMetaList = true;
-//   return true;
-// }
+  pi.newList();
+  pi.clist.isMetaList = true;
+  return true;
+}
 
 function parseNumbers(pi: ParseInfo) {
 

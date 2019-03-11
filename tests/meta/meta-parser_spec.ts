@@ -24,6 +24,13 @@ describe("meta-parser", () => {
       .rejectedWith(`parse error at line 1, col 1:\n)\nError: clist is undefined - probably too many close parens ')'`)
   })
 
+  it('should throw an error if not enough close parens are detected', async () => {
+    const stack = [{}];
+    const code = `((`;
+    await $parse(stack, code).should.be
+      .rejectedWith(`parse error at line 1, col 1:\n((\nparser did not end on root list, probably missing right parens ")"`)
+  })
+
   it('should detect parsers in the stack and sort them by priority', async () => {
     const stack = [{
       c: parser("c", pi => (pi.push("c"), false), 3),
@@ -35,14 +42,14 @@ describe("meta-parser", () => {
     cleanCopyList(r).should.eql(['a', 'b', 'c'])
   })
 
-  // it('should throw an error if no parsers are proceeding', async () => {
-  //  hilariously, I can't get this error to throw because lispParser will consume any text
-  //  after trying for an hour I've decided to just leave it and consider this a feature ha.
-  //  Note this means any parsers behind lispParser will only take effect after all text is consumed
-  //  to future self: this can probably be done by removing the lispParser with another parser, 
-  //      then adding another parser after that
-  //      also it should probably be easier to just remove all default parsers
-  // })
+  it('should allow a flag to not include the default parsers', async () => {
+    const stack = [{
+      exclude_default_parsers: true     
+    }];
+    const code = `a`;
+    await $parse(stack, code).should.be
+      .rejectedWith(`parse error at line 1, col 1:\na\nno parsers are proceeding`)
+  })
 
   it('should only call parsers with a higher priority than lispParser after all text is consumed', async () => {
     const stack = [{

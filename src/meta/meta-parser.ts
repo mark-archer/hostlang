@@ -1,5 +1,5 @@
 import { flatten, sortBy, last } from 'lodash';
-import { isExpr, untick, tick } from './meta-common';
+import { isExpr, untick, tick, nameLookup } from './meta-common';
 import { $eval, $apply } from './eval-apply';
 
 export function isParser(x:any) {
@@ -84,8 +84,10 @@ const lispParser: IParser = {
 export function getParsers(stack: any[]) {
   // get parsers
   let parsers: IParser[] = flatten(stack.map(ctx => Object.values(ctx).filter(isParser) as IParser[]));
-  parsers.push(parserParser);
-  parsers.push(lispParser);
+  if (!nameLookup(stack, "exclude_default_parsers")) {
+    parsers.push(parserParser);
+    parsers.push(lispParser);
+  }
   parsers = sortBy(parsers, c => c.priority);
   parsers
   return parsers;
@@ -112,6 +114,10 @@ export async function $parse(stack: any[], code:string, options?: ParseInfoOptio
   } catch (err) {
     throw parseError(pi, err);
   } 
+
+  if (pi.stack.length > 1) { 
+    throw parseError(pi, 'parser did not end on root list, probably missing right parens ")"'); 
+  }
 
   // if we're not at end of code throw error
   if (pi.i < pi.code.length) {

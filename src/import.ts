@@ -3,18 +3,18 @@ import * as fsPath from "path";
 import * as common from "./common";
 import * as compile from "./compile";
 import { compileHost, compileModule } from "./compile";
-import { parseHost } from "./parse";
+import { parseHost } from "./host/host-parser";
 import { cleanCopyList } from "./utils";
 
 const moduleCache: any = {};
-export async function $import(path: string, options: any= {type: null}) {
+export async function $import_old(path: string, options: any= {type: null}) {
   if (moduleCache[path]) { return moduleCache[path]; }
 
   if (path === "common") { 
     if (options && options.importCommonLib) {
       return await options.importCommonLib(options);
     }
-    const commonLib = await $import('./src/common.hl');
+    const commonLib = await $import_old('./src/common.hl');
     const _common:any = {};
     Object.assign(_common, common, commonLib); // NOTE common.hl takes precidence
     console.log(_common.parsers);
@@ -48,7 +48,7 @@ export async function $import(path: string, options: any= {type: null}) {
       resolve(code);
     }),
   ));
-  const stack = [{import: $import, exports}];
+  const stack = [{import: $import_old, exports}];
   let ast: any;
   try {
     ast = await parseHost(stack, code);

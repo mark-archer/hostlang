@@ -1,6 +1,4 @@
 import * as _ from "lodash";
-import { EQ } from "../../src/common";
-import { $import } from "../../src/import";
 import { parseHost } from "../../src//host/host-parser";
 import { cleanCopyList } from "../../src/utils";
 import { parser, ParseInfo } from "../../src/meta/meta-parser";
@@ -186,8 +184,8 @@ describe("parseHost", () => {
       .rejectedWith("parse error at line 1, col 1:\n)\nError: clist is undefined - probably too many close parens ')'"),
     );
 
-    it("should throw an error when there are too many open parens", () =>
-      parseHost([], "(").should.be
+    it("should throw an error when there are too many open parens", async () =>
+      await parseHost([], "(").should.be
         .rejectedWith('parse error at line 2, col 1:\nparser did not end on root list, probably missing right parens ")"'),
     );
 
@@ -996,8 +994,8 @@ export fn parseSmiley (pi)
     });
   });
 
-  describe("parseTime exectution", () => {
-    it.skip("should allow custom parsers", async () => {
+  describe.skip("parseTime exectution", () => {
+    it("should allow custom parsers", async () => {
       let firstCall = true;
       const testParser = (pi: ParseInfo) => {
         if (firstCall) {
@@ -1017,19 +1015,19 @@ export fn parseSmiley (pi)
       ast.should.eql([ [ "`", "`list", 1, 2 ] ]);
     });
 
-    it("should allow calling %load to load modules at parsetime", async () => {
-      const scope = [{ import: $import }];
-      const ast = await parseHost(scope, '%load "./tests/host/export-simple.hl"\n, 1 2').then(cleanCopyList);
-      scope.length.should.equal(2);
-      scope[1].should.eql({a: 1});
-      ast.should.eql([ [ "`", "`list", 1, 2 ] ]);
-    });
+    // it("should allow calling %load to load modules at parsetime", async () => {
+    //   const scope = [{ import: $import }];
+    //   const ast = await parseHost(scope, '%load "./tests/host/export-simple.hl"\n, 1 2').then(cleanCopyList);
+    //   scope.length.should.equal(2);
+    //   scope[1].should.eql({a: 1});
+    //   ast.should.eql([ [ "`", "`list", 1, 2 ] ]);
+    // });
 
-    it("should allow update parsers after %load", async () => {
-      const scope = [{ import: $import, EQ }];
-      const ast = await parseHost(scope, '%load "./tests/host/parseSmiley.hl"\n, 1 ☺').then(cleanCopyList);
-      scope.length.should.equal(2);
-      ast.should.eql([ [ "`", "`list", 1, "Smiley!" ] ]);
-    });
+    // it("should allow update parsers after %load", async () => {
+    //   const scope = [{ import: $import, EQ }];
+    //   const ast = await parseHost(scope, '%load "./tests/host/parseSmiley.hl"\n, 1 ☺').then(cleanCopyList);
+    //   scope.length.should.equal(2);
+    //   ast.should.eql([ [ "`", "`list", 1, "Smiley!" ] ]);
+    // });
   });
 });

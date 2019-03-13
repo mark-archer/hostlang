@@ -10,7 +10,7 @@ export function nameLookup(stack: any[], name: string) {
 export const isList = isArray;
 
 export function sym(s: string) {
-  if (!isSym(s)) { s = tick(s); }
+  if (isString(s) && !isSym(s)) { s = tick(s); }
   return s;
 }
 
@@ -19,7 +19,7 @@ export function isSym(x: any) {
 }
 
 export function expr(...args) {
-  return ['`', ...args.map(tick)]
+  return ['`', ...args.map(sym)]
 }
 
 export function isExpr(x: any) {

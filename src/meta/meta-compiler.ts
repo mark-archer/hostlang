@@ -1,5 +1,4 @@
 import { flatten, sortBy, range, clone, isError } from 'lodash'
-import { js } from "../utils";
 import { isExpr, sym, untick, isList } from './meta-common';
 import { $eval, $apply } from './eval-apply';
 
@@ -7,7 +6,7 @@ export function isCompiler(x:any) : boolean {
   return x && x.ICompiler === true;
 }
 
-type CompilerApplyFn = (stack: any[], ci: ICompileInfo) => (boolean|Promise<boolean>)
+export type CompilerApplyFn = (ci: ICompileInfo) => (boolean|Promise<boolean>)
 
 export interface ICompiler {
   ICompiler: true
@@ -30,7 +29,8 @@ const compilerCompiler: ICompiler = {
   ICompiler: true,
   name: "compilerCompiler",
   priority: 1000,
-  apply: async (stack: any[], ci: ICompileInfo) => {
+  apply: async (ci: ICompileInfo) => {
+    const stack = ci.stack;
     const ast = ci.peek();
     if (!(isExpr(ast) && ast[1] === sym("compiler"))) return;
     ci.pop();
@@ -47,12 +47,18 @@ const compilerCompiler: ICompiler = {
 export interface ICompileInfo {
   compilers: ICompiler[];
   stack: any[];
+  refs: any[];
+  refNames: any[];
+  compileStack: any[];
   ast: any;
+  codeLeft: string;
+  codeRight: string;
   code: string;
   i: number;
   tabSize: number;
   indent: number;
   push: (code: string, indent?: number) => any;
+  pushRight: (code: string, indent?: number) => any;
   peek: () => any;
   pop: () => any;
   //getCurrentLineNum: () => number;
@@ -61,8 +67,11 @@ export interface ICompileInfo {
 
 export function compileInfo(stack: any[], ast: any, options: any = {}): ICompileInfo {
   const ci = {
+    stack,
     compilers: getCompilers(stack),
-    stack: [...stack],
+    refs: options.refs || [],
+    refNames: options.refNames || [],
+    compileStack: options.compileStack || [{}],
     ast,
     i: 0,
     codeLeft: "", 
@@ -78,8 +87,24 @@ export function compileInfo(stack: any[], ast: any, options: any = {}): ICompile
       code = code.split('\n').map(l => indentStr + l).join('\n');
       ci.codeLeft += code;
     },
+    pushRight: (code: string, indent: number = 0) => {
+      let indentTot = ci.indent + indent;
+      if (indentTot < 0) indentTot = 0;
+      let indentStr = range(ci.tabSize).map(() => ' ').join(''); 
+      indentStr = range(indentTot).map(() => indentStr).join('');
+      code = code.split('\n').map(l => indentStr + l).join('\n');
+      ci.codeRight = code + ci.codeRight;
+    },
     peek: () => clone(ci.ast[ci.i]),
-    pop: () => (ci.i++, clone(ci.ast[ci.i-1]))
+    pop: () => (ci.i++, clone(ci.ast[ci.i-1])),
+    getRef: (item, name?: string) => {
+      if (!ci.refs.includes(item)) {
+        ci.refs.push(item);
+        ci.refNames.push(name);
+      }
+      const i = ci.refs.indexOf(item);
+      return ci.refNames[i] || `r${i}`;
+    }
   };
   return ci;
 }
@@ -90,21 +115,6 @@ export function getCompilers(stack:any[]) {
   compilers.push(compilerCompiler);
   compilers = sortBy(compilers, c => c.priority);  
   return compilers;
-}
-
-export function compileError(ci: ICompileInfo, err) {
-  //let lineNum = pi.getCurrentLineNum();
-  //let colNum = pi.getCurrentColNum();
-  //let line = pi.getLine(lineNum);
-  // if (line.trim()) {
-  //   lineNum = pi.clist && pi.clist._sourceLine || lineNum;
-  //   colNum = pi.clist && pi.clist._sourceColumn || colNum;
-  //   line = pi.getLine(lineNum);
-  // }
-  //if (line && line.trim()) { line = "\n" + line; }
-  //return new Error(`parse error at line ${lineNum}, col ${colNum}:${line}${"\n" + err}`);  
-  if (isError(err)) return err;
-  return new Error(String(err))
 }
 
 // ast -> machine code
@@ -118,7 +128,7 @@ export async function $compile(stack:any[], ast:any, options: any = {}) {
       // keep calling compilers until one returns true
       let matched = false;
       for(let compiler of ci.compilers) {
-        matched = await $apply(stack, compiler, [stack, ci]);
+        matched = await $apply(stack, compiler, [ci]);
         if (matched) break;
       }
       if (matched) continue;
@@ -138,23 +148,13 @@ export async function $compile(stack:any[], ast:any, options: any = {}) {
 
   // if we're not at the end of AST so throw an error
   if (ci.i < ci.ast.length) {
-    throw compileError(ci, "no compilers are proceeding");
+    throw compileError(ci, `no compilers are proceeding: ${ci.peek()}`);
   }
 
   return ci;
 }
 
-// interface IApp {
-//   code: string
-//   refs: any[]
-//   apply: (refs:any[]) => any
-//   run: () => any
-// }
-
-// machine code -> f
-// export async function $build(code): Promise<IApp> {
-//   const apply: ((args:any[]) => any) = js(code);
-//   const refs = [] // [ _, env, ...refs]
-//   const run = () => apply.apply(null, refs);
-//   return { code, refs, apply, run };
-// }
+export function compileError(ci: ICompileInfo, err) {
+  if (isError(err)) return err;
+  return new Error(String(err))
+}

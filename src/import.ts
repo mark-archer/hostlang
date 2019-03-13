@@ -3,7 +3,7 @@ import * as fsPath from "path";
 import * as common from "./common";
 import * as compile from "./compile";
 import { compileHost, compileModule } from "./compile";
-import { parseHost } from "./host/host-parser";
+import { parseHost } from "./host-parser";
 import { cleanCopyList } from "./utils";
 
 const moduleCache: any = {};

@@ -1,7 +1,7 @@
 import * as _ from "lodash";
-import { parseHost } from "../../src//host/host-parser";
-import { cleanCopyList } from "../../src/utils";
-import { parser, ParseInfo } from "../../src/meta/meta-parser";
+import { parseHost } from "../src/host-parser";
+import { cleanCopyList } from "../src/utils";
+import { parser, ParseInfo } from "../src/meta/meta-parser";
 
 const should = require("should");
 
@@ -9,7 +9,7 @@ describe("parseHost", () => {
 
   it("should parse empty strings", async () => {
     await parseHost([], "").then((ast) => ast.should.eql([]));
-  });
+  });  
 
   it("should parse only whitespaces", async () => {
     await parseHost([], "  \n \t \n ").then((ast) =>

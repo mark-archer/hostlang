@@ -59,6 +59,9 @@ export function compileVar(refs: any[], stack: any[], expr: any) {
   const valueExpr = expr.length === 4 ? expr[3] : null;
   const assignUnderscore = valueExpr !== "`_";
   const r = `let ${varRef}${assignUnderscore && "=_" || ""}=${compileExpr(refs, stack, valueExpr)}`;
+  
+  // above 2 lines should probably just below, lots of logic just to avoid name=_=_;
+  // const r = `let ${varRef}=_=${compileExpr(refs, stack, valueExpr)}`;
   return r;
 }
 

@@ -1,7 +1,6 @@
-import { readFileSync } from "fs";
 import { add, list } from "../src/common";
 import * as common from "../src/common";
-import { compileExpr, compileExprBlock, compileFn, compileHost, compileMacro, compileModule, compileSet, compileSym, defineVar } from "../src/compile";
+import { compileExpr, compileDo, compileFn, compileJs, compileMacro, compileJsModule, compileSet, compileSym, defineVar } from "../src/js-compiler-v2";
 //import { $import } from "../src/import";
 import { parseHost } from "../src/host-parser";
 import { Fn, objectInfo } from "../src/typeInfo";
@@ -12,11 +11,11 @@ const should = require("should");
 async function execHost(env: any, code: string) {
   let ast = await parseHost([env], code);
   ast = cleanCopyList(ast);
-  const r = compileHost(env, ast);
+  const r = await compileJs([env], ast);
   return r.exec();
 }
 
-describe("compile", () => {
+describe.only("js-compiler-v2", () => {
   describe("defineVar", () => {
     it("should error if var already exists", () => {
       should(() => defineVar([{a: 1}], "a")).throw("var already exists: a");
@@ -97,7 +96,7 @@ describe("compile", () => {
     //   Object.keys(stack[0]).includes('myFn').should.equal(true)
     // })
 
-    it("should compile parameter names", () => {
+    it.only("should compile parameter names", async () => {
       const refs: any[] = [];
       const stack: any[] = [{}, { add }, { a: 1 }];
       const fn: Fn = {
@@ -107,7 +106,7 @@ describe("compile", () => {
         } ],
         body: [ [ "`", "`add", "`n", 1 ] ],
       };
-      const r = compileFn(refs, stack, fn);
+      const r = await compileFn(refs, stack, fn);
       linesJoinedShouldEqual(r, `
         function(n){
           let _=null;
@@ -122,7 +121,7 @@ describe("compile", () => {
       const exports: any = {};
       const env = { add, exports };
       const ast = await parseHost([common], "n => () => n + 1");
-      const c = compileHost(env, ast);
+      const c = await compileJs([env], ast);
       const f = c.exec();
       const f1 = f(1);
       const f2 = f(2);
@@ -136,7 +135,7 @@ describe("compile", () => {
       const exports: any = {};
       const env = { add, exports, a: 1 };
       const ast = await parseHost([], "n => () => n + a");
-      const c = compileHost(env, ast);
+      const c = await compileJs([env], ast);
       const f = c.exec();
       const f1 = f(1);
       const f2 = f(2);
@@ -153,7 +152,7 @@ describe("compile", () => {
     it("should reference imported values as references", async () => {
       const env = { a: 1 };
       const ast = await parseHost([], "() => a");
-      const c = compileHost(env, ast);
+      const c = await compileJs([env], ast);
       const f = c.exec();
       f().should.equal(1);
       env.a = 2;
@@ -163,7 +162,7 @@ describe("compile", () => {
     it("should reference imported functions as references", async () => {
       const env = { a: 1, add };
       const ast = await parseHost([], "() => a + 1");
-      const c = compileHost(env, ast);
+      const c = await compileJs([env], ast);
       const f = c.exec();
       f().should.equal(2);
       env.a = 2;
@@ -173,7 +172,7 @@ describe("compile", () => {
     it("should allow calling functions that have just been declared", async () => {
       const env = { a: 1, add };
       const ast = await parseHost([], "add2 () => a + 1\n add2!");
-      const c = compileHost(env, ast);
+      const c = await compileJs([env], ast);
       const f = c.exec();
       f.should.equal(2);
     });
@@ -181,7 +180,7 @@ describe("compile", () => {
     it("should allow calling functions that have just been declared", async () => {
       const env = { a: 1, add };
       const ast = await parseHost([], "add2 () => a + 1\n () => add2!");
-      const c = compileHost(env, ast);
+      const c = await compileJs([env], ast);
       const f = c.exec();
       f().should.equal(2);
       env.a = 2;
@@ -212,7 +211,7 @@ describe("compile", () => {
       let r = compileExpr(refs, stack, lst);
       linesJoinedShouldEqual(r, `r0`);
       const env = { list: (...args) => args, lst };
-      r = await execHost(env, ", 1 2 lst");
+      r = await execHost([env], ", 1 2 lst");
       r.should.eql([1, 2, lst]);
       r[2].should.equal(lst);
     });
@@ -226,11 +225,11 @@ describe("compile", () => {
   });
 
   describe("compileExprBlock", () => {
-    it("should work with references and values", () => {
+    it("should work with references and values", async () => {
       const refs: any[] = [];
       const env = {};
       const stack: any[] = [env, { add }, { a: 1 }];
-      const r = compileExprBlock(refs, stack, [["`", "`add", "`a", 1], ["`", "`add", "`_", 2]]);
+      const r = await compileDo(refs, stack, [["`", "`add", "`a", 1], ["`", "`add", "`_", 2]]);
       linesJoinedShouldEqual(r, `
         (function(_){
           _=add(a,1);
@@ -242,22 +241,22 @@ describe("compile", () => {
 
     it("should work with do blocks", async () => {
       const env = { add, a: 1 };
-      const r: any = await execHost(env, "do (add a 1) (add _ 2)");
+      const r: any = await execHost([env], "do (add a 1) (add _ 2)");
       r.should.equal(4);
     });
   });
 
   describe("compileHost", () => {
-    it("should work with references and values", () => {
+    it("should work with references and values", async () => {
       const env = { add, a: 1 };
-      const r = compileHost(env, [["`", "`add", "`a", 1]]);
+      const r = await compileJs([env], [["`", "`add", "`a", 1]]);
       r.exec().should.equal(2);
     });
 
     it("should work with function declarations", async () => {
       const env = { add, a: 1 };
       const ast = await parseHost([], "() => add a 1");
-      const r = compileHost(env, ast);
+      const r = await compileJs([env], ast);
       const f = r.exec();
       f().should.equal(2);
       linesJoinedShouldEqual(r.code, `
@@ -284,7 +283,7 @@ describe("compile", () => {
     it("should work with expressions with null", async () => {
       const ast = [ null ];
       const env = { list };
-      const r = await compileHost(env, ast);
+      const r = await compileJs([env], ast);
       r.code.should.equal("function(_,env,){\n\treturn (function(_){\n\t_=null;\n\treturn _;\n})(_);\n}");
       should(r.exec()).equal(null);
     });
@@ -294,21 +293,21 @@ describe("compile", () => {
     it("should allow declaring variables with no value", async () => {
       const env = { };
       const ast = await parseHost([], "var a");
-      const r = compileHost(env, ast);
+      const r = await compileJs([env], ast);
       should(r.exec()).be.null();
     });
 
     it("should allow declaring variables with values", async () => {
       const env = { };
       const ast = await parseHost([], "var a 1");
-      const r = compileHost(env, ast);
+      const r = await compileJs([env], ast);
       r.exec().should.equal(1);
     });
 
     it("should allow declaring variables with expressions", async () => {
       const env = { add };
       const ast = await parseHost([], "var a : add 1 1");
-      const r = compileHost(env, ast);
+      const r = await compileJs([env], ast);
       r.exec().should.equal(2);
     });
   });
@@ -317,14 +316,14 @@ describe("compile", () => {
     it("should allow assigning values to variable names", async () => {
       const env = { add, a: 1 };
       const ast = await parseHost([], "a = 2");
-      const r = compileHost(env, ast);
+      const r = await compileJs([env], ast);
       r.exec().should.equal(2);
     });
 
     it("should allow assigning expression results to variable names", async () => {
       const env = { add, a: 1, b: 0 };
       const ast = await parseHost([], "a =: add a 1\nb");
-      const r = compileHost(env, ast);
+      const r = await compileJs([env], ast);
       r.exec().should.equal(0);
     });
 
@@ -339,35 +338,35 @@ describe("compile", () => {
     it("should work with a single if statement", async () => {
       const env = { add, a: 1 };
       const ast = await parseHost([], "if a : add a 1");
-      const r = compileHost(env, ast);
+      const r = await compileJs([env], ast);
       r.exec().should.equal(2);
     });
 
     it("should compile an if statements body as a block", async () => {
       const env = { add, a: 1 };
       const ast = await parseHost([], "if a : add a 1, add _ 3");
-      const r = compileHost(env, ast);
+      const r = await compileJs([env], ast);
       r.exec().should.equal(5);
     });
 
     it("should work with if-else statement", async () => {
       const env = { add, a: 0 };
       const ast = await parseHost([], "if a : add a 1\nelse 3");
-      const r = compileHost(env, ast);
+      const r = await compileJs([env], ast);
       r.exec().should.equal(3);
     });
 
     it("should transform `cond into if-else statments", async () => {
       const env = { add, a: 0, b: 2, c: 3 };
       const ast = await parseHost([], "if a : add a 1\nelif (add b 1) b\nelse c");
-      const r = compileHost(env, ast);
+      const r = await compileJs([env], ast);
       r.exec().should.equal(2);
     });
 
     it("should transform `cond into if-else statments", async () => {
       const env = { add, a: 0, b: -1, c: 5 };
       const ast = await parseHost([], "if a : add a 1\nelif (add b 1) b\nelse c");
-      const r = compileHost(env, ast);
+      const r = await compileJs([env], ast);
       r.exec().should.equal(5);
     });
   });
@@ -376,14 +375,14 @@ describe("compile", () => {
     it("should throw an error if exports object does not exist", async () => {
       const env = { };
       const ast = await parseHost([], "export var a 1");
-      should(() => compileHost(env, ast)).throw("no export object found: ` export var a 1");
+      should(() => compileJs([env], ast)).throw("no export object found: ` export var a 1");
     });
 
     it("should allow declaring variables that will be exported", async () => {
       const exports: any = {};
       const env = { add, exports };
       const ast = await parseHost([], "export var a 1");
-      const r = compileHost(env, ast);
+      const r = await compileJs([env], ast);
       r.exec().should.equal(1);
       exports.a.should.equal(1);
     });
@@ -392,7 +391,7 @@ describe("compile", () => {
       const exports: any = {};
       const env = { add, exports };
       const ast = await parseHost([], "export add1 n => n + 1");
-      const r = compileHost(env, ast);
+      const r = await compileJs([env], ast);
       const add1 = r.exec();
       add1(1).should.equal(2);
       exports.add1.should.equal(add1);
@@ -401,25 +400,25 @@ describe("compile", () => {
     it("should throw an error if export already exists", async () => {
       const env = { exports: {} };
       const ast = await parseHost([], "export var a 1\nexport var a");
-      should(() => compileHost(env, ast)).throw("export already exists: a");
+      should(() => compileJs([env], ast)).throw("export already exists: a");
     });
 
     it("should throw an error if trying to export a variable that already exists", async () => {
       const env = { exports: {} };
       const ast = await parseHost([], "var a 1\nexport var a");
-      should(() => compileHost(env, ast)).throw("export cannot be declared because something with that name already exists: a");
+      should(() => compileJs([env], ast)).throw("export cannot be declared because something with that name already exists: a");
     });
 
     it("should throw an error if trying to declare a variable that is already an export", async () => {
       const env = { exports: {} };
       const ast = await parseHost([], "export var a\nvar a 1");
-      should(() => compileHost(env, ast)).throw("var already exists as an export: a");
+      should(() => compileJs([env], ast)).throw("var already exists as an export: a");
     });
 
     it("should throw an error if not used with var or fn", async () => {
       const env = { exports: {} };
       const ast = await parseHost([], "export a");
-      should(() => compileHost(env, ast)).throw("export called without `var or `fn");
+      should(() => compileJs([env], ast)).throw("export called without `var or `fn");
     });
   });
 
@@ -429,7 +428,7 @@ describe("compile", () => {
       const exports: any = {};
       const env = { add, exports };
       const ast = await parseHost([], "`a");
-      const r = compileHost(env, ast);
+      const r = await compileJs([env], ast);
       r.exec().should.equal("`a");
     });
 
@@ -437,7 +436,7 @@ describe("compile", () => {
       const exports: any = {};
       const env = { add, exports };
       const ast = await parseHost([], "` add a b");
-      const r = compileHost(env, ast);
+      const r = await compileJs([env], ast);
       cleanCopyList(r.exec()).should.eql([ "`", "`add", "`a", "`b" ]);
     });
 
@@ -455,13 +454,13 @@ describe("compile", () => {
   describe("compileQuote", () => {
     it("should allow a symbol to be evaluated and returned as a symbol", async () => {
       const env = { f: "add" };
-      const r = await execHost(env, "'f");
+      const r = await execHost([env], "'f");
       r.should.equal("`add");
     });
 
     it("should evaluated symbols at runtime", async () => {
       const env = { f: "add" };
-      const r = await execHost(env, "() => 'f");
+      const r = await execHost([env], "() => 'f");
       r().should.equal("`add");
       env.f = "add2";
       r().should.equal("`add2");
@@ -469,19 +468,19 @@ describe("compile", () => {
 
     it("should allow an expression to be evaluated and then returned as unevaluated", async () => {
       const env = { add, f: "add", n: 1  };
-      const r = await execHost(env, "' f n 1");
+      const r = await execHost([env], "' f n 1");
       r.should.eql([ "`", "`add", 1, 1 ]);
     });
 
     it("should allow partial evaulations", async () => {
       const env = { add, f: "add", n: 1  };
-      const r = await execHost(env, "' f n `a");
+      const r = await execHost([env], "' f n `a");
       r.should.eql([ "`", "`add", 1, "`a" ]);
     });
 
     it("should evaluate expressions at runtime", async () => {
       const env = { add, f: "add", n: 1  };
-      const r = await execHost(env, "() => ' f n `a");
+      const r = await execHost([env], "() => ' f n `a");
       r().should.eql([ "`", "`add", 1, "`a" ]);
       env.f = "add2";
       r().should.eql([ "`", "`add2", 1, "`a" ]);
@@ -489,7 +488,7 @@ describe("compile", () => {
 
     it("should evaluate expressions at runtime", async () => {
       const env = { add, f: "add" };
-      const r = await execHost(env, "n => ' f n `a");
+      const r = await execHost([env], "n => ' f n `a");
       r(1).should.eql([ "`", "`add", 1, "`a" ]);
       env.f = "add2";
       r(2).should.eql([ "`", "`add2", 2, "`a" ]);
@@ -497,7 +496,7 @@ describe("compile", () => {
 
     it("should work with nested expressions", async () => {
       const env = { add, f: "add" };
-      const r = await execHost(env, "n => ' f n `a (f n)");
+      const r = await execHost([env], "n => ' f n `a (f n)");
       r(1).should.eql([ "`", "`add", 1, "`a", ["`", "`add", 1]]);
       env.f = "add2";
       r(2).should.eql([ "`", "`add2", 2, "`a", ["`", "`add2", 2]]);
@@ -505,7 +504,7 @@ describe("compile", () => {
 
     it("should work with nested and ticked expressions", async () => {
       const env = { add, f: "add", m: "o" };
-      const r = await execHost(env, "n => ' f n `a (` f n) (f m 'm `a)");
+      const r = await execHost([env], "n => ' f n `a (` f n) (f m 'm `a)");
       r(1).should.eql([ "`", "`add", 1, "`a", ["`", "`f", "`n"], ["`", "`add", "`o", "``o", "`a"]]);
       env.f = "add2";
       env.m = "`p";
@@ -514,7 +513,7 @@ describe("compile", () => {
 
     it("should work with nested and ticked expressions deeper", async () => {
       const env = { add, f: "add", m: "o" };
-      const r = await execHost(env, "n => ' f n `a (` f n (f n)) (f m 'm `a (f n))");
+      const r = await execHost([env], "n => ' f n `a (` f n (f n)) (f m 'm `a (f n))");
       r(1).should.eql([ "`", "`add", 1, "`a", ["`", "`f", "`n", ["`", "`f", "`n"]], ["`", "`add", "`o", "``o", "`a", ["`", "`add", 1]]]);
       env.f = "add2";
       env.m = "`p";
@@ -540,7 +539,7 @@ describe("compile", () => {
     it("should allow calling macro functions", async () => {
       const $myMacro = () => [ "`", "`add", 1, 1 ];
       const env = { add, $myMacro };
-      const r = await execHost(env, "$myMacro!");
+      const r = await execHost([env], "$myMacro!");
       r.should.equal(2);
     });
 
@@ -553,7 +552,7 @@ describe("compile", () => {
         }
       };
       const env = { add, $myMacro };
-      const r = await execHost(env, "$myMacro 5");
+      const r = await execHost([env], "$myMacro 5");
       r.should.equal(5);
     });
 
@@ -642,19 +641,19 @@ describe("compile", () => {
   describe("compileGetr", () => {
     it("should compile getr", async () => {
       const env = { obj: {a: 1} };
-      const r = await execHost(env, `obj.a`);
+      const r = await execHost([env], `obj.a`);
       r.should.equal(1);
     });
 
     it("should compile multipule getrs", async () => {
       const env = { obj: {a: 1, b: { c: 2 }}};
-      const r = await execHost(env, `obj.b.c`);
+      const r = await execHost([env], `obj.b.c`);
       r.should.equal(2);
     });
 
     it("should work in function position", async () => {
       const env = { list: (...args) => args, add1: (i) => i + 1 };
-      const r = await execHost(env, `, 1 2 3\n_.map add1`);
+      const r = await execHost([env], `, 1 2 3\n_.map add1`);
       r.should.eql([2, 3, 4]);
     });
   });
@@ -662,14 +661,14 @@ describe("compile", () => {
   describe("compileSetr", () => {
     it("should compile setr", async () => {
       const env = { obj: {a: 1, b: { c: 1 }}};
-      const r = await execHost(env, `obj.a = 2`);
+      const r = await execHost([env], `obj.a = 2`);
       r.should.equal(2);
       env.obj.a.should.equal(2);
     });
 
     it("should compile multipule setrs", async () => {
       const env = { obj: {a: 1, b: { c: 1 }}};
-      const r = await execHost(env, `obj.b.c = 2`);
+      const r = await execHost([env], `obj.b.c = 2`);
       r.should.equal(2);
       env.obj.b.c.should.eql(2);
     });
@@ -678,12 +677,12 @@ describe("compile", () => {
   describe("compileLoop", () => {
     it("should compile loops", async () => {
       const env = { list: (...args) => args, add1: (i) => i + 1 };
-      const r = await execHost(env, `, 1 2 3\n_.map add1`);
+      const r = await execHost([env], `, 1 2 3\n_.map add1`);
       r;
     });
   });
 
-  describe("compileModule", () => {
+  describe("compileJsModule", () => {
     it("should return an object with only exported references", async () => {
       const ast = ["tabSize=2",
         ["`", "`export", "`var", "`a", 1],
@@ -691,7 +690,7 @@ describe("compile", () => {
         ["`", "`export", "`fn", "`add2", [],
           ["`", "`add", "`a", "`b"]],
       ];
-      const m = await compileModule({add}, ast);
+      const m = await compileJsModule([{add}], ast);
       m.a.should.equal(1);
       Object.keys(m).includes("b").should.equal(false);
       m.add2().should.equal(3);
@@ -700,12 +699,12 @@ describe("compile", () => {
     });
 
     it("should work with an empty list environment", async () => {
-      const m = await compileModule([], [["`", "`export", "`var", "`a", 1]]);
+      const m = await compileJsModule([], [["`", "`export", "`var", "`a", 1]]);
       m.a.should.equal(1);
     });
 
     it("should work with an empty object environment", async () => {
-      const m = await compileModule({}, [["`", "`export", "`var", "`a", 1]]);
+      const m = await compileJsModule([{}], [["`", "`export", "`var", "`a", 1]]);
       m.a.should.equal(1);
     });
 
@@ -713,7 +712,7 @@ describe("compile", () => {
       const exports: any = {b: 2};
       const env = [{exports}];
       const env0 = env[0];
-      const m = await compileModule(env, [["`", "`export", "`var", "`a", 1]]);
+      const m = await compileJsModule([env], [["`", "`export", "`var", "`a", 1]]);
       m.should.equal(exports);
       m.a.should.equal(1);
       env.length.should.equal(1);
@@ -723,7 +722,7 @@ describe("compile", () => {
     it("should use existing export in object env passed in", async () => {
       const exports: any = {b: 2};
       const env = {exports};
-      const m = await compileModule(env, [["`", "`export", "`var", "`a", 1]]);
+      const m = await compileJsModule([env], [["`", "`export", "`var", "`a", 1]]);
       m.a.should.equal(1);
       m.should.equal(exports);
       env.exports.should.equal(exports);
@@ -733,7 +732,7 @@ describe("compile", () => {
   describe("compileAwait", () => {
     it("should mark the wrapping scope as async", async () => {
       const env = {import: list};
-      const r = compileHost(env, [["`", "`await", "`import", "simple.hl"]]);
+      const r = await compileJs([env], [["`", "`await", "`import", "simple.hl"]]);
       linesJoinedShouldEqual(r.code, `
         function(_,env,){
           return (async function(_){
@@ -746,7 +745,7 @@ describe("compile", () => {
 
     it("should allow it in nested scopes", async () => {
       const env = {import: list, add};
-      const r = compileHost(env, [
+      const r = await compileJs([env], [
         ["`", "`do", ["`", "`await", "`import", "simple.hl", ["`", "`a", "`b"]]],
         ["`", "`add", "`_", 1],
       ]);
@@ -766,7 +765,7 @@ describe("compile", () => {
 
     it("should allow awaiting the results of nested scopes", async () => {
       const env = {import: list, add};
-      const r = compileHost(env, [
+      const r = await compileJs([env], [
         ["`", "`do", ["`", "`await", "`import", "simple.hl", ["`", "`a", "`b"]]],
         ["`", "`await", "`_"],
         ["`", "`add", "`_", 1],
@@ -790,7 +789,7 @@ describe("compile", () => {
   describe("compileImport", () => {
     it("should allow importing names individually", async () => {
       const env = {import: list};
-      const r = compileHost(env, [["`", "`await", "`import", "simple.hl", ["`", "`a", "`b"]]]);
+      const r = await compileJs([env], [["`", "`await", "`import", "simple.hl", ["`", "`a", "`b"]]]);
       linesJoinedShouldEqual(r.code, `
         function(_,env,){
           return (async function(_){
@@ -804,7 +803,7 @@ describe("compile", () => {
     // it should automatically use await
     it("should allow importing names individually", async () => {
       const env = {import: list};
-      const r = compileHost(env, [["`", "`import", "simple.hl", ["`", "`a", "`b"]]]);
+      const r = await compileJs([env], [["`", "`import", "simple.hl", ["`", "`a", "`b"]]]);
       linesJoinedShouldEqual(r.code, `
         function(_,env,){
           return (async function(_){
@@ -819,7 +818,7 @@ describe("compile", () => {
   describe("compileReturn", () => {
     it("should return _ if not value specified", async () => {
       const env = {import: list};
-      const r = compileHost(env, [["`", "`return"]]);
+      const r = await compileJs([env], [["`", "`return"]]);
       linesJoinedShouldEqual(r.code, `
         function(_,env,){
           return (function(_){
@@ -832,7 +831,7 @@ describe("compile", () => {
     
     it("should allow returning simple values", async () => {
       const env = {import: list};
-      const r = compileHost(env, [["`", "`return", 1]]);
+      const r = await compileJs([env], [["`", "`return", 1]]);
       linesJoinedShouldEqual(r.code, `
         function(_,env,){
           return (function(_){
@@ -845,7 +844,7 @@ describe("compile", () => {
 
     it("should allow returning expr results", async () => {
       const env = {import: list};
-      const r = compileHost(env, [["`", "`return", ['`', '`add', 1, 1]]]);
+      const r = await compileJs([env], [["`", "`return", ['`', '`add', 1, 1]]]);
       linesJoinedShouldEqual(r.code, `
         function(_,env,r0){
           return (function(_){

@@ -11,10 +11,10 @@ describe("meta-compiler", () => {
   it("should throw an error if no compilers are proceeding", async () => {
     await $compile([], [1]).should.be.rejectedWith("no compilers are proceeding");
   });
-
+  
   it("should automatically add the compilerCompiler", async () => {
     const stack = [{}]
-    const ast = expr("compiler", "bang", (stack, ci) => (ci.pop(), false));
+    const ast = expr("compiler", "bang", ci => (ci.pop(), false));
     const r = await $compile(stack, ast)
     r.code.should.equal("");
     r.stack[0].bang.should.be.ok();      
@@ -23,7 +23,7 @@ describe("meta-compiler", () => {
   it("should allow adding additional compilers at compile time", async () => {
     const stack = [{}]
     const ast = [
-      expr("compiler", "bang", (stack, ci: ICompileInfo) => ci.pop() ? ci.push("!") && true : false),
+      expr("compiler", "bang", (ci: ICompileInfo) => ci.pop() ? ci.push("!") && true : false),
       1
     ]
     const r = await $compile(stack, ast)
@@ -34,7 +34,7 @@ describe("meta-compiler", () => {
   it("should keep running compilers until none return true", async () => {
     const stack = [{}]
     const ast = [
-      expr("compiler", "bang", (stack, ci: ICompileInfo) => {
+      expr("compiler", "bang", (ci: ICompileInfo) => {
         if (ci.code.length == 5) return;
         ci.push("!");
         ci.pop();
@@ -50,7 +50,7 @@ describe("meta-compiler", () => {
   it("should throw an error if max loop limit is reached", async () => {
     const stack = [{}]
     const ast = [
-      expr("compiler", "bang", (stack, ci: ICompileInfo) => (ci.pop(), true)),
+      expr("compiler", "bang", (ci: ICompileInfo) => (ci.pop(), true)),
       1
     ]
     await $compile(stack, ast).should.be
@@ -59,7 +59,7 @@ describe("meta-compiler", () => {
 
   it("should allow setting a compiler priorty", async () => {
     const stack:any[] = [{}]
-    const ast = expr("compiler", "bang", (stack, ci: ICompileInfo) => (ci.push("!"), ci.pop(), false), 5)
+    const ast = expr("compiler", "bang", (ci: ICompileInfo) => (ci.push("!"), ci.pop(), false), 5)
     const r:any = await $compile(stack, ast)    
     stack[0].bang.priority.should.equal(5)
   });
@@ -67,7 +67,7 @@ describe("meta-compiler", () => {
   it("should allow throwing errors", async () => {
     const stack = [{
       noCompilerMatched: compiler("noCompilerMatched", 
-        (stack, ci) => { throw new Error(`No compiler matched`) },
+        ci => { throw new Error(`No compiler matched`) },
         1001
       ),
     }];
@@ -78,22 +78,22 @@ describe("meta-compiler", () => {
   it("should allow multipule compilers and sort them by priority", async () => {
     const stack = [{
       noCompilerMatched: compiler("noCompilerMatched", 
-        (stack, ci) => (ci.pop(), ci.push('2')),
+        ci => (ci.pop(), ci.push('2')),
         1001
       ),
       matchAnything: compiler("matchAnything", 
-        (stack, ci) => (ci.pop(), ci.push('1')),
+        ci => (ci.pop(), ci.push('1')),
         999
       )
     }]
     const ast = []
     const r = await $compile(stack, ast)
     r.code.should.equal("12")
-  });
+  });  
 
   it("should indent correctly with pop", async () => {
     const stack = [{
-      x: compiler("x", (stack, ci) => (ci.push("x", 1))),
+      x: compiler("x", ci => (ci.push("x", 1))),
     }];
     const ast = [];
     (await $compile(stack, ast)).code.should.equal('    x')    
@@ -101,7 +101,7 @@ describe("meta-compiler", () => {
 
   it("should indent correctly based on ci", async () => {
     const stack = [{
-      x: compiler("x", (stack, ci) => (ci.push("x", 1))),
+      x: compiler("x", ci => (ci.push("x", 1))),
     }];
     const ast = [];
     (await $compile(stack, ast, { tabSize: 2 })).code.should.equal('  x')
@@ -109,7 +109,7 @@ describe("meta-compiler", () => {
 
   it("should indent correctly based on ci and pop", async () => {
     const stack = [{
-      x: compiler("x", (stack, ci) => (ci.push("x", 1))),
+      x: compiler("x", ci => (ci.push("x", 1))),
     }];
     const ast = [];
     (await $compile(stack, ast, { tabSize: 2, indent: 1 })).code.should.equal('    x')
@@ -117,7 +117,7 @@ describe("meta-compiler", () => {
 
   it("should convert negative indents to zero", async () => {
     const stack = [{
-      x: compiler("x", (stack, ci) => (ci.push("x", -1))),
+      x: compiler("x", ci => (ci.push("x", -1))),
     }];
     const ast = [];
     (await $compile(stack, ast)).code.should.equal('x')

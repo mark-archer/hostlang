@@ -1,17 +1,16 @@
 import { range, isNumber, last } from "lodash";
-import { js } from "../utils";
-import { ParseInfoOptions, ParseInfo, parser, $parse } from "../meta/meta-parser";
-import { nameLookup, tick, untick, isSym, sym, isExpr } from "../meta/meta-common";
-import { nvp, isList } from "../common";
-import { meta } from "../typeInfo";
+import { js } from "./utils";
+import { ParseInfoOptions, ParseInfo, parser, $parse } from "./meta/meta-parser";
+import { nameLookup, tick, untick, isSym, sym, isExpr } from "./meta/meta-common";
+import { nvp, isList } from "./common";
+import { meta } from "./typeInfo";
 
 export function parseHost(stack: any[], code: string, options: ParseInfoOptions = {}): Promise<any> {
-  const $import = nameLookup(stack, "common")
+  //const $import = nameLookup(stack, "common")
   // if($import) commonLib = await $import("common")
+  
   code += "\n"; // add newline to code to ease matching logic
-  //const pi = parseInfo(stack, code, options);
-  // pi.parsers = getParsers(stack);
-
+  
   function init(pi: ParseInfo) {
     // immediately start a new list to represent to first line of code
     if (pi.i === 0 && pi.root.length === 0) {
@@ -33,7 +32,7 @@ export function parseHost(stack: any[], code: string, options: ParseInfoOptions 
   parseCtx.parserCleanup = parser("parserCleanup", parserCleanup, 1002);
   // @ts-ignore
   parseCtx.exclude_default_parsers = true;
-  stack = [parseCtx, ...stack] 
+  stack = [...stack, parseCtx] 
   
   return $parse(stack, code, options);
 }

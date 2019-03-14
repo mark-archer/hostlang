@@ -1,19 +1,19 @@
-//import * as common from "./common";
+import * as common from "../common";
 import { sym, isSym, isExpr, tick, untick, quote, unquote, last, isList, skip } from "../common";
 import { isFunction } from "util";
 import { stringify } from "../utils";
 import { $parse } from "./meta-parser";
-import { $compile, $build } from "./meta-compiler";
+import { exists } from "fs";
 
 export type Stack = { [key:string]: any}[]
 
-export function Host(stack: Stack = []) {
+export function runtime(stack: Stack = []) {
   if(!isList(stack)) {
     stack = [stack];
   }
   const scope:any = {};
-  // copy common functions
-  // Object.assign(scope, common) // TODO: uncomment this
+  // import common functions
+  Object.assign(scope, common) // TODO: uncomment this
   // copy stack based functions
   const stackFns = {
     nameLookup: $nameLookup, 
@@ -23,8 +23,8 @@ export function Host(stack: Stack = []) {
     eval: $eval,
     apply: $apply,
     parse: $parse,
-    compile: $compile,
-    build: $build
+    // compile: $compile,
+    // build: $build
   };
   Object.keys(stackFns).forEach(name => scope[name] = (...args) => stackFns[name](stack, ...args));  
   // push scope on stack 
@@ -32,6 +32,31 @@ export function Host(stack: Stack = []) {
   
   // return scope
   return scope; // should be able to do everything you need with functions on stack
+}
+
+// eval: ast -> value
+export function $eval(stack: Stack, ast) {
+  if (isSym(ast)) {
+    // TODO quoted symbols
+    const name = untick(ast);
+    if (isSym(name)) return name;
+    const r = $nameLookup(stack, name);
+    if (r === undefined) throw new Error(`${ast} is not defined`);
+    return r
+  }
+  if (isExpr(ast)) {
+    // TODO quoted expressions
+    const expr = untick(ast);
+    if (isExpr(expr)) return expr;
+    const f = $eval(stack, expr[0]);
+    // TODO what if f is a macro?
+    const args = skip(expr).map(arg => $eval(stack, arg));
+    //$newScope(stack);
+    const r = $apply(stack, f, args);
+    //$exitScope(stack);
+    return r;
+  }
+  return ast;
 }
 
 // apply: fn+args -> value
@@ -48,28 +73,17 @@ export function $apply(stack: Stack, f, args:any[]) {
   throw new Error(`unknown apply ${stringify({ f, args, }, 2)}`)
 }
 
-// eval: ast -> value
-export function $eval(stack: Stack, ast) {
-  if (isSym(ast)) {
-    // TODO quoted symbols
-    const name = untick(ast);
-    if (isSym(name)) return name;
-    return $nameLookup(stack, name);
-  }
-  if (isExpr(ast)) {
-    // TODO quoted expressions
-    const expr = untick(ast);
-    if (isExpr(expr)) return expr;
-    const f = $eval(stack, expr[0]);
-    // TODO what if f is a macro?
-    const args = skip(expr).map(arg => $eval(stack, arg));
-    return $apply(stack, f, args);
-  }
-  return ast;
-}
+// function $newScope(stack) {
+//   stack.push({});
+// }
+// function $exitScope(stack) {
+//   stack.pop();
+// }
 
 function $nameLookup(stack: Stack, name: string) {
-  if (isSym(name)) { return untick(name); }
+  if (isSym(name)) { 
+    return untick(name); 
+  }
   for (let i = stack.length - 1; i >= 0; i--) {
     if (stack[i][name] !== undefined) { 
       return stack[i][name]; 

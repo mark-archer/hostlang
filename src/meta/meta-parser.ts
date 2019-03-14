@@ -1,6 +1,6 @@
 import { flatten, sortBy, last } from 'lodash';
 import { isExpr, untick, tick, nameLookup } from './meta-common';
-import { $eval, $apply } from './eval-apply';
+import { $eval, $apply } from './meta-lang';
 
 export function isParser(x:any) {
   return x && x.IParser
@@ -48,7 +48,7 @@ const lispParser: IParser = {
   IParser: true,
   name: "lispParser",
   priority: 1001,
-  apply: async (pi: ParseInfo) => {
+  apply: (pi: ParseInfo) => {
     const word = pi.peekWord();
     if (!word) return false;    
     // open list
@@ -83,7 +83,7 @@ const lispParser: IParser = {
 
 export function getParsers(stack: any[]) {
   // get parsers
-  let parsers: IParser[] = flatten(stack.map(ctx => Object.values(ctx).filter(isParser) as IParser[]));
+  let parsers: IParser[] = flatten(stack.map(ctx => (<any>Object).values(ctx).filter(isParser) as IParser[]));
   if (!nameLookup(stack, "exclude_default_parsers")) {
     parsers.push(parserParser);
     parsers.push(lispParser);
@@ -94,9 +94,8 @@ export function getParsers(stack: any[]) {
 }
 
 // source code -> ast
-export async function $parse(stack: any[], code:string, options?: ParseInfoOptions): Promise<any[]> {
+export async function $parse(stack: any[], code:string, options?: ParseInfoOptions) {
   const pi = parseInfo(stack, code, options);
-  
   try {
     while (true) {
       // get first matching compiler and apply it

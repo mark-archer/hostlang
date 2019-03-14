@@ -13,7 +13,7 @@ async function execHost(env: any, code: string) {
   let ast = await parseHost([env], code);
   ast = cleanCopyList(ast);
   const r = compileHost(env, ast);
-  return r.exec();
+  return r.exec();  
 }
 
 describe("compile", () => {
@@ -21,7 +21,7 @@ describe("compile", () => {
     it("should error if var already exists", () => {
       should(() => defineVar([{a: 1}], "a")).throw("var already exists: a");
     });
-  });
+  });  
 
   describe("compileSym", () => {
     it("should error if sym is not defined", () => {

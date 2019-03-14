@@ -218,7 +218,6 @@ export function varSet(stack: any[], name: string, ...value: any[]) {
 // @ts-ignore
 varSet.isMacro = true; varSet.isMeta = true;
 
-// @ts-ignore
 export function date(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   // this craziness is because I couldn't get apply to work with (new Date())
   let date = null;

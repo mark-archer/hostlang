@@ -1,0 +1,108 @@
+//import * as common from "./common";
+import { sym, isSym, isExpr, tick, untick, quote, unquote, last, isList, skip } from "../common";
+import { isFunction } from "util";
+import { stringify } from "../utils";
+import { $parse } from "./meta-parser";
+import { $compile, $build } from "./meta-compiler";
+
+export type Stack = { [key:string]: any}[]
+
+export function Host(stack: Stack = []) {
+  if(!isList(stack)) {
+    stack = [stack];
+  }
+  const scope:any = {};
+  // copy common functions
+  // Object.assign(scope, common) // TODO: uncomment this
+  // copy stack based functions
+  const stackFns = {
+    nameLookup: $nameLookup, 
+    isDefined: $isDefined, 
+    var: $var,
+    set: $set,
+    eval: $eval,
+    apply: $apply,
+    parse: $parse,
+    compile: $compile,
+    build: $build
+  };
+  Object.keys(stackFns).forEach(name => scope[name] = (...args) => stackFns[name](stack, ...args));  
+  // push scope on stack 
+  stack.push(scope);  
+  
+  // return scope
+  return scope; // should be able to do everything you need with functions on stack
+}
+
+// apply: fn+args -> value
+//  stack is included for symetry with eval and future enhancements to allow adding apply rules
+export function $apply(stack: Stack, f, args:any[]) {
+  // standard js apply
+  if (isFunction(f)) {
+    return f.apply(null, args);
+  }
+  // object with apply function
+  if (isFunction(f.apply)) {
+    return f.apply(...args);
+  }
+  throw new Error(`unknown apply ${stringify({ f, args, }, 2)}`)
+}
+
+// eval: ast -> value
+export function $eval(stack: Stack, ast) {
+  if (isSym(ast)) {
+    // TODO quoted symbols
+    const name = untick(ast);
+    if (isSym(name)) return name;
+    return $nameLookup(stack, name);
+  }
+  if (isExpr(ast)) {
+    // TODO quoted expressions
+    const expr = untick(ast);
+    if (isExpr(expr)) return expr;
+    const f = $eval(stack, expr[0]);
+    // TODO what if f is a macro?
+    const args = skip(expr).map(arg => $eval(stack, arg));
+    return $apply(stack, f, args);
+  }
+  return ast;
+}
+
+function $nameLookup(stack: Stack, name: string) {
+  if (isSym(name)) { return untick(name); }
+  for (let i = stack.length - 1; i >= 0; i--) {
+    if (stack[i][name] !== undefined) { 
+      return stack[i][name]; 
+    }
+  }
+  return undefined;
+}
+
+function $isDefined(stack: Stack, name: string) {
+  if (isSym(name)) { return untick(name); }
+  for (let i = stack.length - 1; i >= 0; i--) {
+    if (stack[i][name] !== undefined) { 
+      return true;
+    }
+  }
+  return undefined;
+}
+
+function $var(stack: Stack, name: string, value: any = null) {
+  // for now, not throwing an error if already defined
+  last(stack)[name] = value
+  return value;
+}
+
+function $set(stack: Stack, name: string, value: any) {
+  for (let i = stack.length - 1; i >= 0; i--) {
+    if (stack[i][name] !== undefined) { 
+      stack[i][name] =  value;
+      return value
+    }
+  }
+  throw new Error(`cannot set "${name}", variable does not exist`)
+}
+
+// NOTE we are only in the business of source-code -> ast -> target-code
+

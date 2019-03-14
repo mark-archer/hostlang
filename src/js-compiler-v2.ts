@@ -202,9 +202,9 @@ export async function compileExport(refs: any[], stack: any[], ast: any[]) {
   if (op == "fn") {
     ast.splice(1, 1); // remove '`export`
     ast.splice(2, 1); // remove name
-    code = compileExpr(refs, stack, ast);
+    code = await compileExpr(refs, stack, ast);
   } else {
-    code = compileExpr(refs, stack, ast[4]);
+    code = await compileExpr(refs, stack, ast[4]);
   }
   code = exportRef + "=" + code;
   return code;
@@ -277,9 +277,9 @@ export async function compileGetr(refs: any[], stack: any[], ast: any) {
   if (!isExpr(ast) || ast[1] !== '`getr') return;
   ast.shift();
   ast.shift();
-  let code = compileExpr(refs, stack, ast.shift());
+  let code = await compileExpr(refs, stack, ast.shift());
   while (ast.length) {
-    const prop = compileExpr(refs, stack, untick(ast.shift()));
+    const prop = await compileExpr(refs, stack, untick(ast.shift()));
     code += `[${prop}]`;
   }
   return code;
@@ -289,10 +289,10 @@ export async function compileSetr(refs: any[], stack: any[], ast: any) {
   if (!isExpr(ast) || ast[1] !== '`setr') return;
   ast.shift();
   ast.shift();
-  const ref = compileExpr(refs, stack, ast.shift());
+  const ref = await compileExpr(refs, stack, ast.shift());
   let code = ref;
   while (ast.length > 1) {
-    const prop = compileExpr(refs, stack, untick(ast.shift()));
+    const prop = await compileExpr(refs, stack, untick(ast.shift()));
     code += `[${prop}]`;
   }
   const value = compileExpr(refs, stack, untick(ast.shift()));
@@ -312,8 +312,8 @@ export async function compileImport(refs: any[], stack: any[], ast: any[]) {
   if (ast.length == 4) { names = untick(ast.pop()); }
   if (ast.length == 2) { ast = ast[1]; }
   ast.splice(1, 1);
-  let code = compileSym(refs, stack, "import");
-  const arg = compileExpr(refs, stack, ast[1]);
+  let code = await compileSym(refs, stack, "import");
+  const arg = await compileExpr(refs, stack, ast[1]);
   code = `${code}(${arg})`;
   if (names && names.length) {
     names = untick(names);

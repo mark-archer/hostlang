@@ -42,7 +42,7 @@ describe.only("js-compiler-v2", () => {
   });
 
   describe("compileFn", () => {
-    it("should compile empty functions", () => {
+    it("should compile empty functions", async () => {
       const refs: any[] = [];
       const stack: any[] = [{ add }, { a: 1 }];
       const fn: Fn = {
@@ -50,7 +50,7 @@ describe.only("js-compiler-v2", () => {
         params: [],
         body: [],
       };
-      const r = compileFn(refs, stack, fn);
+      const r = await compileFn(refs, stack, fn);
       linesJoinedShouldEqual(r, `
         function(){
           let _=null;
@@ -61,7 +61,7 @@ describe.only("js-compiler-v2", () => {
       `);
     });
 
-    it("should compile functions names", () => {
+    it("should compile functions names", async () => {
       const refs: any[] = [];
       const stack: any[] = [{ add }, { a: 1 }];
       const fn: Fn = {
@@ -70,7 +70,7 @@ describe.only("js-compiler-v2", () => {
         body: [],
         name: "myFn",
       };
-      const r = compileFn(refs, stack, fn);
+      const r = await compileFn(refs, stack, fn);
       linesJoinedShouldEqual(r, `
         function myFn(){
           let _=null;
@@ -189,17 +189,17 @@ describe.only("js-compiler-v2", () => {
   });
 
   describe("compileExpr", () => {
-    it("should work with references and values", () => {
+    it("should work with references and values", async () => {
       const refs: any[] = [];
       const stack: any[] = [{}, { add }, { a: 1 }];
-      const r = compileExpr(refs, stack, ["`", "`add", "`a", 1]);
+      const r = await compileExpr(refs, stack, ["`", "`add", "`a", 1]);
       linesJoinedShouldEqual(r, `add(a,1)`);
     });
 
-    it("should treat the first level in the stack as env", () => {
+    it("should treat the first level in the stack as env", async () => {
       const refs: any[] = [];
       const stack: any[] = [{ add }, { a: 1 }];
-      const r = compileExpr(refs, stack, ["`", "`add", "`a", 1]);
+      const r = await compileExpr(refs, stack, ["`", "`add", "`a", 1]);
       linesJoinedShouldEqual(r, `env["add"](a,1)`);
     });
 
@@ -208,7 +208,7 @@ describe.only("js-compiler-v2", () => {
       const stack: any[] = [];
       const obj = {a: 1};
       const lst = [1, 2, obj];
-      let r = compileExpr(refs, stack, lst);
+      let r = await compileExpr(refs, stack, lst);
       linesJoinedShouldEqual(r, `r0`);
       const env = { list: (...args) => args, lst };
       r = await execHost([env], ", 1 2 lst");

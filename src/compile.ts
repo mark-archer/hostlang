@@ -384,7 +384,6 @@ export async function compileModule(env: any, ast: any[], refs: any[]= []) {
   const $exports: any = env[0].exports || {};
   env[0].exports = $exports;  
   const r = compileHost(env, ast, refs);
-  console.log(r.code)
   await r.exec(); // code has to be run to generate module
   return $exports;
 }

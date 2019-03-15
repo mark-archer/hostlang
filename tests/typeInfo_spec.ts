@@ -8,7 +8,7 @@ const should = require("should");
 const context = describe;
 
 describe("host TypeInfo", () => {
-  const stack: any[] = [];
+  const stack: any[] = [];  
 
   describe("validate", () => {
 

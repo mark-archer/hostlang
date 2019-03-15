@@ -4,7 +4,7 @@ import { Any, Str } from "../src/typeInfo";
 
 const should = require("should");
 
-describe("hostExec", () => {
+describe("hostExec", () => {  
   it("should return null for no code", () =>
     execHost("").then((r) => should(r).equal(null)),
   );

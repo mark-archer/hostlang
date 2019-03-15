@@ -8,17 +8,14 @@ import { exists } from "fs";
 export type Stack = { [key:string]: any}[]
 
 export function runtime(stack: Stack = []) {
-  if(!isList(stack)) {
-    stack = [stack];
-  }
   const scope:any = {};
   // import common functions
   Object.assign(scope, common) // TODO: uncomment this
   // copy stack based functions
   const stackFns = {
-    nameLookup: $nameLookup, 
-    isDefined: $isDefined, 
+    exists: $exists, 
     var: $var,
+    get: $get, 
     set: $set,
     eval: $eval,
     apply: $apply,
@@ -40,7 +37,7 @@ export function $eval(stack: Stack, ast) {
     // TODO quoted symbols
     const name = untick(ast);
     if (isSym(name)) return name;
-    const r = $nameLookup(stack, name);
+    const r = $get(stack, name);
     if (r === undefined) throw new Error(`${ast} is not defined`);
     return r
   }
@@ -80,32 +77,31 @@ export function $apply(stack: Stack, f, args:any[]) {
 //   stack.pop();
 // }
 
-function $nameLookup(stack: Stack, name: string) {
-  if (isSym(name)) { 
-    return untick(name); 
-  }
-  for (let i = stack.length - 1; i >= 0; i--) {
-    if (stack[i][name] !== undefined) { 
-      return stack[i][name]; 
-    }
-  }
-  return undefined;
-}
-
-function $isDefined(stack: Stack, name: string) {
-  if (isSym(name)) { return untick(name); }
+function $exists(stack: Stack, name: string): boolean {
   for (let i = stack.length - 1; i >= 0; i--) {
     if (stack[i][name] !== undefined) { 
       return true;
     }
   }
-  return undefined;
+  return false;
 }
 
 function $var(stack: Stack, name: string, value: any = null) {
   // for now, not throwing an error if already defined
   last(stack)[name] = value
   return value;
+}
+
+function $get(stack: Stack, name: string) {
+  // if (isSym(name)) { 
+  //   return untick(name); 
+  // }
+  for (let i = stack.length - 1; i >= 0; i--) {
+    if (stack[i][name] !== undefined) { 
+      return stack[i][name]; 
+    }
+  }
+  return undefined;
 }
 
 function $set(stack: Stack, name: string, value: any) {
@@ -115,8 +111,7 @@ function $set(stack: Stack, name: string, value: any) {
       return value
     }
   }
-  throw new Error(`cannot set "${name}", variable does not exist`)
+  throw new Error(`${name} is not defined`);
 }
-
 // NOTE we are only in the business of source-code -> ast -> target-code
 

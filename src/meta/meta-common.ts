@@ -27,6 +27,7 @@ export function isExpr(x: any) {
 }
 
 export function tick(x: any) {
+  if (x === "`") { return x; }
   if (isString(x)) { return "`" + x; }
   if (isList(x)) { return ["`", ...x]; }
   return x;

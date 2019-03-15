@@ -24,26 +24,6 @@ export function parser(name: string, apply: ParserApplyFn, priority: number = 10
   }
 }
 
-const parserParser: IParser = {
-  IParser: true,
-  name: "parserParser",
-  priority: 1000,
-  apply: async (pi: ParseInfo) => {
-    const stack = pi.runtimeStack;
-    let llist: any = last(pi.clist);
-    if (isExpr(llist) && llist[1] === "`parser") {
-      pi.clist.pop(); // remove from ast
-      const name = await $eval(stack, untick(llist[2]));
-      const apply = await $eval(stack, llist[3]);
-      const priority = await $eval(stack, llist[4]);
-      last(stack)[name] = parser(name, apply, priority);
-      pi.parsers = getParsers(stack);
-      return true;
-    }
-    return false;
-  }
-}
-
 const lispParser: IParser = {
   IParser: true,
   name: "lispParser",
@@ -81,12 +61,51 @@ const lispParser: IParser = {
   }
 }
 
+const parserParser: IParser = {
+  IParser: true,
+  name: "parserParser",
+  priority: 1000,
+  apply: async (pi: ParseInfo) => {
+    const stack = pi.runtimeStack;
+    let llist: any = last(pi.clist);
+    if (isExpr(llist) && llist[1] === "`parser") {
+      pi.clist.pop(); // remove from ast
+      const name = await $eval(stack, untick(llist[2]));
+      const apply = await $eval(stack, llist[3]);
+      const priority = await $eval(stack, llist[4]);
+      last(stack)[name] = parser(name, apply, priority);
+      pi.parsers = getParsers(stack);
+      return true;
+    }
+    return false;
+  }
+}
+
+const excludeDefaultParsers: IParser = {
+  IParser: true,
+  name: "excludeDefaultParsers",
+  priority: 1000,
+  apply: async (pi: ParseInfo) => {
+    const stack = pi.runtimeStack;
+    let llist: any = last(pi.clist);
+    if (isExpr(llist) && llist[1] === "`exclude_default_parsers") {
+      pi.clist.pop(); // remove from ast
+      const value = await $eval(stack, untick(llist[2]));
+      last(stack).exclude_default_parsers = value;
+      pi.parsers = getParsers(stack);
+      return true;
+    }
+    return false;
+  }
+}
+
 export function getParsers(stack: any[]) {
   // get parsers
   let parsers: IParser[] = flatten(stack.map(ctx => (<any>Object).values(ctx).filter(isParser) as IParser[]));
   if (!nameLookup(stack, "exclude_default_parsers")) {
-    parsers.push(parserParser);
     parsers.push(lispParser);
+    parsers.push(parserParser);
+    parsers.push(excludeDefaultParsers);
   }
   parsers = sortBy(parsers, c => c.priority);
   parsers
@@ -98,7 +117,7 @@ export async function $parse(stack: any[], code:string, options?: ParseInfoOptio
   const pi = parseInfo(stack, code, options);
   try {
     while (true) {
-      // get first matching compiler and apply it
+      // try compilers one at a time until a match is found
       let matched = false;
       for(let parser of pi.parsers) {
         matched = await $apply(stack, parser, [pi]);
@@ -114,7 +133,7 @@ export async function $parse(stack: any[], code:string, options?: ParseInfoOptio
     throw parseError(pi, err);
   } 
 
-  if (pi.stack.length > 1) { 
+  if (pi.parseStack.length > 1) { 
     throw parseError(pi, 'parser did not end on root list, probably missing right parens ")"'); 
   }
 
@@ -134,7 +153,7 @@ export interface ParseInfo {
   indent: number;
   clist: any;
   root: any[];
-  stack: any[];
+  parseStack: any[];
   terminators: RegExp;
   maxSymLength: number;
   tabSize: number;
@@ -169,7 +188,7 @@ export function parseInfo(stack: any[], code: string, options: ParseInfoOptions 
     indent: 0,
     clist: root,
     root,
-    stack: [],
+    parseStack: [],
     terminators: options.terminators || /[^\$%a-zA-Z0-9_`'-]/, // anything not allowed in names
     maxSymLength: options.maxSymLength || 100,
     tabSize: options.tabSize || 4,
@@ -200,7 +219,7 @@ export function parseInfo(stack: any[], code: string, options: ParseInfoOptions 
       return word;
     },
     newList: (explicit?: boolean) => {
-      pi.stack.push(pi.clist);
+      pi.parseStack.push(pi.clist);
       const nlist: any = ["`"];
       nlist.indent = pi.indent;
       nlist.explicit = explicit || false;
@@ -217,7 +236,7 @@ export function parseInfo(stack: any[], code: string, options: ParseInfoOptions 
       // if(pi.clist.pipeThird) throw new Error("Piped into the third spot in a list but the list only had 1 item");
       if ((pi.clist.minLength || 0) > pi.clist.length) { throw new Error(`list ended before it's minimum length (${pi.clist.minLength}) was reached`); }
       const thisListExplicit = pi.clist.explicit || false;
-      pi.clist = pi.stack.pop();
+      pi.clist = pi.parseStack.pop();
       if (!pi.clist) { throw new Error ("clist is undefined - probably too many close parens ')'"); }
       if (explicit && !thisListExplicit) { pi.endList(explicit); }
     },

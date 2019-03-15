@@ -566,8 +566,8 @@ function parseIfElifElse(pi: ParseInfo) {
       condList.push(elifList);
 
       // restore stack (yikes)
-      pi.stack.push(pi.clist);
-      pi.stack.push(condList);
+      pi.parseStack.push(pi.clist);
+      pi.parseStack.push(condList);
       pi.clist = elifList;
       pi.clist.indent = condList.indent + 1;
     }
@@ -667,7 +667,7 @@ function parseTryCatch(pi: ParseInfo) {
     pi.clist.pop();
 
     // set the current list back to the try
-    pi.stack.push(pi.clist);
+    pi.parseStack.push(pi.clist);
     pi.clist = last(pi.clist);
     if (!pi.clist || pi.clist[1] !== sym("try")) { throw new Error("catch in unexpected position"); }
     // pi.stack.push(pi.clist);

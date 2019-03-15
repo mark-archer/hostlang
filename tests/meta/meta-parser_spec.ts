@@ -20,7 +20,7 @@ describe("meta-parser", () => {
     const stack = [{}];
     const code = `)`;
     await $parse(stack, code).should.be
-      .rejectedWith(`parse error at line 1, col 1:\n)\nError: clist is undefined - probably too many close parens ')'`)
+      .rejectedWith(`parse error at line 1, col 1:\n)\nError: current list is undefined - probably too many close parens ')'`)
   })
 
   it('should throw an error if not enough close parens are detected', async () => {
@@ -82,6 +82,44 @@ describe("meta-parser", () => {
     bParser.apply.should.equal(stack[0].a);
     bParser.priority.should.equal(1);
   })
+
+  it('should allow setting `exclude_default_parsers at parsetime', async () => {
+    const stack: any[] = [{}];
+    const code = `(exclude_default_parsers 1)`;
+    const r = await $parse(stack, code)    
+    cleanCopyList(r).should.eql([])
+    stack[0].exclude_default_parsers.should.equal(1)
+    await $parse(stack, code).should.be.rejectedWith(/no parsers are proceeding/)
+  })
+
+  it("should allow evaulating expressions at parsetime", async () => {
+    let out = "";
+    const stack: any[] = [{ log: v => out += v }];
+    const code = `(% log 1)`;
+    const r = await $parse(stack, code)    
+    cleanCopyList(r).should.eql([])
+    out.should.equal("1")
+  });
+
+  it("should parse strings by default", async () => {
+    const stack: any[] = [{}];
+    const code = `"test"`;
+    const r = await $parse(stack, code)    
+    cleanCopyList(r).should.eql(['test'])
+  });
+
+  it("should parse escape chars in strings", async () => {
+    const stack: any[] = [{}];
+    const code = `" \\" "`;
+    const r = await $parse(stack, code)
+    cleanCopyList(r).should.eql([' " '])
+  });
+
+  it("should throw an error for an unterminated string", async () => {    
+    const stack: any[] = [{}];
+    const code = `" asdf asdf asdf asdf asdf`;
+    await $parse(stack, code).should.be.rejectedWith(/unterminated string/)
+  });
 
   describe("parseInfo", () => {// NOTE that these don't add much code coverage (only about 5%)    
     it("should allow an empty stack and empty string", () => {
@@ -239,13 +277,13 @@ describe("meta-parser", () => {
   
       it("should throw an error if it is root", () => {
         let pi = parseInfo([], "");
-        should(() => pi.endList()).throw("clist is undefined - probably too many close parens ')'");
+        should(() => pi.endList()).throw("current list is undefined - probably too many close parens ')'");
   
         pi = parseInfo([], "");
         const explicit = true;
         pi.newList();
         pi.newList();
-        should(() => pi.endList(explicit)).throw("clist is undefined - probably too many close parens ')'");
+        should(() => pi.endList(explicit)).throw("current list is undefined - probably too many close parens ')'");
       });
   
       it("should recursively end non-explicit lists if ending explicit", () => {

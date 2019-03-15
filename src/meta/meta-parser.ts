@@ -48,6 +48,21 @@ const lispParser: IParser = {
       pi.pop()
       return true;
     }
+    // parse string
+    if (word === '"') {
+      const unterminatedStringError = parseError(pi, 'unterminated string');
+      pi.pop();
+      let s = "";
+      while (pi.peek() && pi.peek() != '"') {
+        let c = pi.pop();
+        if (c == "\\") c = pi.pop();
+        s += c;
+      }
+      if (!pi.peek()) throw unterminatedStringError;
+      pi.pop();
+      pi.push(s);
+      return true;
+    }
     // add number
     if (!isNaN(Number(word))) {
       pi.push(Number(word))
@@ -99,6 +114,24 @@ const excludeDefaultParsers: IParser = {
   }
 }
 
+const parsetimeEval: IParser = {
+  IParser: true,
+  name: "parsetimeEval",
+  priority: 1000,
+  apply: async (pi: ParseInfo) => {
+    const stack = pi.runtimeStack;
+    let llist: any = last(pi.clist);
+    if (isExpr(llist) && llist[1] === "`%") {
+      pi.clist.pop(); // remove from ast
+      llist.splice(1,1) // remove `%: (% log 1) => (log 1)
+      await $eval(stack, llist); // if this doesn't modify the stack or do IO it's a no-op
+      pi.parsers = getParsers(stack);
+      return true;
+    }
+    return false;
+  }
+}
+
 export function getParsers(stack: any[]) {
   // get parsers
   let parsers: IParser[] = flatten(stack.map(ctx => (<any>Object).values(ctx).filter(isParser) as IParser[]));
@@ -106,6 +139,7 @@ export function getParsers(stack: any[]) {
     parsers.push(lispParser);
     parsers.push(parserParser);
     parsers.push(excludeDefaultParsers);
+    parsers.push(parsetimeEval);
   }
   parsers = sortBy(parsers, c => c.priority);
   parsers
@@ -174,7 +208,7 @@ export interface ParseInfoOptions {
   maxSymLength?: number;
   tabSize?: number;
   debug?: boolean;
-  sourceMap?: boolean;
+  sourceMap?: boolean;  
 }
 
 export function parseInfo(stack: any[], code: string, options: ParseInfoOptions = {}) {
@@ -237,7 +271,7 @@ export function parseInfo(stack: any[], code: string, options: ParseInfoOptions 
       if ((pi.clist.minLength || 0) > pi.clist.length) { throw new Error(`list ended before it's minimum length (${pi.clist.minLength}) was reached`); }
       const thisListExplicit = pi.clist.explicit || false;
       pi.clist = pi.parseStack.pop();
-      if (!pi.clist) { throw new Error ("clist is undefined - probably too many close parens ')'"); }
+      if (!pi.clist) { throw new Error ("current list is undefined - probably too many close parens ')'"); }
       if (explicit && !thisListExplicit) { pi.endList(explicit); }
     },
     getCurrentLineNum: () => pi.code.substr(0, pi.i).split("\n").length,

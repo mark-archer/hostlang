@@ -1,8 +1,8 @@
 import { clone, isExpr, isJS, isList, isNvp, isSym, INvp, promiseAll, tick, unquote, untick, without } from "./common";
 import { parseHost } from "./host-parser";
-import { ParseInfoOptions } from "./parseInfo";
 import { Fn, IParamInfo, isFn, isMeta, validate } from "./typeInfo";
 import { copy } from "./utils";
+import { ParseInfoOptions } from "./meta/meta-parser";
 
 // responseText
 module.exports.parseHost = parseHost;

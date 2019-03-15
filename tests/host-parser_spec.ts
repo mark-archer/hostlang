@@ -181,7 +181,7 @@ describe("parseHost", () => {
 
     it("should throw an error when there are too many close parens", () =>
       parseHost([], ")").should.be
-      .rejectedWith("parse error at line 1, col 1:\n)\nError: clist is undefined - probably too many close parens ')'"),
+      .rejectedWith("parse error at line 1, col 1:\n)\nError: current list is undefined - probably too many close parens ')'"),
     );
 
     it("should throw an error when there are too many open parens", async () =>

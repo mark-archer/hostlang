@@ -1,17 +1,17 @@
-import { Runtime, runtime, $eval } from "./meta/meta-lang";
+import { runtime } from "./meta/meta-lang";
 import { readFile } from "fs";
 import { parseHost } from "./host-parser";
 import { compileHost } from "./compile";
 
 
-export function HostRuntime(stack: any[] = []) {
+export function hostRuntime(stack: any[] = []) {
   const hostRuntime = runtime(stack);
   const hostScope = hostRuntime.newScope();  
   
   const stackFns = {
     parse: parseHost,
     compile: compileHost,
-    eval: $hostEval
+    exec: $hostEval
   }
   Object.keys(stackFns)
     .forEach(name => hostScope[name] = (...args) => stackFns[name](stack, ...args));
@@ -23,8 +23,6 @@ export function HostRuntime(stack: any[] = []) {
 }
 
 export function $hostEval(stack: any[], ast: any) {
-  console.log(stack)
-  console.log(ast);
   const exe = compileHost(stack, [ast]);
   return exe.exec();
 }

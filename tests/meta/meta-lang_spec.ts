@@ -7,7 +7,7 @@ describe("meta-lang", () => {
   describe("runtime", () => {
     it("should not require any params", async () => {
       const r = runtime();
-      r.should.be.ok();
+      should(r).be.ok();
     });  
 
     it("should convert scopeFns to functions enclosing the scope", async () => {

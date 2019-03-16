@@ -7,10 +7,24 @@ import { exists } from "fs";
 
 export type Stack = { [key:string]: any}[]
 
-export function runtime(stack: Stack = []) {
-  const scope:any = {};
+export interface Runtime {
+  exists: Function;
+  var: Function;
+  get: Function;
+  set: Function;
+  eval: Function;
+  apply: Function;
+  parse: Function;
+  newScope: Function;
+  exitScope: Function;
+  [key: string]: any
+}
+
+export function runtime(stack: Stack = []): Runtime {
+  const runtimeScope = {};
+  $newScope(stack, runtimeScope);  
   // import common functions
-  Object.assign(scope, common) // TODO: uncomment this
+  Object.assign(runtimeScope, common)
   // copy stack based functions
   const stackFns = {
     exists: $exists, 
@@ -20,15 +34,15 @@ export function runtime(stack: Stack = []) {
     eval: $eval,
     apply: $apply,
     parse: $parse,
-    // compile: $compile,
-    // build: $build
+    newScope: $newScope,
+    exitScope: $exitScope
   };
-  Object.keys(stackFns).forEach(name => scope[name] = (...args) => stackFns[name](stack, ...args));  
-  // push scope on stack 
-  stack.push(scope);  
-  
-  // return scope
-  return scope; // should be able to do everything you need with functions on stack
+  Object.keys(stackFns).forEach(name => runtimeScope[name] = (...args) => stackFns[name](stack, ...args));  
+
+  // @ts-ignore
+  //return runtimeScope; // should be able to do everything you need with functions on stack
+  // @ts-ignore
+  return new Proxy({},{ get(target,name) { return $get(stack, name); }})
 }
 
 // eval: ast -> value
@@ -113,5 +127,14 @@ function $set(stack: Stack, name: string, value: any) {
   }
   throw new Error(`${name} is not defined`);
 }
-// NOTE we are only in the business of source-code -> ast -> target-code
 
+function $newScope(stack: Stack, scope: { [key:string]: any} = {}) {
+  stack.push(scope);
+  return scope;
+}
+
+function $exitScope(stack: Stack) {
+  if (!stack.length) throw new Error('no scope to exit, stack is empty');
+  stack.pop();
+  return stack[stack.length - 1];
+}

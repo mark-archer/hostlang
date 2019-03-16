@@ -1,11 +1,11 @@
 import { range, isNumber, last } from "lodash";
 import { js } from "./utils";
 import { ParseInfoOptions, ParseInfo, parser, $parse } from "./meta/meta-parser";
-import { nameLookup, tick, untick, isSym, sym, isExpr } from "./meta/meta-common";
+import { tick, untick, isSym, sym, isExpr } from "./meta/meta-common";
 import { nvp, isList } from "./common";
 import { meta } from "./typeInfo";
 
-export function parseHost(stack: any[], code: string, options: ParseInfoOptions = {}): Promise<any> {
+export async function parseHost(stack: any[], code: string, options: ParseInfoOptions = {}): Promise<any> {
   //const $import = nameLookup(stack, "common")
   // if($import) commonLib = await $import("common")
   
@@ -34,7 +34,8 @@ export function parseHost(stack: any[], code: string, options: ParseInfoOptions 
   parseCtx.exclude_default_parsers = true;
   stack = [...stack, parseCtx] 
   
-  return $parse(stack, code, options);
+  const ast = await $parse(stack, code, options);
+  return ast;
 }
 
 function parserCleanup(pi: ParseInfo) {    

@@ -1,9 +1,9 @@
 import { isArray, isFunction, isObject, isString } from "util";
-import { guid, isExpr, isList, isSym, last, quote, skip, sym, tick, unquote, untick } from "./common";
+import { isExpr, isList, isSym, last, quote, skip, sym, tick, unquote, untick } from "./common";
 import * as common from "./common";
 import { getName } from "./host";
 import { Fn, makeFn } from "./typeInfo";
-import { copy, js } from "./utils";
+import { js } from "./utils";
 
 export function getRef(refs: any[], ctx: any) {
   let ref = refs.indexOf(ctx);

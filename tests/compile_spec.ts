@@ -856,6 +856,35 @@ describe("compile", () => {
       `);
     });
   });
+
+  describe("compileThrow", () => {
+    it("should throw _ if no value specified", async () => {
+      const env = {import: list, _:1};
+      const r = compileHost(env, [["`", "`throw"]]);
+      linesJoinedShouldEqual(r.code, `
+        function(_,env,){
+          return (function(_){
+            _=_;
+            throw _;
+            return _;
+          })(_);
+        }
+      `);
+      should(() => r.exec()).throw(1)
+    });
+
+    it("should allow throwing a simple value", async () => {
+      const env = {import: list, _:1};
+      const r = compileHost(env, [["`", "`throw", 2]]);
+      should(() => r.exec()).throw(2)
+    });
+
+    it("should allow throwing an expression result", async () => {
+      const env = {import: list, _:1, add};
+      const r = compileHost(env, [["`", "`throw", ['`', "`add", 1, 1]]]);
+      should(() => r.exec()).throw(2)
+    });
+  });
 });
 
 function linesJoinedShouldEqual(a: string, b: string) {

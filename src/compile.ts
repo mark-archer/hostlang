@@ -271,7 +271,7 @@ export function compileThrow(refs: any[], stack: any[], expr: any[]) {
   let valueExpr = expr[2];
   if (valueExpr === undefined) valueExpr = '`_';
   let valueCode = compileExpr(refs, stack, valueExpr);
-  return `${valueCode};throw _`
+  return `${valueCode};throw _`  
 }
 
 export function compileAwait(refs: any[], stack: any[], expr: any[]) {
@@ -371,7 +371,7 @@ export function compileHost(env: any, ast: any[], refs: any[]= []) {
   code += refs.map((v, i) => `r${i}`).join();
   code += `){\n\treturn ${innerCode}\n}`;
   const f = js(code);
-  const _ = getName(stack, "_");
+  const _ = getName(stack, "_");  
   const exec = () => f.apply(null, [ _, env, ...refs]);
   return { code, f, exec, env, ast };
 }

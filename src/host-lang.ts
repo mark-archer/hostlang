@@ -31,8 +31,7 @@ export function $hostExec(stack: any[], ast: any) {
 export async function $import(stack: any[], path: string, options?: any) {
   const fetch = nameLookup(stack, "fetch");
   const code = await fetch(path, options);
-  // ... todo
-  // if (_import) return await _import(path, options);
+  // ... todo  
 }
 
 export async function fetch(path: string, options: any = { encoding: 'utf-8' }) {

@@ -472,7 +472,7 @@ f 1 2
 
     it("should treat << as pipe for a block into the current position", () =>
       parseHost([], "a << b c").then(cleanCopyList).then((ast) => {
-        ast.should.eql([ [ "`", "`a", [ "`", "`evalBlock", "`b", "`c" ] ] ]);
+        ast.should.eql([ [ "`", "`a", [ "`", "`do", "`b", "`c" ] ] ]);
       }),
     );
 
@@ -696,6 +696,27 @@ else
               [true, 3]]]]]);
         }),
     );
+  });
+
+  describe("parseSet", () => {
+    it("should allow prefix equals", async () => {
+      const ast = await parseHost([], "= a b");
+      cleanCopyList(ast).should.eql([[ '`', '`set', '`a', '`b']])
+    });
+
+    it("should allow infix equals", async () => {
+      const ast = await parseHost([], "a = b");
+      cleanCopyList(ast).should.eql([[ '`', '`set', '`a', '`b']])
+    });
+
+    it("should allow implicit expressions after equals", async () => {
+      const ast = await parseHost([], "a = b c");
+      cleanCopyList(ast).should.eql([[ '`', '`set', '`a', [ '`', '`b', '`c' ]]])
+    });
+
+    it("should throw an error if equals is in invalid position", async () => {
+      await parseHost([], "a b =").should.be.rejectedWith(/unexpected symbol/)
+    });
   });
 
   describe("parseBasicOps", () => {

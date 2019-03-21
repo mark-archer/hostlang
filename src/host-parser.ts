@@ -22,7 +22,8 @@ export async function parseHost(stack: any[], code: string, options: ParseInfoOp
     parseSymbols, parseLists, parseStrings,
     parseIndents, parseMetaList, 
     parseNumbers, parseComments, parseNvp,
-    parseDots, parsePipes, parseIfElifElse, parseBasicOps, parseNew, parseTryCatch, parseFnArrow, parseSpread,
+    parseDots, parsePipes, parseIfElifElse, parseSet,
+    parseBasicOps, parseNew, parseTryCatch, parseFnArrow, parseSpread,
     parseTabSize,
     init    
   }
@@ -502,7 +503,7 @@ function parsePipes(pi: ParseInfo) {
       pi.newList();
       pi.clist.indent = pi.indent + 1;
     }
-    pi.clist.push(sym("evalBlock"));
+    pi.clist.push(sym("do"));
     return true;
   }
 
@@ -580,6 +581,40 @@ function parseIfElifElse(pi: ParseInfo) {
   }
 }
 
+function parseSet(pi: ParseInfo) {
+  const c = pi.peekWord()
+  // check for implicit expr
+  if (pi.clist[1] === sym("set") && pi.clist.length === 5) {
+    // ` set a b c -> ` set a: b c
+    const exprA = pi.clist.pop();
+    const exprF = pi.clist.pop();
+    pi.newList();
+    pi.clist.indent = pi.indent + 1;
+    pi.push(exprF);
+    pi.push(exprA)
+    return true;
+  }
+  if (c !== "=") return;
+  pi.pop();
+  if (pi.clist.length == 1) {
+    pi.push(sym("set"))
+    return true;
+  }
+  // first check for getr; o.i = 1
+  else if (pi.clist.length == 2 && pi.clist[1].length && pi.clist[1][1] === sym("getr")) {
+    pi.clist.splice(1, 0, sym("set"));
+    return true;
+  }
+
+  else if (pi.clist.length == 2) {
+    pi.clist.splice(1, 0, sym("set"))
+    //pi.newList()
+  }
+  else {
+    throw "unexpected symbol set ="
+  }
+}
+
 function parseBasicOps(pi: ParseInfo) {
 
   let word = pi.peek(2);
@@ -589,12 +624,6 @@ function parseBasicOps(pi: ParseInfo) {
 
     // infix logic - if past second position (first sym) treat as infix
     if (pi.clist.length > 1) {
-
-      // first check for getr; o.i = 1
-      if (op === "set" && pi.clist.length == 2 && pi.clist[1].length && pi.clist[1][1] === sym("getr")) {
-        pi.clist.splice(1, 0, sym("set"));
-        return true;
-      }
 
       // 1 + 2 * 3
       // ===
@@ -639,7 +668,7 @@ function parseBasicOps(pi: ParseInfo) {
   if (word === "+") { return opFound("add"); }
   if (word === "*") { return opFound("multiply"); }
   if (word === "/") { return opFound("divide"); }
-  if (word === "=") { return opFound("set"); }
+  //if (word === "=") { return opFound("set"); }
 
 }
 

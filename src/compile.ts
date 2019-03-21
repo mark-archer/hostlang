@@ -89,7 +89,7 @@ export function compileFn(refs: any[], stack: any[], expr: (any[] | Fn)) {
   }).join();
   stack = [...stack, fnScope];
   code += "){\n\tlet _=null;\n\treturn";
-  code += compileExprBlock(refs, stack, fn.body);
+  code += compileDo(refs, stack, fn.body);
   code += "\n}";
   return code;
 }
@@ -110,7 +110,7 @@ export function compileCond(refs: any[], stack: any[], expr: any[]) {
   let r = "";
   expr.forEach((ifthen, i) => {
     const _if = compileExpr(refs, stack, ifthen.shift());
-    const _then = compileExprBlock(refs, stack, ifthen);
+    const _then = compileDo(refs, stack, ifthen);
     r += `if (${_if}) _=${_then}`;
     if (i < expr.length - 1) {
       r += "\nelse ";
@@ -312,7 +312,7 @@ export function compileExpr(refs: any[], stack: any[], expr: any): string {
   return code;
 }
 
-export function compileExprBlock(refs: any[], stack: any[], expr: any) {
+export function compileDo(refs: any[], stack: any[], expr: any) {
   expr = untick(expr);
   if (expr[0] === "`do") { expr.shift(); }
   let code = `(function(_){`;
@@ -338,11 +338,20 @@ export function compileExprBlock(refs: any[], stack: any[], expr: any) {
   return code;
 }
 
+export function compilerCompiler(refs: any[], stack: any[], expr: any[]) {
+  let key = untick(expr[2]);
+  let fnExpr = ['`', '`fn', ...skip(expr, 3)];
+  console.log(fnExpr)
+  const compiler = compileHost(stack, [fnExpr], refs).exec();
+  stack[0].compilers[key] = compiler;
+  return "_";
+}
+
 function loadCommon(stack: any[]) {
   const defaultCompilers = {
     "getr": compileGetr,
     "setr": compileSetr,
-    "do": compileExprBlock,
+    "do": compileDo,
     "fn": compileFn,
     "set": compileSet,
     "export": compileExport,
@@ -351,7 +360,8 @@ function loadCommon(stack: any[]) {
     "await": compileAwait,
     "import": compileImport,
     "return": compileReturn,
-    "throw": compileThrow
+    "throw": compileThrow,
+    "compiler": compilerCompiler,
   };
   const env = stack[0];
   if (!env.compilers) { env.compilers = {}; }
@@ -366,7 +376,7 @@ export function compileHost(env: any, ast: any[], refs: any[]= []) {
   stack[0] = env;
   env.env = env;
   loadCommon(stack);
-  const innerCode = compileExprBlock(refs, stack, ast);
+  const innerCode = compileDo(refs, stack, ast);
   let code = "function(_,env,";
   code += refs.map((v, i) => `r${i}`).join();
   code += `){\n\treturn ${innerCode}\n}`;

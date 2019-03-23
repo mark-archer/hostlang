@@ -142,7 +142,6 @@ export function getParsers(stack: any[]) {
     parsers.push(parsetimeEval);
   }
   parsers = sortBy(parsers, c => c.priority);
-  parsers
   return parsers;
 }
 

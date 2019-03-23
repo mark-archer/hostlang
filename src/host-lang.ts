@@ -1,7 +1,7 @@
 import { runtime } from "./meta/meta-lang";
 import { readFile } from "fs";
 import { parseHost } from "./host-parser";
-import { compileHost } from "./compile";
+import { compileHost, compileModule } from "./compile";
 import { nameLookup } from "./meta/meta-common";
 
 
@@ -30,8 +30,11 @@ export function $hostExec(stack: any[], ast: any) {
 
 export async function $import(stack: any[], path: string, options?: any) {
   const fetch = nameLookup(stack, "fetch");
+  const parse = nameLookup(stack, "parse");
   const code = await fetch(path, options);
-  // ... todo  
+  const ast = await parse(code, options);
+  const mod = await compileModule(stack, ast);
+  return mod;
 }
 
 export async function fetch(path: string, options: any = { encoding: 'utf-8' }) {

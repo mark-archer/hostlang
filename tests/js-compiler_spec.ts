@@ -3,7 +3,7 @@ import { add } from "../src/common";
 
 const should = require('should');
 
-describe.only("compileJs", () => {
+describe("compileJs", () => {
   const ci = jsCompilerInfo([{a:1, add}]);
   describe("compileSym", () => {
     it("should return undefined if not given a sym", async () => {

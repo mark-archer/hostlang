@@ -7,7 +7,8 @@ import { nameLookup } from "./meta/meta-common";
 
 export function hostRuntime(stack: any[] = []) {
   const hostRuntime = runtime(stack);
-  const hostScope = hostRuntime.newScope();  
+  const hostScope = hostRuntime.newScope();
+  hostScope._ = hostRuntime._ === undefined ? null : hostRuntime._
   
   const stackFns = {
     parse: parseHost,
@@ -47,5 +48,41 @@ export async function fetch(path: string, options: any = { encoding: 'utf-8' }) 
   return r
 }
 
+export function repl() {
+  const readline = require('readline');
+  const rl = readline.createInterface(process.stdin, process.stdout);
+
+  let rt;
+  function restart() {
+    rt = hostRuntime([{ 
+      "exit": () => rl.close(), 
+      restart,
+    }]);
+    return "restarted";
+  }
+  restart();
+
+  function prompt() {
+    rl.setPrompt(`host$ `)
+    rl.prompt();
+  }
+  prompt();
+  
+  rl.on('line', async (line) => {
+    const ast = await rt.parse(line);
+    try {
+      for (const i of ast) {
+        const r = await rt.eval(i);
+        rt.var('_', r);
+        console.log(r);
+      }
+    } catch (e) {
+      console.error(e && e.message || e);
+    }    
+    prompt();
+  }).on('close', () => {
+    process.exit(0);
+  });
+}
 
 

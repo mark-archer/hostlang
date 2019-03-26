@@ -37,7 +37,10 @@ export function runtime(stack: Stack = []): Runtime {
     newScope: $newScope,
     exitScope: $exitScope
   };
-  Object.keys(stackFns).forEach(name => runtimeScope[name] = (...args) => stackFns[name](stack, ...args));  
+  Object.keys(stackFns).forEach(name => {
+    runtimeScope[name] = (...args) => stackFns[name](stack, ...args)
+    runtimeScope[name].isMacro = stackFns[name].isMacro;
+  });  
 
   // @ts-ignore
   //return runtimeScope; // should be able to do everything you need with functions on stack
@@ -52,7 +55,7 @@ export function $eval(stack: Stack, ast) {
     const name = untick(ast);
     if (isSym(name)) return name;
     const r = $get(stack, name);
-    if (r === undefined) throw new Error(`${ast} is not defined`);
+    if (r === undefined) throw new Error(`${name} is not defined`);
     return r
   }
   if (isExpr(ast)) {
@@ -60,11 +63,15 @@ export function $eval(stack: Stack, ast) {
     const expr = untick(ast);
     if (isExpr(expr)) return expr;
     const f = $eval(stack, expr[0]);
-    // TODO what if f is a macro?
-    const args = skip(expr).map(arg => $eval(stack, arg));
-    //$newScope(stack);
+    const argsAst = skip(expr);
+    // @ts-ignore
+    if (f.isMacro) {
+      let r = $apply(stack, f, argsAst);
+      r = $eval(stack, r);
+      return r;
+    }
+    const args = argsAst.map(arg => $eval(stack, arg));
     const r = $apply(stack, f, args);
-    //$exitScope(stack);
     return r;
   }
   return ast;
@@ -84,14 +91,8 @@ export function $apply(stack: Stack, f, args:any[]) {
   throw new Error(`unknown apply ${stringify({ f, args, }, 2)}`)
 }
 
-// function $newScope(stack) {
-//   stack.push({});
-// }
-// function $exitScope(stack) {
-//   stack.pop();
-// }
-
 function $exists(stack: Stack, name: string): boolean {
+  name = $eval(stack, untick(name));
   for (let i = stack.length - 1; i >= 0; i--) {
     if (stack[i][name] !== undefined) { 
       return true;
@@ -99,17 +100,21 @@ function $exists(stack: Stack, name: string): boolean {
   }
   return false;
 }
+// @ts-ignore
+$exists.isMacro = true;
 
 function $var(stack: Stack, name: string, value: any = null) {
+  name = $eval(stack, untick(name));
+  //name = untick(name);
+  value = $eval(stack, value);
   // for now, not throwing an error if already defined
   last(stack)[name] = value
   return value;
 }
+// @ts-ignore
+$var.isMacro = true;
 
 function $get(stack: Stack, name: string) {
-  // if (isSym(name)) { 
-  //   return untick(name); 
-  // }
   for (let i = stack.length - 1; i >= 0; i--) {
     if (stack[i][name] !== undefined) { 
       return stack[i][name]; 
@@ -119,6 +124,8 @@ function $get(stack: Stack, name: string) {
 }
 
 function $set(stack: Stack, name: string, value: any) {
+  name = untick(name);
+  value = $eval(stack, value);
   for (let i = stack.length - 1; i >= 0; i--) {
     if (stack[i][name] !== undefined) { 
       stack[i][name] =  value;

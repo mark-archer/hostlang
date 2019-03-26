@@ -29,6 +29,7 @@ export function compileSym(ast: any, ci: ICompilerInfo) {
 
 export function compileExpr(ast: any, ci: ICompilerInfo) {
   if (!isExpr(ast)) return;
+  if (ast[1] === '`do') return compileDo(skip(ast, 2), ci);
   const f = $compile(ast[1], ci);
   const args = skip(ast, 2).map(a => $compile(a, ci));
   return `${f}(${args.join()})`

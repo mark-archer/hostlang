@@ -31,7 +31,6 @@ export function compileSym(refs: any[], stack: any[], sym: string) {
   // quote logic
   if (sym[0] === `'`) {
     sym = unquote(sym);
-    sym;
     const evalQuote = () => `${tick(getName(stack, sym))}`;
     return compileExpr(refs, stack, ["`", evalQuote]);
   }

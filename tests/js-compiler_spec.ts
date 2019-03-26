@@ -27,6 +27,16 @@ describe("compileJs", () => {
     it("should return a js string representing a function call", async () => {
       compileExpr(['`', '`add', '`a', '`a'], ci).should.equal('add(a,a)');
     });
+
+    it("should forward do exprs to compileDo", async () => {
+      const r = compileExpr(['`', '`do', ['`', '`add', '`a', '`a']], ci);
+      linesJoinedShouldEqual(r, `
+        (function(_){
+          _=add(a,a);
+          return _;
+        })(_)
+      `)
+    });
   });
 
   describe("compileDo", () => {
@@ -46,7 +56,7 @@ describe("compileJs", () => {
       should(compileDo(['`'], ci)).equal(undefined)
       should(compileDo([], ci)).not.equal(undefined)
     });
-  });
+  });  
 });
 
 function linesJoinedShouldEqual(a: string, b: string) {

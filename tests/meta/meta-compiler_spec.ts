@@ -16,7 +16,7 @@ describe("meta-compiler", () => {
     r.should.equal('');
     ci.stack[0].compileStar.should.be.ok();
     const r2 = $compile('*', ci);
-    r2.should.equal('multiply');
+    r2.should.equal('multiply');    
   });
 
   it("should throw an error if no compilers are proceeding", async () => {

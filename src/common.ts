@@ -1,8 +1,9 @@
 import * as _ from "lodash";
 import * as uuid from "uuid";
-import { apply, evalHost, evalHostBlock, evalSym, execHost, execHostInScope, getName } from "./host";
-import { Fn, IFieldInfo, IObjectInfo, isFn, isMeta, isObjectInfo, makeFn, TypeInfo } from "./typeInfo";
+import { evalHost, evalHostBlock, execHostInScope } from "./host";
+import { Fn, IObjectInfo, isFn, isMeta, isObjectInfo, makeFn } from "./typeInfo";
 import { copy, stringify } from "./utils";
+import { $get } from "./meta/meta-lang";
 
 export const {
   isString,
@@ -98,8 +99,6 @@ export function isPromise(x: any) {
   return x && isFunction(x.then);
 }
 
-// export type Param = { name:string, typeInfo?:TypeInfo, nullable?:boolean, defaultValue?:any, isRest?:boolean }
-
 export interface INvp { kind: "Nvp"; name: string; value: any; }
 
 export function isNvp(x: any) {
@@ -109,10 +108,6 @@ export function isNvp(x: any) {
 export function nvp(name: string, value: any) {
   return { kind: "Nvp", name, value };
 }
-
-// export async function GET(id:string) {
-//     //throw new Error('not implemented');
-// }
 
 export function mapkv(x: any, f: (k: string, v: any) => any) {
   const keys = _.keys(x);
@@ -168,7 +163,7 @@ module.exports.fn.isMacro = true; module.exports.fn.isMeta = true;
 function hostVar(stack: any[], name: string, ...value: any[]) {
   const ctx = _.last(stack);
   name = untick(name);
-  if (ctx[name] !== undefined && !getName(stack, "varCanSet")) {
+  if (ctx[name] !== undefined && !$get(stack, "varCanSet")) {
     /* tslint:disable-next-line:max-line-length */
     throw new Error(`${name} already exists. Use 'set' (=), 'varSet' (<-) or create a variable named "varCanSet" with the value of true if you want to allow this behavior: var varCanSet true`);
   }
@@ -208,7 +203,7 @@ set.isMacro = true; set.isMeta = true;
 //  this is behind the '<-' and '->' operators
 //  this enables a nice and simple syntax for working with vars that you usually want when scripting
 export function varSet(stack: any[], name: string, ...value: any[]) {
-  // if(getName(stack, untick(name)) === undefined)
+  // if($get(stack, untick(name)) === undefined)
   if (last(stack)[untick(name)] === undefined) {
     return hostVar(stack, name, ...value);
   } else {
@@ -264,7 +259,7 @@ export function sleep(msInterval: number) {
 }
 
 export function cond(stack: any[], ...conditions: any[]) {
-  const lastIt = getName(stack, "_");
+  const lastIt = $get(stack, "_");
   return new Promise((resolve, reject) => {
     const conds = [...conditions];
     conds.reverse();
@@ -672,7 +667,7 @@ function hostEach(stack: any[], items: any[], iterSym: any, ...body: any[]) {
   return evalHost(stack, items)
     .then((items: any[]) => new Promise((resolve, reject) => {
       items = clone(items);
-      if (!items.length) { return resolve(getName(stack, "_")); }
+      if (!items.length) { return resolve($get(stack, "_")); }
       items.reverse();
 
       const ctx: any = {};
@@ -689,7 +684,7 @@ function hostEach(stack: any[], items: any[], iterSym: any, ...body: any[]) {
           return evalHostBlock(stack, copy(body), ctx).then(resolve).catch(reject);
         }).then(next).catch(reject);
       }
-      next(getName(stack, "_"));
+      next($get(stack, "_"));
     }));
 }
 // @ts-ignore
@@ -727,7 +722,7 @@ function hostFor(stack: any[], iterArgs: any[], ...body: any[]) {
           start += step;
           return evalHostBlock(stack, copy(body), ctx).then(next).catch(reject);
         }
-        next(getName(stack, "_"));
+        next($get(stack, "_"));
       });
     });
 }
@@ -748,7 +743,7 @@ function hostWhile(stack: any[], condition: any, ...body: any[]) {
           return evalHostBlock(stack, copy(body), ctx).then(next).catch(reject);
         });
     }
-    next(getName(stack, "_"));
+    next($get(stack, "_"));
   });
 }
 // @ts-ignore
@@ -788,8 +783,8 @@ function hostExport(stack: any[], ...syms: string[]) {
   if (!top.exports) { top.exports = {}; }
   syms.forEach((sym) => {
     sym = untick(sym);
-    if (getName(stack, sym) === undefined) { console.warn(`export - ${sym} is not defined`); }
-    top.exports[sym] = getName(stack, sym);
+    if ($get(stack, sym) === undefined) { console.warn(`export - ${sym} is not defined`); }
+    top.exports[sym] = $get(stack, sym);
   });
   return top.exports;
 }
@@ -798,7 +793,7 @@ hostExport.isMeta = true; hostExport.isMacro = true;
 module.exports.export = hostExport;
 
 function hostInline(stack: any[], url: string): Promise<any> {
-  const GETData = getName(stack, "GETData");
+  const GETData = $get(stack, "GETData");
   if (!GETData) {
     throw new Error("GETData is not defined. `run needs a valid implementation of (GETData url) in the stack");
   }

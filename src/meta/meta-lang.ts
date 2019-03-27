@@ -1,9 +1,9 @@
 import * as common from "../common";
-import { sym, isSym, isExpr, tick, untick, quote, unquote, last, isList, skip } from "../common";
+import { last, skip } from "../common";
+import { isSym, untick, isExpr, isList, tick } from "./meta-common";
 import { isFunction } from "util";
 import { stringify } from "../utils";
 import { $parse } from "./meta-parser";
-import { exists } from "fs";
 
 export type Stack = { [key:string]: any}[]
 
@@ -27,19 +27,25 @@ export function runtime(stack: Stack = []): Runtime {
   Object.assign(runtimeScope, common)
   // copy stack based functions
   const stackFns = {
+    // get: (name) => $get(stack, name), 
+    // newScope: () => $newScope(stack),
+    // exitScope: () => $exitScope(stack),
+    get: $get,
+    newScope: $newScope,
+    exitScope: $exitScope,
     exists: $exists, 
     var: $var,
-    get: $get, 
     set: $set,
     eval: $eval,
+    do: $doBlock,
     apply: $apply,
     parse: $parse,
-    newScope: $newScope,
-    exitScope: $exitScope
   };
   Object.keys(stackFns).forEach(name => {
+    //runtimeScope[name] = stackFns[name]
     runtimeScope[name] = (...args) => stackFns[name](stack, ...args)
     runtimeScope[name].isMacro = stackFns[name].isMacro;
+    //runtimeScope[name].isMeta = stackFns[name].isMeta;
   });  
 
   // @ts-ignore
@@ -48,7 +54,15 @@ export function runtime(stack: Stack = []): Runtime {
   return new Proxy({},{ get(target,name) { return $get(stack, name); }})
 }
 
-// eval: ast -> value
+export function $doBlock(stack: Stack, ast: any[]) {
+  if (!isList(ast)) ast = [ast];
+  for (const i of ast) {
+    const r = $eval(stack, i);
+    last(stack)._ = r;
+  }
+  return $get(stack, '_');
+}
+
 export function $eval(stack: Stack, ast) {
   if (isSym(ast)) {
     // TODO quoted symbols
@@ -63,35 +77,40 @@ export function $eval(stack: Stack, ast) {
     const expr = untick(ast);
     if (isExpr(expr)) return expr;
     const f = $eval(stack, expr[0]);
-    const argsAst = skip(expr);
-    // @ts-ignore
-    if (f.isMacro) {
-      let r = $apply(stack, f, argsAst);
-      r = $eval(stack, r);
-      return r;
+    let args = skip(expr);
+    if (!(f.isMacro || f.isMeta)) {
+      args = args.map(arg => $eval(stack, arg));
     }
-    const args = argsAst.map(arg => $eval(stack, arg));
-    const r = $apply(stack, f, args);
-    return r;
+    let result = $apply(stack, f, args);
+    if(f.isMacro) {
+      result = $eval(stack, result);
+    }
+    return result;
   }
   return ast;
 }
+// @ts-ignore
+$eval.isMeta = true;
 
-// apply: fn+args -> value
-//  stack is included for symetry with eval and future enhancements to allow adding apply rules
 export function $apply(stack: Stack, f, args:any[]) {
+  let result = null;
   // standard js apply
   if (isFunction(f)) {
-    return f.apply(null, args);
+    result = f.apply(null, args);
   }
   // object with apply function
-  if (isFunction(f.apply)) {
-    return f.apply(...args);
+  else if (isFunction(f.apply)) {
+    result = f.apply(...args);
   }
-  throw new Error(`unknown apply ${stringify({ f, args, }, 2)}`)
+  else {
+    throw new Error(`unknown apply ${stringify({ f, args, }, 2)}`)
+  }
+  return result;
 }
+// @ts-ignore
+$apply.isMeta = true;
 
-function $exists(stack: Stack, name: string): boolean {
+export function $exists(stack: Stack, name: string): boolean {
   name = $eval(stack, untick(name));
   for (let i = stack.length - 1; i >= 0; i--) {
     if (stack[i][name] !== undefined) { 
@@ -101,20 +120,21 @@ function $exists(stack: Stack, name: string): boolean {
   return false;
 }
 // @ts-ignore
-$exists.isMacro = true;
+$exists.isMeta = true;
 
-function $var(stack: Stack, name: string, value: any = null) {
+export function $var(stack: Stack, name: string, value: any = null) {
   name = $eval(stack, untick(name));
   //name = untick(name);
   value = $eval(stack, value);
   // for now, not throwing an error if already defined
   last(stack)[name] = value
-  return value;
+  //return value;
+  return tick(name);
 }
 // @ts-ignore
 $var.isMacro = true;
 
-function $get(stack: Stack, name: string) {
+export function $get(stack: Stack, name: string) {
   for (let i = stack.length - 1; i >= 0; i--) {
     if (stack[i][name] !== undefined) { 
       return stack[i][name]; 
@@ -122,8 +142,10 @@ function $get(stack: Stack, name: string) {
   }
   return undefined;
 }
+// @ts-ignore
+$get.isMeta = true;
 
-function $set(stack: Stack, name: string, value: any) {
+export function $set(stack: Stack, name: string, value: any) {
   name = untick(name);
   value = $eval(stack, value);
   for (let i = stack.length - 1; i >= 0; i--) {
@@ -134,13 +156,19 @@ function $set(stack: Stack, name: string, value: any) {
   }
   throw new Error(`${name} is not defined`);
 }
+// @ts-ignore
+$set.isMeta = true;
 
-function $newScope(stack: Stack, scope: { [key:string]: any} = {}) {
+export function $newScope(stack: Stack, scope: { [key:string]: any} = {}) {
   stack.push(scope);
+  scope._ = $get(stack, "_");
+  if(scope._ === undefined) {
+    scope._ = null;
+  }
   return scope;
 }
 
-function $exitScope(stack: Stack) {
+export function $exitScope(stack: Stack) {
   if (!stack.length) throw new Error('no scope to exit, stack is empty');
   stack.pop();
   return stack[stack.length - 1];

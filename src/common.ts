@@ -133,49 +133,49 @@ export function skip(x: any[], n: number = 1) {
   return x.slice(n);
 }
 
-function hostFn(stack: any[], ...args: any[]): Promise<Fn> {
-  let name;
-  if (typeof args[0] === "string") { name = untick(args.shift()); }
-  let params = untick(args.shift());
-  let metaData;
-  if (isMeta(args[0])) { metaData = args.shift(); }
-  const body = args;
-  params = params.map((p: any) => {
-    if (isSym(p)) { return untick(p); }
-    return p;
-  });
-  const f = makeFn(name, params, undefined, body, [...stack]);
-  if (name) { hostVar(stack, name, f); } // TODO fix this
-  if (!metaData) { return Promise.resolve(f); }
-  // return then(evalHost(stack, metaData), (metaData:any) => {
-  return evalHost(stack, metaData).then((metaData) => {
-    f.returnType = metaData.typeInfo;
-    delete metaData.kind;
-    delete metaData.typeInfo;
-    // @ts-ignore
-    mapkv(metaData, (k, v) => f[k] = v);
-    return f;
-  });
-}
-module.exports.fn = hostFn;
-module.exports.fn.isMacro = true; module.exports.fn.isMeta = true;
+// function hostFn(stack: any[], ...args: any[]): Promise<Fn> {
+//   let name;
+//   if (typeof args[0] === "string") { name = untick(args.shift()); }
+//   let params = untick(args.shift());
+//   let metaData;
+//   if (isMeta(args[0])) { metaData = args.shift(); }
+//   const body = args;
+//   params = params.map((p: any) => {
+//     if (isSym(p)) { return untick(p); }
+//     return p;
+//   });
+//   const f = makeFn(name, params, undefined, body, [...stack]);
+//   if (name) { hostVar(stack, name, f); } // TODO fix this
+//   if (!metaData) { return Promise.resolve(f); }
+//   // return then(evalHost(stack, metaData), (metaData:any) => {
+//   return evalHost(stack, metaData).then((metaData) => {
+//     f.returnType = metaData.typeInfo;
+//     delete metaData.kind;
+//     delete metaData.typeInfo;
+//     // @ts-ignore
+//     mapkv(metaData, (k, v) => f[k] = v);
+//     return f;
+//   });
+// }
+// module.exports.fn = hostFn;
+// module.exports.fn.isMacro = true; module.exports.fn.isMeta = true;
 
-function hostVar(stack: any[], name: string, ...value: any[]) {
-  const ctx = _.last(stack);
-  name = untick(name);
-  if (ctx[name] !== undefined && !$get(stack, "varCanSet")) {
-    /* tslint:disable-next-line:max-line-length */
-    throw new Error(`${name} already exists. Use 'set' (=), 'varSet' (<-) or create a variable named "varCanSet" with the value of true if you want to allow this behavior: var varCanSet true`);
-  }
-  return evalHostBlock(stack, value)
-    .then((value) => {
-      ctx[name] = value;
-      return value;
-    });
-}
-// @ts-ignore
-hostVar.isMacro = true; hostVar.isMeta = true;
-module.exports.var = hostVar;
+// function hostVar(stack: any[], name: string, ...value: any[]) {
+//   const ctx = _.last(stack);
+//   name = untick(name);
+//   if (ctx[name] !== undefined && !$get(stack, "varCanSet")) {
+//     /* tslint:disable-next-line:max-line-length */
+//     throw new Error(`${name} already exists. Use 'set' (=), 'varSet' (<-) or create a variable named "varCanSet" with the value of true if you want to allow this behavior: var varCanSet true`);
+//   }
+//   return evalHostBlock(stack, value)
+//     .then((value) => {
+//       ctx[name] = value;
+//       return value;
+//     });
+// }
+// // @ts-ignore
+// hostVar.isMacro = true; hostVar.isMeta = true;
+// module.exports.var = hostVar;
 
 export function set(stack: any[], name: string, ...value: any[]) {
   /* tslint:disable-next-line:max-line-length */
@@ -198,20 +198,19 @@ export function set(stack: any[], name: string, ...value: any[]) {
 }
 // @ts-ignore
 set.isMacro = true; set.isMeta = true;
-
-// checks if a var exists in local scope, if not it creates it, otherwise sets it
-//  this is behind the '<-' and '->' operators
-//  this enables a nice and simple syntax for working with vars that you usually want when scripting
-export function varSet(stack: any[], name: string, ...value: any[]) {
-  // if($get(stack, untick(name)) === undefined)
-  if (last(stack)[untick(name)] === undefined) {
-    return hostVar(stack, name, ...value);
-  } else {
-    return set(stack, name, ...value);
-  }
-}
-// @ts-ignore
-varSet.isMacro = true; varSet.isMeta = true;
+// // checks if a var exists in local scope, if not it creates it, otherwise sets it
+// //  this is behind the '<-' and '->' operators
+// //  this enables a nice and simple syntax for working with vars that you usually want when scripting
+// export function varSet(stack: any[], name: string, ...value: any[]) {
+//   // if($get(stack, untick(name)) === undefined)
+//   if (last(stack)[untick(name)] === undefined) {
+//     return hostVar(stack, name, ...value);
+//   } else {
+//     return set(stack, name, ...value);
+//   }
+// }
+// // @ts-ignore
+// varSet.isMacro = true; varSet.isMeta = true;
 
 export function date(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   // this craziness is because I couldn't get apply to work with (new Date())
@@ -548,9 +547,9 @@ export function log(...args: any[]) {
 }
 
 export function warn(...args: any[]) {
+  console.warn(...args);
   if (args.length < 2) { args = args[0]; }
-  console.warn(args);
-  return args;
+  return args;  
 }
 
 function hostMap(stack: any[], items: any[], iterSym: any, ...body: any[]) {
@@ -807,42 +806,6 @@ function hostInline(stack: any[], url: string): Promise<any> {
 // @ts-ignore
 hostInline.isMeta = true;
 module.exports.inline = hostInline;
-
-// let hostModuleCache:any = {};
-// export function clearModuleCache () {
-//     hostModuleCache = {};
-// }
-// function hostRequire(stack:any[], url:string, reload:boolean=false) : Promise<any> {
-//     url = url.toLowerCase();
-//     if (hostModuleCache[url] && !reload) {
-//         return Promise.resolve(hostModuleCache[url]);
-//     }
-//     let exs:any = {};
-//     hostModuleCache[url] = exs;
-//     const newTop:any = { exports: exs };
-//     const newCtx = {}; // any other vars will go here and be discarded
-//     const newStack = [newTop, ...stack, newCtx];
-//     return hostInline(newStack, url).then(() => {
-//         return exs;
-//     });
-// }
-// //@ts-ignore
-// hostRequire.isMeta = true;
-// module.exports.require = hostRequire;
-
-// function hostImport(stack:any[], url:string) {
-//     return hostRequire(stack, url).then((exported:any) => {
-//         const ctx = last(stack);
-//         keys(exported).map(n => {
-//             if(ctx[n] !== undefined) console.warn(`import - overwritting ${n}`)
-//             ctx[n] = exported[n];
-//         });
-//         return exported;
-//     });
-// }
-// //@ts-ignore
-// hostImport.isMeta = true;
-// module.exports.import = hostImport;
 
 export function spread(stack: any[], expr: any[], spreadArg: any, ...addArgs: any[]) {
   return evalHost(stack, spreadArg)

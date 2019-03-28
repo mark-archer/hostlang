@@ -55,14 +55,21 @@ describe("host-lang", () => {
         await rt.shell('1 + 1').should.eventually.equal(2)
         await rt.shell('_ + 1 >> * 3').should.eventually.equal(9)
       });      
+    });
 
-      it("should allow setting unevaluated code to variables", async () => {
-        const rt = hostRuntime()
-        const r = await rt.shell('var a: ` 1')
-        r.should.eql([ '`', 1 ]);
-        const r2 = await rt.shell('a');
-        r2.should.equal(r)
-      });
+    it("should allow setting unevaluated code to variables", async () => {
+      const rt = hostRuntime()
+      const r = await rt.shell('var a: ` 1')
+      r.should.eql([ '`', 1 ]);
+      const r2 = await rt.shell('a');
+      r2.should.equal(r)      
+    });
+
+    it.skip("should allow declaring functions", async () => {
+      const rt = hostRuntime()
+      const r = await rt.shell('a => 1')
+      r
+      r.should.eql([ '`', 1 ]);      
     });
   });
 });

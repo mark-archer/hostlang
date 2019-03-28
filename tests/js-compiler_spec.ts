@@ -1,5 +1,8 @@
-import { compileSym, compileExpr, jsCompilerInfo, compileDo } from "../src/js-compiler";
+import { compileSym, compileExpr, jsCompilerInfo, compileDo, compileFn, buildJs } from "../src/js-compiler";
 import { add } from "../src/common";
+import { parseHost } from "../src/host-parser";
+import { js } from "../src/utils";
+import { makeFn } from "../src/typeInfo";
 
 const should = require('should');
 
@@ -54,9 +57,59 @@ describe("compileJs", () => {
     it("should return undefined if not given a list or given an expression", async () => {
       should(compileDo(1, ci)).equal(undefined)
       should(compileDo(['`'], ci)).equal(undefined)
-      should(compileDo([], ci)).not.equal(undefined)
+      should(compileDo([], ci)).not.equal(undefined)      
     });
-  });  
+  });
+
+  describe("compileFn", () => {
+    it("should return undefined if not given a Fn or fn expr", async () => {
+      should(compileFn(1, ci)).equal(undefined)
+      should(compileFn(['`'], ci)).equal(undefined)
+      should(compileFn([], ci)).equal(undefined)
+    });
+
+    it("should compile a fn expr", async () => {
+      const ast = await parseHost([], 'fn add1(x): x + 1')
+      const fnAst = ast[0];
+      const r = compileFn(fnAst, ci);
+      linesJoinedShouldEqual(r, `
+        function add1(x){
+          let _=null;
+          return(function(_){
+            _=add(x,1);
+            return _;
+          })(_)
+        }
+      `)
+      const add1 = js(r, { add });
+      add1(1).should.equal(2);
+      add1("a").should.equal("a1");      
+    });
+
+    it("should compile a fn object", async () => {
+      const fn = makeFn('add1', ['x'], undefined, [['`', '`add', '`x', 1]])
+      const r = compileFn(fn, ci);
+      linesJoinedShouldEqual(r, `
+        function add1(x){
+          let _=null;
+          return(function(_){
+            _=add(x,1);
+            return _;
+          })(_)
+        }
+      `)
+      const add1 = js(r, { add });
+      add1(1).should.equal(2);
+      add1("a").should.equal("a1");      
+    });
+  });
+
+  describe("buildJs", () => {
+    it.only("should work", async () => {
+      const f = buildJs('1', ci)
+      
+    });
+  });
 });
 
 function linesJoinedShouldEqual(a: string, b: string) {

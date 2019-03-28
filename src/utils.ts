@@ -14,6 +14,7 @@ export function js(jsCode: string, externalReferences?: any) {
       refNames.push(key);
       refValues.push(externalReferences[key]);
     });
+    jsCode
     const compiledJs = Function.apply(null, [...refNames, ...hideGlobals, '"use strict"; return ' + jsCode.trim()]);
     return compiledJs.apply(null, refValues);
   } catch (err) {

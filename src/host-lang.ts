@@ -16,8 +16,6 @@ export function hostRuntime(stack: any[] = []) {
   const stackFns = {
     parse: parseHost,
     compile: $compileJs,
-    build: $build,
-    exec: $exec,
     import: $import,
     shell: $shell
   }
@@ -31,19 +29,11 @@ export function hostRuntime(stack: any[] = []) {
 
 export function $compileJs(stack, ast) {
   const ci = jsCompilerInfo(stack)
-  return $compile(ast, ci)
-}
-
-export function $build(stack, ast) {
-  const jsCode = $compileJs(stack, ast);
+  const jsCode = $compile(ast, ci)
   const f = js(jsCode)
   const _ = $get(stack, "_");
-  const exec = () => f.apply(null, [ _ ]);
+  const exec = () => f.apply(null, [ _, ...ci.refs ]);
   return exec;
-}
-
-export function $exec(stack: any[], ast: any) {
-  return $build(stack, ast)();
 }
 
 export async function $import(stack: any[], path: string, options?: any) {

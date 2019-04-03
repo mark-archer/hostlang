@@ -255,7 +255,7 @@ describe("meta-parser", () => {
       });
   
       it("should capture source information", () => {
-        const pi = parseInfo([{meta: {_sourceFile: "!.hl"}}], "\n\nword:");
+        const pi = parseInfo([], "\n\nword:", { sourceFile: "!.hl"});
         pi.popWord();
         pi.popWord();
         pi.popWord().should.eql("word");

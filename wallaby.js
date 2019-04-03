@@ -7,6 +7,7 @@ module.exports = function (wallaby) {
       'tsconfig.json',
       './src/**',
       './public/**',
+      './host_env/**'
     ],
 
     tests: [

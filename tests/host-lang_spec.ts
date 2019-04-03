@@ -10,7 +10,7 @@ describe("host-lang", () => {
     });
 
     it("should expose runtime dependent functions as closures", async () => {
-      const rt = hostRuntime()
+      const rt = await hostRuntime()
       await rt.get("fetch")('/not/a/real/path').should.be.rejectedWith(/no such file or directory/)
       await rt.fetch('/not/a/real/path').should.be.rejectedWith(/no such file or directory/)      
     });
@@ -31,14 +31,14 @@ describe("host-lang", () => {
     // });    
 
     it("should allow evaluating code blocks with do", async () => {
-      const rt = hostRuntime()
+      const rt = await hostRuntime()
       const ast = await rt.parse('add 1 1')
       const f = rt.do(ast);
       f.should.equal(2)
     });
     
     it("should allow declaring variables", async () => {
-      const rt = hostRuntime()
+      const rt = await hostRuntime()
       const ast = await rt.parse('var a 1, a + a')
       const f = rt.do(ast);
       f.should.equal(2)
@@ -46,19 +46,19 @@ describe("host-lang", () => {
 
     describe("shell interface", () => {
       it("should provide a shell interface", async () => {
-        const rt = hostRuntime()
+        const rt = await hostRuntime()
         await rt.shell('1 + 1').should.eventually.equal(2)
       });
 
       it("should remember the state in between calls", async () => {
-        const rt = hostRuntime()
+        const rt = await hostRuntime()
         await rt.shell('1 + 1').should.eventually.equal(2)
         await rt.shell('_ + 1 >> * 3').should.eventually.equal(9)
       });      
     });
 
     it("should allow setting unevaluated code to variables", async () => {
-      const rt = hostRuntime()
+      const rt = await hostRuntime()
       const r = await rt.shell('var a: ` 1')
       r.should.eql([ '`', 1 ]);
       const r2 = await rt.shell('a');
@@ -66,10 +66,15 @@ describe("host-lang", () => {
     });
 
     it.skip("should allow declaring functions", async () => {
-      const rt = hostRuntime()
+      const rt = await hostRuntime()
       const r = await rt.shell('a => 1')
       r
       r.should.eql([ '`', 1 ]);      
     });
+
+    it.skip("should load files in host_env", async () => {
+      const rt = await hostRuntime()
+    });
   });
 });
+

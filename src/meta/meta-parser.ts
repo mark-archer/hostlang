@@ -207,7 +207,8 @@ export interface ParseInfoOptions {
   maxSymLength?: number;
   tabSize?: number;
   debug?: boolean;
-  sourceMap?: boolean;  
+  sourceMap?: boolean;
+  sourceFile?: string;
 }
 
 export function parseInfo(stack: any[], code: string, options: ParseInfoOptions = {}) {
@@ -260,7 +261,8 @@ export function parseInfo(stack: any[], code: string, options: ParseInfoOptions 
       pi.clist = nlist;
 
       if (options.sourceMap !== false) {
-        nlist._sourceFile = stack[0] && stack[0].meta && stack[0].meta._sourceFile;
+        //nlist._sourceFile = stack[0] && stack[0].meta && stack[0].meta._sourceFile;
+        nlist._sourceFile = options.sourceFile;
         nlist._sourceLine = pi.getCurrentLineNum();
         nlist._sourceColumn = pi.getCurrentColNum();
       }

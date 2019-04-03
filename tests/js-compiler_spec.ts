@@ -1,8 +1,9 @@
-import { compileSym, compileExpr, jsCompilerInfo, compileDo, compileFn, buildJs } from "../src/js-compiler";
+import { compileSym, compileExpr, jsCompilerInfo, compileDo, compileFn, buildJs, compileExport } from "../src/js-compiler";
 import { add } from "../src/common";
 import { parseHost } from "../src/host-parser";
 import { js } from "../src/utils";
 import { makeFn } from "../src/typeInfo";
+import { $compile } from "../src/meta/meta-compiler";
 
 const should = require('should');
 
@@ -73,15 +74,16 @@ describe("compileJs", () => {
       const fnAst = ast[0];
       const r = compileFn(fnAst, ci);
       linesJoinedShouldEqual(r, `
-        function add1(x){
+        _=function(x){
           let _=null;
           return(function(_){
             _=add(x,1);
             return _;
-          })(_)
-        }
+          })(_)};
+        let add1=_
       `)
-      const add1 = js(r, { add });
+      const r2 = $compile(ast, ci);
+      const add1 = js(r2, { add, _: null });
       add1(1).should.equal(2);
       add1("a").should.equal("a1");      
     });
@@ -90,24 +92,54 @@ describe("compileJs", () => {
       const fn = makeFn('add1', ['x'], undefined, [['`', '`add', '`x', 1]])
       const r = compileFn(fn, ci);
       linesJoinedShouldEqual(r, `
+        _=function(x){
+          let _=null;
+          return(function(_){
+            _=add(x,1);
+            return _;
+          })(_)};
+        let add1=_
+      `)
+    });
+  });
+
+  describe("compileExport", () => {
+    it.skip("should compile exported functions", async () => {
+      const ast = await parseHost([], 'export fn add1(x): x + 1')
+      const exportAst = ast[0];
+      const r = compileExport(exportAst, ci);
+      linesJoinedShouldEqual(r, `
         function add1(x){
           let _=null;
           return(function(_){
             _=add(x,1);
             return _;
           })(_)
-        }
+        };
+        exports.add1=_
       `)
       const add1 = js(r, { add });
       add1(1).should.equal(2);
-      add1("a").should.equal("a1");      
-    });
+      add1("a").should.equal("a1");
+    });    
   });
 
   describe("buildJs", () => {
-    it.only("should work", async () => {
+    it("should work", async () => {
       const f = buildJs('1', ci)
-      
+      f().should.equal(1)
+    });
+  });
+
+  describe("$compile", () => {
+    it("should work with exports", async () => {
+      const ast = await parseHost([], 'export fn add1(x): x + 1')
+      let r = $compile(ast, ci);
+      r
+      const _exports: any = {}
+      r = js(r, { _: null, exports: _exports, add })
+      _exports.add1.should.be.ok()
+      _exports.add1(1).should.equal(2)
     });
   });
 });

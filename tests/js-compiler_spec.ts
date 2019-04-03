@@ -104,21 +104,22 @@ describe("compileJs", () => {
   });
 
   describe("compileExport", () => {
-    it.skip("should compile exported functions", async () => {
+    it("should compile exported functions", async () => {
       const ast = await parseHost([], 'export fn add1(x): x + 1')
       const exportAst = ast[0];
       const r = compileExport(exportAst, ci);
       linesJoinedShouldEqual(r, `
-        function add1(x){
+        _=function(x){
           let _=null;
           return(function(_){
             _=add(x,1);
             return _;
           })(_)
         };
+        let add1=_;
         exports.add1=_
       `)
-      const add1 = js(r, { add });
+      const add1 = js(r, { add, _:null });
       add1(1).should.equal(2);
       add1("a").should.equal("a1");
     });    

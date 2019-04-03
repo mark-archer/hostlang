@@ -59,23 +59,29 @@ export async function loadHostEnv(stack, envScope:any) {
 export async function $import(stack: any[], path: string, options?: any) {
   const fetch = nameLookup(stack, "fetch");
   const parse = nameLookup(stack, "parse");
-  const compile = nameLookup(stack, "compile");
+  
   const code = await fetch(path, options);
   const ast = await parse(code, Object.assign({}, options, { sourceFile: path }));
-  if(path.includes("greet")) {
-    code
-    ast
-    const modCode = compile(ast)
+
+  const ci = jsCompilerInfo(stack)
+  const jsCode = $compile(ast, ci)
+  const _module = { exports: {}}
+  const f = js(jsCode, { 
+    _:null, 
+    module: _module, 
+    exports: _module.exports }    
+  );
+  if (path.includes("greet")) {
+    path
+    _module.exports.greet()
   }
-  const moduleStack = [...stack, {}]
-  //const mod = await compileModule(stack, ast);
-  //return mod;
+  return await _module.exports;
 }
 
 export function $compileJs(stack, ast) {
   const ci = jsCompilerInfo(stack)
   const jsCode = $compile(ast, ci)
-  const f = js(jsCode)
+  const f = js(jsCode); // todo probably need to add 
   const _ = $get(stack, "_");
   const exec = () => f.apply(null, [ _, ...ci.refs ]);
   return exec;

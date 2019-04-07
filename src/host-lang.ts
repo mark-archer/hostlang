@@ -5,6 +5,7 @@ import { nameLookup } from "./meta/meta-common";
 import { $compile } from "./meta/meta-compiler";
 import { jsCompilerInfo } from "./js-compiler";
 import { js } from "./utils";
+import { add } from "./common";
 
 
 export async function hostRuntime(stack: any[] = []) {
@@ -63,18 +64,21 @@ export async function $import(stack: any[], path: string, options?: any) {
   const code = await fetch(path, options);
   const ast = await parse(code, Object.assign({}, options, { sourceFile: path }));
 
-  const ci = jsCompilerInfo(stack)
-  const jsCode = $compile(ast, ci)
-  const _module = { exports: {}}
-  const f = js(jsCode, { 
-    _:null, 
+  const ci = jsCompilerInfo(stack);
+  const jsCode = $compile(ast, ci);
+  const _module: any = { exports: {} };
+  js(jsCode, { // execute the compiled code to populate the `exports object which is what will be returned
+    _:null, add,
     module: _module, 
-    exports: _module.exports }    
+    exports: _module.exports },       
   );
-  if (path.includes("greet")) {
-    path
-    _module.exports.greet()
-  }
+  // if (path.includes("greet")) {
+  //   path
+  //   let r = _module.exports.greet()
+  //   r
+  //   r = _module.exports.greet("Blair")
+  //   r
+  // }
   return await _module.exports;
 }
 

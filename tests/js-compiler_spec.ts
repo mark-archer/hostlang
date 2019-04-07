@@ -1,4 +1,4 @@
-import { compileSym, compileExpr, jsCompilerInfo, compileDo, compileFn, buildJs, compileExport } from "../src/js-compiler";
+import { compileSym, compileExpr, jsCompilerInfo, compileDo, compileFn, buildJs, compileExport, compileCond } from "../src/js-compiler";
 import { add } from "../src/common";
 import { parseHost } from "../src/host-parser";
 import { js } from "../src/utils";
@@ -107,7 +107,7 @@ describe("compileJs", () => {
     it("should compile exported functions", async () => {
       const ast = await parseHost([], 'export fn add1(x): x + 1')
       const exportAst = ast[0];
-      const r = compileExport(exportAst, ci);
+      const r = compileExport(exportAst, ci);      
       linesJoinedShouldEqual(r, `
         _=function(x){
           let _=null;
@@ -125,6 +125,46 @@ describe("compileJs", () => {
     });    
   });
 
+  describe("compileCond", () => {
+    it("should compile a cond expr", async () => {
+      const ast = await parseHost([], 'cond (false ((+ "ignored"))) (true "runs")')
+      const condAst = ast[0];
+      const r = compileCond(condAst, ci);
+      linesJoinedShouldEqual(r, `
+        (function(_){
+          if(false) return add("ignored")();
+          else if(true) return "runs";
+          return _;
+        })(_)
+      `)
+    });
+
+    it("should compile a simple if", async () => {
+      const ast = await parseHost([], 'if (-1 + 1): 1 + 1\n2 + 2')
+      const condAst = ast[0];
+      const r = compileCond(condAst, ci);
+      linesJoinedShouldEqual(r, `
+        (function(_){
+          if(add(-1,1)) return add(1,1);
+          return _;
+        })(_)
+      `)
+    });
+
+    it("should compile a simple if-else", async () => {
+      const ast = await parseHost([], 'if false 0 else 1')
+      const condAst = ast[0];
+      const r = compileCond(condAst, ci);
+      linesJoinedShouldEqual(r, `
+        (function(_){
+          if(false) return 0;
+          else if(true) return 1;
+          return _;
+        })(_)
+      `)
+    });
+  });
+
   describe("buildJs", () => {
     it("should work", async () => {
       const f = buildJs('1', ci)
@@ -134,13 +174,20 @@ describe("compileJs", () => {
 
   describe("$compile", () => {
     it("should work with exports", async () => {
-      const ast = await parseHost([], 'export fn add1(x): x + 1')
+      const ast = await parseHost([], 'export fn add1(x): x + 1\nadd1 1')
       let r = $compile(ast, ci);
-      r
       const _exports: any = {}
       r = js(r, { _: null, exports: _exports, add })
+      r.should.equal(2)
       _exports.add1.should.be.ok()
       _exports.add1(1).should.equal(2)
+    });
+
+    it("should work with cond", async () => {
+      const ast = await parseHost([], 'if _ true else false')
+      let r = $compile(ast, ci);
+      js(r, { _: null }).should.equal(false);
+      js(r, { _: 1 }).should.equal(true);
     });
   });
 });

@@ -11,6 +11,7 @@ export function jsCompilerInfo(stack=[], refs=[], compilerStack=[]) {
     compileDo,
     compileSym,
     compileExpr,
+    compileCond,
     compileFn,
     compileExport,
   };
@@ -123,4 +124,19 @@ export function compileExport(ast: any, ci:ICompilerInfo) {
   const code = `${$compile(ast, ci)};\nexports.${name}=_`;
   code
   return code
+}
+
+export function compileCond(ast: any, ci: ICompilerInfo) {
+  if (!(isExpr(ast) && ast[1] === sym("cond"))) return;
+  ast
+  const conds = skip(ast, 2);
+  let code = "(function(_){\n";
+  for (let cond of conds) {    
+    cond = untick(cond);
+    code += `if(${$compile(cond[0], ci)}) return ${$compile(cond[1], ci)};\nelse `
+  }   
+  code = code.substr(0, code.length - 5);
+  code += "\nreturn _;"
+  code += "})(_)"
+  return code;
 }

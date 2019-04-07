@@ -1,6 +1,7 @@
 import { runtime, $eval, $apply } from "../../src/meta/meta-lang";
 import { add } from "../../src/common";
 import { expr } from "../../src/meta/meta-common";
+import { makeFn } from "../../src/typeInfo";
 const should = require('should');
 
 describe("meta-lang", () => {
@@ -45,6 +46,11 @@ describe("meta-lang", () => {
   describe("$apply", () => {
     it("should throw an error if called with an unknow apply", async () => {
       should(() => $apply([], 'not-function', [])).throw(/unknown apply/)
+    });
+
+    it("should allow applying a host fn", async () => {
+      const f = makeFn("f", [], undefined, [1]);
+      $apply([], f, []).should.equal(1);
     });
   });
 

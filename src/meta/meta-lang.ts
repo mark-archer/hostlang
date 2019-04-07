@@ -1,9 +1,11 @@
 import * as common from "../common";
 import { last, skip } from "../common";
 import { isSym, untick, isExpr, isList, tick } from "./meta-common";
-import { isFunction } from "util";
+import { isFunction, isString } from "util";
 import { stringify } from "../utils";
 import { $parse } from "./meta-parser";
+import { makeFn, isFn, Fn } from "../typeInfo";
+import * as _ from 'lodash';
 
 export type Stack = { [key:string]: any}[]
 
@@ -34,6 +36,7 @@ export function runtime(stack: Stack = []): Runtime {
     newScope: $newScope,
     exitScope: $exitScope,
     exists: $exists, 
+    fn: $fn,
     var: $var,
     set: $set,
     eval: $eval,
@@ -45,7 +48,7 @@ export function runtime(stack: Stack = []): Runtime {
     //runtimeScope[name] = stackFns[name]
     runtimeScope[name] = (...args) => stackFns[name](stack, ...args)
     runtimeScope[name].isMacro = stackFns[name].isMacro;
-    //runtimeScope[name].isMeta = stackFns[name].isMeta;
+    runtimeScope[name].isMeta = stackFns[name].isMeta;
   });  
 
   // @ts-ignore
@@ -101,6 +104,16 @@ export function $apply(stack: Stack, f, args:any[]) {
   // object with apply function
   else if (isFunction(f.apply)) {
     result = f.apply(...args);
+  }
+  // host fn apply
+  else if (isFn(f)) {
+    const _f:Fn = f;
+    const fnStack = [...(_f.closure || [])];
+    const fnAst = _.cloneDeep(_f.body);
+    const fnScope = $newScope(fnStack);
+    const argMap = _.zipObject(_f.params.map(p => p.name), args);
+    Object.assign(fnScope, argMap);    
+    result = $doBlock(fnStack, fnAst);
   }
   else {
     throw new Error(`unknown apply ${stringify({ f, args, }, 2)}`)
@@ -158,6 +171,22 @@ export function $set(stack: Stack, name: string, value: any) {
 }
 // @ts-ignore
 $set.isMeta = true;
+
+export function $fn(stack: Stack, ...args) {
+  let name;
+  if(isString(args[0])){
+    name = untick(args.shift());    
+  }
+  const params = args.shift().map(untick);
+  const body = args;
+  const f = makeFn(name, params, undefined, body, [...stack]);
+  if (name) {
+    $var(stack, name, f);
+  }
+  return f;
+}
+// @ts-ignore
+$fn.isMeta = true;
 
 export function $newScope(stack: Stack, scope: { [key:string]: any} = {}) {
   stack.push(scope);

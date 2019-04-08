@@ -4,11 +4,12 @@ import { parseHost } from "../src/host-parser";
 import { js } from "../src/utils";
 import { makeFn } from "../src/typeInfo";
 import { $compile } from "../src/meta/meta-compiler";
+import { $parse } from "../src/meta/meta-parser";
 
 const should = require('should');
 
 describe("compileJs", () => {
-  const ci = jsCompilerInfo([{a:1, add}]);
+  const ci = jsCompilerInfo([{b:2}], undefined, [{a:1, add}]);    
   describe("compileSym", () => {
     it("should return undefined if not given a sym", async () => {
       should(compileSym(1, ci)).equal(undefined);
@@ -20,7 +21,15 @@ describe("compileJs", () => {
 
     it("should return a normal sym if given a ticked sym", async () => {
       compileSym('``a', ci).should.equal('"`a"');
-    });    
+    });
+
+    it("should throw an error if the symbols is not defined", async () => {
+      should(() => compileSym('`c', ci)).throw(/c is not defined/)
+    });
+
+    it("should return special references for items in the runtime stack", async () => {
+      compileSym('`b', ci).should.equal('__ref0.b');
+    });
   });
 
   describe("compileExpr", () => {
@@ -166,9 +175,53 @@ describe("compileJs", () => {
   });
 
   describe("buildJs", () => {
-    it("should work", async () => {
+    it("should work with a number", async () => {
       const f = buildJs('1', ci)
       f().should.equal(1)
+    });
+
+    it("should work with external refs", async () => {
+      const ci = jsCompilerInfo([{add}]);
+      const ast = [['`', '`add', 1, 1]];
+      const jsCode = $compile(ast, ci);
+      const f = buildJs(jsCode, ci)
+      f().should.equal(2)
+    });
+
+    it("should compile variables", async () => {
+      const ci = jsCompilerInfo([]);
+      const ast = [['`', '`var', '`a', 1]];
+      const jsCode = $compile(ast, ci);
+      const f = buildJs(jsCode, ci)
+      f().should.equal(1)      
+    });
+
+    it("should allow updating external refs", async () => {
+      const ctx:any = {a:1};
+      const ci = jsCompilerInfo([ctx]);
+      const ast = [['`', '`set', '`a', 2]];
+      const jsCode = $compile(ast, ci);
+      const f = buildJs(jsCode, ci)
+      should(ctx.a).equal(1);
+      f().should.equal(2)
+      should(ctx.a).equal(2);
+    });
+
+    it("should work with updated refs", async () => {
+      const ctx:any = {a:1};
+      const ci = jsCompilerInfo([ctx]);
+      const ast = ['`a'];
+      const jsCode = $compile(ast, ci);
+      const f = buildJs(jsCode, ci)
+      f().should.equal(1);
+      ctx.a = 2;
+      f().should.equal(2);
+    });
+
+    it("should throw an error if name is not defined", async () => {
+      const ci = jsCompilerInfo([]);
+      const ast = [['`', '`set', '`a', 2]];
+      should(() => $compile(ast, ci)).throw(/a is not defined/);
     });
   });
 

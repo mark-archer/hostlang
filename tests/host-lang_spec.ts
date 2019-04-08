@@ -62,7 +62,7 @@ describe("host-lang", () => {
       const r = await rt.shell('var a: ` 1')
       r.should.eql([ '`', 1 ]);
       const r2 = await rt.shell('a');
-      r2.should.equal(r)      
+      r2.should.equal(r)
     });
 
     it("should allow declaring functions", async () => {
@@ -73,9 +73,11 @@ describe("host-lang", () => {
 
     it("should add named functions to the scope when declaring them", async () => {
       const rt = await hostRuntime()
-      const r = await rt.shell('f a => 1')
-      r.should.match({ kind: "Fn", name: "f", params: [{name:'a'}], body: [1]})      
+      const r = await rt.shell('f a => a')
+      r.should.match({ kind: "Fn", name: "f", params: [{name:'a'}], body: ['`a']})      
       should(rt.f).equal(r);
+      const r2 = await rt.shell('f 1')
+      r2.should.equal(1);
     });
 
     it.skip("should load files in host_env", async () => {

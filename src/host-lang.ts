@@ -28,7 +28,7 @@ export async function hostRuntime(stack: any[] = []) {
   return hostRuntime;  
 }
 
-export async function loadHostEnv(stack, envScope:any) {
+export async function loadHostEnv(stack, envScope:any) {  
   // this copies all exports directly into the env scope
   // it also creates a namespace hierarchy matching the folder structure
   // note that if there are name collisions
@@ -64,7 +64,7 @@ export async function $import(stack: any[], path: string, options?: any) {
   const code = await fetch(path, options);
   const ast = await parse(code, Object.assign({}, options, { sourceFile: path }));
 
-  const ci = jsCompilerInfo(stack);
+  const ci = jsCompilerInfo(stack, undefined, [{}]);
   const jsCode = $compile(ast, ci);
   const _module: any = { exports: {} };
   js(jsCode, { // execute the compiled code to populate the `exports object which is what will be returned
@@ -85,7 +85,7 @@ export async function $import(stack: any[], path: string, options?: any) {
 export function $compileJs(stack, ast) {
   const ci = jsCompilerInfo(stack)
   const jsCode = $compile(ast, ci)
-  const f = js(jsCode); // todo probably need to add 
+  const f = js(jsCode); 
   const _ = $get(stack, "_");
   const exec = () => f.apply(null, [ _, ...ci.refs ]);
   return exec;

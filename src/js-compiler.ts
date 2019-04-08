@@ -1,8 +1,8 @@
 import { $compile, ICompilerInfo, compiler, compilerInfo } from "./meta/meta-compiler";
 import { untick, isSym, unquote, isExpr, isList } from "./meta/meta-common";
-import { skip, sym, isString, keys } from "./common";
+import { skip, sym, isString, keys, last } from "./common";
 import { Fn, makeFn, isFn } from "./typeInfo";
-import { js } from "./utils";
+import { $exists } from "./meta/meta-lang";
 
 export function jsCompilerInfo(stack=[], refs=[], compilerStack=[]) {
   const ci = compilerInfo(stack, refs, compilerStack);
@@ -14,6 +14,8 @@ export function jsCompilerInfo(stack=[], refs=[], compilerStack=[]) {
     compileCond,
     compileFn,
     compileExport,
+    compileVar,
+    compileSet,
   };
   Object.keys(compilerScope).forEach((name, i) => {
     const applyFn = compilerScope[name];
@@ -25,27 +27,27 @@ export function jsCompilerInfo(stack=[], refs=[], compilerStack=[]) {
 }
 
 export function buildJs(jsCode: string, ci: ICompilerInfo) {
-  const externalRefs = {};
-  // add everything from the stack
-  for (let i = 0; i < ci.stack.length; i++) {
-    const ctx = ci.stack[i];
-    Object.keys(ctx).forEach(name => externalRefs[name] = ctx[name]);    
-  }
-  // // add everything from refs
-  // ci.refs.forEach((ref,i) => externalRefs[`r${i}`] = ref);
-  // // TODO create a wrapper function that uses live stack instead of copy so changes are seen by compiled code
-  // //let wrapper = `function()`
-  // const f = js(jsCode, externalRefs)
-  // return f;
+  //const externalRefs = {};
 
+  // // add everything from the stack
+  // for (let i = 0; i < ci.stack.length; i++) {
+  //   const ctx = ci.stack[i];
+  //   Object.keys(ctx).forEach(name => externalRefs[name] = ctx[name]);    
+  // }
+
+  // // add everything from refs
+  // ci.refs.forEach((ref) => externalRefs[compileRef(ref, ci)] = ref);
+  // externalRefs
+    
   try {
-    const refNames = [];
-    const refValues = [];
-    keys(externalRefs).forEach((key) => {
-      refNames.push(key);
-      refValues.push(externalRefs[key]);
-    });
-    jsCode
+    const refNames = ci.refs.map(ref => compileRef(ref, ci));
+    const refValues = [...ci.refs];
+    refNames.unshift('_');
+    refValues.unshift(null);
+    // keys(externalRefs).forEach((key) => {
+    //   refNames.push(key);
+    //   refValues.push(externalRefs[key]);
+    // });
     const compiledJs = Function.apply(null, [...refNames, '"use strict"; return ' + jsCode.trim()]);
     return () => compiledJs.apply(null, refValues);
   } catch (err) {
@@ -55,7 +57,23 @@ export function buildJs(jsCode: string, ci: ICompilerInfo) {
 
 export function compileLiteral(expr: any, ci: ICompilerInfo) {
   if (isString(expr)) { return `"${expr}"`; }
+  // TODO object
+  // TODO Array
   return String(expr);
+}
+
+export function declareVar(name: string, ci: ICompilerInfo) {
+  if(!ci.compilerStack.length) ci.compilerStack.push({});
+  last(ci.compilerStack)[name] = null;
+}
+
+export function compileRef(obj:any, ci: ICompilerInfo) {
+  let iRef = ci.refs.indexOf(obj);
+  if (iRef === -1) {
+    iRef = ci.refs.length;
+    ci.refs.push(obj);
+  }
+  return `__ref${iRef}`;
 }
 
 export function compileSym(ast: any, ci: ICompilerInfo) {
@@ -63,8 +81,17 @@ export function compileSym(ast: any, ci: ICompilerInfo) {
   ast = untick(ast);
   // TODO Quote logic
   if (isSym(ast)) return `"${ast}"`;
-  // TODO check sym exists
-  return ast;
+  let name = ast;
+  if (name === '_') return name;
+  if ($exists(ci.compilerStack, name)) return name;
+  for (let i = ci.stack.length - 1; i >= 0; i--) {
+    const scope = ci.stack[i];
+    if (scope[name] !== undefined) {
+      const ref = compileRef(scope, ci);
+      return `${ref}.${name}`
+    }
+  }
+  throw new Error(`${name} is not defined`);
 }
 
 export function compileExpr(ast: any, ci: ICompilerInfo) {
@@ -102,18 +129,20 @@ export function compileFn(ast: any, ci: ICompilerInfo) {
 
   let code = "";
   code += `_=function(`;
-  //const fnScope = {};
+  const fnScope = {};
   code += fn.params.map((p) => {
-    //fnScope[p.name] = null;
+    fnScope[p.name] = null;
     return p.name;
   }).join();
-  //stack = [...stack, fnScope];
-  //const fnCi = compilerInfo(stack, ci.refs, ci.compilerStack)
   code += "){\n\tlet _=null;\n\treturn";
-  console.log(fn.body)
+  ci.compilerStack.push(fnScope);
   code += compileDo(fn.body, ci);
+  ci.compilerStack.pop();
   code += "\n}";
-  if(fn.name) code += `;let ${fn.name}=_`  
+  if(fn.name) {
+    code += `;let ${fn.name}=_`
+    declareVar(fn.name, ci);
+  }
   return code;
 }
 
@@ -122,13 +151,11 @@ export function compileExport(ast: any, ci:ICompilerInfo) {
   (ast as any[]).splice(1,1);
   const name = untick(ast[2]);
   const code = `${$compile(ast, ci)};\nexports.${name}=_`;
-  code
   return code
 }
 
 export function compileCond(ast: any, ci: ICompilerInfo) {
   if (!(isExpr(ast) && ast[1] === sym("cond"))) return;
-  ast
   const conds = skip(ast, 2);
   let code = "(function(_){\n";
   for (let cond of conds) {    
@@ -139,4 +166,19 @@ export function compileCond(ast: any, ci: ICompilerInfo) {
   code += "\nreturn _;"
   code += "})(_)"
   return code;
+}
+
+export function compileVar(ast: any, ci:ICompilerInfo) {
+  if (!(isExpr(ast) && ast[1] === sym("var"))) return;
+  const name = untick(ast[2]);
+  declareVar(name, ci);
+  const code = `_;let ${name}=${$compile(ast[3], ci)};_=${name}`;
+  return code
+}
+
+export function compileSet(ast: any, ci:ICompilerInfo) {
+  if (!(isExpr(ast) && ast[1] === sym("set"))) return;
+  const name = compileSym(ast[2], ci);
+  const code = `${name}=${$compile(ast[3], ci)}`;
+  return code
 }

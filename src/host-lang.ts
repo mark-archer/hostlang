@@ -3,7 +3,7 @@ import { readFile, readdirSync, lstatSync } from "fs";
 import { parseHost } from "./host-parser";
 import { nameLookup } from "./meta/meta-common";
 import { $compile } from "./meta/meta-compiler";
-import { jsCompilerInfo } from "./js-compiler";
+import { jsCompilerInfo, buildJs } from "./js-compiler";
 import { js } from "./utils";
 import { add } from "./common";
 
@@ -67,18 +67,8 @@ export async function $import(stack: any[], path: string, options?: any) {
   const ci = jsCompilerInfo(stack, undefined, [{}]);
   const jsCode = $compile(ast, ci);
   const _module: any = { exports: {} };
-  js(jsCode, { // execute the compiled code to populate the `exports object which is what will be returned
-    _:null, add,
-    module: _module, 
-    exports: _module.exports },       
-  );
-  // if (path.includes("greet")) {
-  //   path
-  //   let r = _module.exports.greet()
-  //   r
-  //   r = _module.exports.greet("Blair")
-  //   r
-  // }
+  const mod = buildJs(jsCode, ci, { module: _module, exports: _module.exports });
+  mod(); // module code needs to be run to generate exports
   return await _module.exports;
 }
 

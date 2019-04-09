@@ -26,7 +26,7 @@ export function jsCompilerInfo(stack=[], refs=[], compilerStack=[]) {
   return ci;
 }
 
-export function buildJs(jsCode: string, ci: ICompilerInfo) {
+export function buildJs(jsCode: string, ci: ICompilerInfo, externalRefs = {}) {
   //const externalRefs = {};
 
   // // add everything from the stack
@@ -42,12 +42,12 @@ export function buildJs(jsCode: string, ci: ICompilerInfo) {
   try {
     const refNames = ci.refs.map(ref => compileRef(ref, ci));
     const refValues = [...ci.refs];
+    keys(externalRefs).forEach((name) => {
+      refNames.push(name);
+      refValues.push(externalRefs[name]);
+    });
     refNames.unshift('_');
-    refValues.unshift(null);
-    // keys(externalRefs).forEach((key) => {
-    //   refNames.push(key);
-    //   refValues.push(externalRefs[key]);
-    // });
+    refValues.unshift(null);    
     const compiledJs = Function.apply(null, [...refNames, '"use strict"; return ' + jsCode.trim()]);
     return () => compiledJs.apply(null, refValues);
   } catch (err) {

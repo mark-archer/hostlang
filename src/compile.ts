@@ -1,9 +1,9 @@
 import { isArray, isFunction, isObject, isString } from "util";
 import { isExpr, isList, isSym, last, quote, skip, sym, tick, unquote, untick } from "./common";
 import * as common from "./common";
-import { getName } from "./host";
 import { Fn, makeFn } from "./typeInfo";
 import { js } from "./utils";
+import { nameLookup } from "./meta/meta-common";
 
 export function getRef(refs: any[], ctx: any) {
   let ref = refs.indexOf(ctx);
@@ -17,7 +17,7 @@ export function getRef(refs: any[], ctx: any) {
 export function defineVar(stack: any[], sym: string) {
   const ctx = last(stack);
   sym = untick(sym);
-  const exports = getName(stack, "exports");
+  const exports = nameLookup(stack, "exports");
   if (exports && exports[sym] !== undefined) { throw new Error(`var already exists as an export: ${sym}`); }
   if (ctx[sym] !== undefined) { throw new Error(`var already exists: ${sym}`); }
   ctx[sym] = null;
@@ -31,7 +31,7 @@ export function compileSym(refs: any[], stack: any[], sym: string) {
   // quote logic
   if (sym[0] === `'`) {
     sym = unquote(sym);
-    const evalQuote = () => `${tick(getName(stack, sym))}`;
+    const evalQuote = () => `${tick(nameLookup(stack, sym))}`;
     return compileExpr(refs, stack, ["`", evalQuote]);
   }
   if (sym == "_") { return sym; }
@@ -45,7 +45,7 @@ export function compileSym(refs: any[], stack: any[], sym: string) {
       return sym;
     }
   }
-  if(!getName(stack, "dont_load_common") && commonLib && commonLib[sym]) {
+  if(!nameLookup(stack, "dont_load_common") && commonLib && commonLib[sym]) {
     return getRef(refs, commonLib[sym])
   }
   throw new Error(`${sym} is not defined`);
@@ -184,7 +184,7 @@ function isMacroCall(stack: any[], expr: any) {
   // if(!isExpr(expr)) return false;
   const fnSym = expr[1];
   if (!isSym(fnSym)) { return false; }
-  const fn = getName(stack, untick(fnSym));
+  const fn = nameLookup(stack, untick(fnSym));
   if (!fn && untick(fnSym)[0] === "$") { return true; }
   return fn && (fn.isMacro || (untick(fnSym)[0] === "$" && fn.isMacro !== false));
 }
@@ -380,13 +380,13 @@ export function compileHost(env: any, ast: any[], refs: any[]= []) {
   code += refs.map((v, i) => `r${i}`).join();
   code += `){\n\treturn ${innerCode}\n}`;
   const f = js(code);
-  const _ = getName(stack, "_");
+  const _ = nameLookup(stack, "_");
   const exec = () => f.apply(null, [ _, env, ...refs]);
   return { code, f, exec, env, ast };
 }
 
 export async function compileModule(env: any, ast: any[], refs: any[]= []) {
-  let $import = env.import || getName(env, "import");
+  let $import = env.import || nameLookup(env, "import");
   if ($import) commonLib = await $import("common"); // load commonLib if we have an import
   if (isList(env)) { env = [...env]; } else { env = [env]; }
   if (env[0]) { env[0] = {...env[0]}; } else { env.push({}); }

@@ -128,6 +128,7 @@ export const uniq = _.uniq;
 export function skip(x: any[], n: number = 1) {
   return x.slice(n);
 }
+
 export function date(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   // this craziness is because I couldn't get apply to work with (new Date())
   let date = null;

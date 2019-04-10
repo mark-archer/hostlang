@@ -80,7 +80,7 @@ describe("host-lang", () => {
       r2.should.equal(1);
     });
 
-    it("should automatically load files in host_env folder", async () => {
+    it("should automatically load files in host_env folder", async () => {      
       const rt = await hostRuntime()
       const greet = rt.greet;
       greet().should.equal('Hey you!');

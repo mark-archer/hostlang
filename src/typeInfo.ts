@@ -1,6 +1,6 @@
 import { isBoolean, isDate, isid, isList, isNumber, isNvp, isObject, isString, isSym, last, INvp, tick, untick } from "./common";
-import { apply, evalSym } from "./host";
 import { copy, stringify } from "./utils";
+import { $eval, $apply } from "./meta/meta-lang";
 
 export type ValidateFnType = (x: any) => any;
 export type MatchFnType = (x: any) => boolean;
@@ -149,7 +149,7 @@ export function typeOf(stack: any[], x: any): TypeInfo {
     if (!isSym(typeInfo)) { typeInfo = tick(typeInfo); }
     let typeInfoResult;
     try {
-      typeInfoResult =  evalSym(stack, typeInfo);
+      typeInfoResult = $eval(stack, typeInfo);
     } catch (err) {
       throw new Error(`typeOf - TypeInfo '${untick(typeInfo)}' could not be found`);
     }
@@ -288,11 +288,11 @@ export  function validate(stack: any[], x: any, typeInfo?: TypeInfo) {
 
   // if we have a custom validation function call that
   if (typeInfo && typeInfo.validate) {
-    const r =  apply(stack, typeInfo.validate, [x]);
+    const r = $apply(stack, typeInfo.validate, [x]);
     if (r !== undefined) { return r; }
     return x;
   } else if (typeInfo && typeInfo.match) {
-    const isMatch =  apply(stack, typeInfo.match, [x]);
+    const isMatch =  $apply(stack, typeInfo.match, [x]);
     if (!isMatch) { throw new Error(`${x} did not match ${typeInfo.name || typeInfo.kind}`); }
   }
 

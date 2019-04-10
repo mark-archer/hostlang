@@ -1,0 +1,8 @@
+
+;*
+parser 999 parseSymbol(pi)
+    ;; whitespace - consume and move on
+    if(pi.peek!.trim! == "")
+        pi.pop!
+        return true
+*;

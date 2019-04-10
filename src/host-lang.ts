@@ -4,9 +4,6 @@ import { parseHost } from "./host-parser";
 import { nameLookup } from "./meta/meta-common";
 import { $compile } from "./meta/meta-compiler";
 import { jsCompilerInfo, buildJs } from "./js-compiler";
-import { js } from "./utils";
-import { add } from "./common";
-
 
 export async function hostRuntime(stack: any[] = []) {
   const hostRuntime = runtime(stack);
@@ -15,7 +12,6 @@ export async function hostRuntime(stack: any[] = []) {
   
   const stackFns = {
     parse: parseHost,
-    compile: $compileJs,
     import: $import,
     shell: $shell
   }
@@ -51,10 +47,8 @@ export async function loadHostEnv(stack, envScope:any) {
       }      
     }              
   }
-  //const path = process.cwd() + '/host_env';
   const path = './host_env';
   await processDir(path, envScope);
-  envScope
 }
 
 export async function $import(stack: any[], path: string, options?: any) {
@@ -67,18 +61,9 @@ export async function $import(stack: any[], path: string, options?: any) {
   const ci = jsCompilerInfo(stack, undefined, [{}]);
   const jsCode = $compile(ast, ci);
   const _module: any = { exports: {} };
-  const mod = buildJs(jsCode, ci, { module: _module, exports: _module.exports });
-  mod(); // module code needs to be run to generate exports
+  const moduleFn = buildJs(jsCode, ci, { module: _module, exports: _module.exports });
+  moduleFn(); // module code needs to be run to generate exports
   return await _module.exports;
-}
-
-export function $compileJs(stack, ast) {
-  const ci = jsCompilerInfo(stack)
-  const jsCode = $compile(ast, ci)
-  const f = js(jsCode); 
-  const _ = $get(stack, "_");
-  const exec = () => f.apply(null, [ _, ...ci.refs ]);
-  return exec;
 }
 
 export async function fetch(path: string, options: any = { encoding: 'utf-8' }) {

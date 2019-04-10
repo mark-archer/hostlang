@@ -2,7 +2,7 @@ import { $compile, ICompilerInfo, compiler, compilerInfo } from "./meta/meta-com
 import { untick, isSym, unquote, isExpr, isList } from "./meta/meta-common";
 import { skip, sym, isString, keys, last } from "./common";
 import { Fn, makeFn, isFn } from "./typeInfo";
-import { $exists } from "./meta/meta-lang";
+import { $exists, $get } from "./meta/meta-lang";
 
 export function jsCompilerInfo(stack=[], refs=[], compilerStack=[]) {
   const ci = compilerInfo(stack, refs, compilerStack);
@@ -27,18 +27,6 @@ export function jsCompilerInfo(stack=[], refs=[], compilerStack=[]) {
 }
 
 export function buildJs(jsCode: string, ci: ICompilerInfo, externalRefs = {}) {
-  //const externalRefs = {};
-
-  // // add everything from the stack
-  // for (let i = 0; i < ci.stack.length; i++) {
-  //   const ctx = ci.stack[i];
-  //   Object.keys(ctx).forEach(name => externalRefs[name] = ctx[name]);    
-  // }
-
-  // // add everything from refs
-  // ci.refs.forEach((ref) => externalRefs[compileRef(ref, ci)] = ref);
-  // externalRefs
-    
   try {
     const refNames = ci.refs.map(ref => compileRef(ref, ci));
     const refValues = [...ci.refs];
@@ -47,7 +35,7 @@ export function buildJs(jsCode: string, ci: ICompilerInfo, externalRefs = {}) {
       refValues.push(externalRefs[name]);
     });
     refNames.unshift('_');
-    refValues.unshift(null);    
+    refValues.unshift($get(ci.stack, "_"));
     const compiledJs = Function.apply(null, [...refNames, '"use strict"; return ' + jsCode.trim()]);
     return () => compiledJs.apply(null, refValues);
   } catch (err) {

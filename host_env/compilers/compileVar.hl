@@ -1,2 +1,6 @@
 
-;compiler 100 var (ast)
+;*
+compiler 100 var (ast)
+    if (not (isExpr ast)) return!
+    if (not (ast.1 == `var)) return!
+*;

@@ -1,4 +1,4 @@
-import { hostRuntime } from "../src/host-lang";
+import { hostRuntime, $import } from "../src/host-lang";
 
 const should = require('should');
 
@@ -30,7 +30,7 @@ describe("host-lang", () => {
     //   rt.exec(['`', '`add', 1, 1]).should.equal(2)      
     // });    
 
-    it("should allow evaluating code blocks with do", async () => {
+    it("should allow evaluating code blocks with do", async () => {      
       const rt = await hostRuntime()
       const ast = await rt.parse('add 1 1')
       const f = rt.do(ast);
@@ -84,8 +84,22 @@ describe("host-lang", () => {
       const rt = await hostRuntime()
       const greet = rt.greet;
       greet().should.equal('Hey you!');
-      greet('Mark').should.equal('Hi Mark!');
+      greet('Mark').should.equal('Hi Mark!');      
     });
   });
+
+  describe("hostParsers", () => {
+    it.skip("should load parsers from host_env", async () => {
+      const rt = await hostRuntime()      
+      rt.parseTabSize.should.be.ok();
+    });
+  });
+
+  // describe("$import", () => {
+  //   it.only("should work with parsers", async () => {
+  //     const r = await $import([], './host_env/parsers/parseTabSize.hl')
+  //     r
+  //   });
+  // });
 });
 

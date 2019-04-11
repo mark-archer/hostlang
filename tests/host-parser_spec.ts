@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 import { parseHost } from "../src/host-parser";
 import { cleanCopyList } from "../src/utils";
-import { parser, ParseInfo } from "../src/meta/meta-parser";
+import { parser, IParseInfo } from "../src/meta/meta-parser";
 
 const should = require("should");
 
@@ -1018,7 +1018,7 @@ export fn parseSmiley (pi)
   describe.skip("parseTime exectution", () => {
     it("should allow custom parsers", async () => {
       let firstCall = true;
-      const testParser = (pi: ParseInfo) => {
+      const testParser = (pi: IParseInfo) => {
         if (firstCall) {
           pi.newList();
           pi.clist.push("`list");

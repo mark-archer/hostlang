@@ -1,9 +1,10 @@
 import { range, isNumber, last } from "lodash";
 import { js } from "./utils";
-import { ParseInfoOptions, ParseInfo, parser, $parse } from "./meta/meta-parser";
+import { ParseInfoOptions, IParseInfo, parser, $parse, parserParser, getParsers } from "./meta/meta-parser";
 import { tick, untick, isSym, sym, isExpr } from "./meta/meta-common";
 import { nvp, isList } from "./common";
-import { meta } from "./typeInfo";
+import { meta, IParamInfo } from "./typeInfo";
+import { $eval, $fn } from "./meta/meta-lang";
 
 export async function parseHost(stack: any[], code: string, options: ParseInfoOptions = {}): Promise<any> {
   //const $import = nameLookup(stack, "common")
@@ -11,14 +12,14 @@ export async function parseHost(stack: any[], code: string, options: ParseInfoOp
   
   code += "\n"; // add newline to code to ease matching logic
   
-  function init(pi: ParseInfo) {
+  function init(pi: IParseInfo) {
     // immediately start a new list to represent to first line of code
     if (pi.i === 0 && pi.root.length === 0) {
       pi.newList();
       return true;
     } 
   }
-  const parseCtx = {
+  const parseCtx:any = {
     parseSymbols, parseLists, parseStrings,
     parseIndents, parseMetaList, 
     parseNumbers, parseComments, parseNvp,
@@ -28,18 +29,30 @@ export async function parseHost(stack: any[], code: string, options: ParseInfoOp
     init    
   }
   const parserNames = Object.keys(parseCtx);
-  Object.values(parseCtx).map((p, i) => parseCtx[parserNames[i]] = parser(parserNames[i], p, 900 - i))
-  // @ts-ignore
+  Object.values(parseCtx).map((p:any, i) => parseCtx[parserNames[i]] = parser(parserNames[i], p, 900 - i))
   parseCtx.parserCleanup = parser("parserCleanup", parserCleanup, 1002);
-  // @ts-ignore
   parseCtx.exclude_default_parsers = true;
-  stack = [...stack, parseCtx] 
-  
+  parseCtx.parserParser = parser("parserParser", hostParserParser, 1);
+  stack = [...stack, parseCtx]
   const ast = await $parse(stack, code, options);
   return ast;
 }
+// @ts-ignore
+parseHost.isMeta = true;
 
-function parserCleanup(pi: ParseInfo) {    
+function hostParserParser(pi: IParseInfo){
+  const stack = pi.runtimeStack;
+  let llist: any = last(pi.clist);
+  if (isExpr(llist) && llist[1] === "`parser") {
+    //pi.clist.pop(); // remove from ast
+    parserCleanup(pi);
+    parserParser.apply(pi);
+  }
+  return false;
+
+}
+
+function parserCleanup(pi: IParseInfo) {    
   function implicitLogic(ast: any) {
     // if it's not a list were done
     if (!isList(ast)) {
@@ -69,7 +82,7 @@ function parserCleanup(pi: ParseInfo) {
   return false;
 }
 
-function parseSymbols(pi: ParseInfo) {
+function parseSymbols(pi: IParseInfo) {
 
   // whitespace - consume and move on
   if (pi.peek().match(/\s/)) {
@@ -135,7 +148,7 @@ function parseSymbols(pi: ParseInfo) {
   // }
 }
 
-function parseLists(pi: ParseInfo) {
+function parseLists(pi: IParseInfo) {
   // console.log('parselist');
   const c = pi.peek();
 
@@ -209,7 +222,7 @@ function parseLists(pi: ParseInfo) {
   }
 }
 
-function parseStrings(pi: ParseInfo) {
+function parseStrings(pi: IParseInfo) {
   if (pi.code[pi.i] != '"') { return; }
 
   const code = pi.code;
@@ -249,7 +262,7 @@ function parseStrings(pi: ParseInfo) {
   return true;
 }
 
-function parseIndents(pi: ParseInfo) {
+function parseIndents(pi: IParseInfo) {
   if (pi.clist.explicit) {
     return;
   }
@@ -320,7 +333,7 @@ function parseIndents(pi: ParseInfo) {
   return true;
 }
 
-function parseMetaList(pi: ParseInfo) {
+function parseMetaList(pi: IParseInfo) {
   if (pi.peek() === "]") {
     pi.i++;
     pi.endList();
@@ -339,7 +352,7 @@ function parseMetaList(pi: ParseInfo) {
   return true;
 }
 
-function parseNumbers(pi: ParseInfo) {
+function parseNumbers(pi: IParseInfo) {
 
   const maybeNumber = pi.code.substr(pi.i, 100);
   let num = null;
@@ -371,7 +384,7 @@ function parseNumbers(pi: ParseInfo) {
   return true;
 }
 
-function parseComments(pi: ParseInfo) {
+function parseComments(pi: IParseInfo) {
   if (pi.code[pi.i] != ";") { return; }
 
   const code = pi.code;
@@ -401,7 +414,7 @@ function parseComments(pi: ParseInfo) {
   return true;
 }
 
-function parseNvp(pi: ParseInfo) {
+function parseNvp(pi: IParseInfo) {
   if (pi.clist.waitingForValue && pi.clist.length === 4) {
     pi.endList();
     const nv = pi.clist.pop();
@@ -421,7 +434,7 @@ function parseNvp(pi: ParseInfo) {
   return true;
 }
 
-function parseDots(pi: ParseInfo) {
+function parseDots(pi: IParseInfo) {
 
   const c = pi.peek();
   if (c !== ".") {
@@ -461,7 +474,7 @@ function parseDots(pi: ParseInfo) {
   return true;
 }
 
-function parsePipes(pi: ParseInfo) {
+function parsePipes(pi: IParseInfo) {
 
   if (pi.clist.pipeNext && pi.clist.length >= 2 && pi.peek() !== ".") { // if next value is dot things will be done differently
     pi.clist.splice(2, 0, sym("_"));
@@ -533,7 +546,7 @@ function parsePipes(pi: ParseInfo) {
   // }
 }
 
-function parseIfElifElse(pi: ParseInfo) {
+function parseIfElifElse(pi: IParseInfo) {
 
   const l = pi.clist;
   // var lp: any = pi.getParent(pi.clist) || false;
@@ -581,7 +594,7 @@ function parseIfElifElse(pi: ParseInfo) {
   }
 }
 
-function parseSet(pi: ParseInfo) {
+function parseSet(pi: IParseInfo) {
   const c = pi.peekWord()
   // check for implicit expr
   if (pi.clist[1] === sym("set") && pi.clist.length === 5) {
@@ -615,7 +628,7 @@ function parseSet(pi: ParseInfo) {
   }
 }
 
-function parseBasicOps(pi: ParseInfo) {
+function parseBasicOps(pi: IParseInfo) {
 
   let word = pi.peek(2);
 
@@ -672,7 +685,7 @@ function parseBasicOps(pi: ParseInfo) {
 
 }
 
-function parseNew(pi: ParseInfo) {
+function parseNew(pi: IParseInfo) {
   // { -> namesValues
   if (pi.peek() !== "{") { return; }
   pi.i++;
@@ -688,7 +701,7 @@ function parseNew(pi: ParseInfo) {
   return true;
 }
 
-function parseTryCatch(pi: ParseInfo) {
+function parseTryCatch(pi: IParseInfo) {
   const word = pi.peekWord();
   if (word === "catch") {
     const indent = pi.clist.indent;
@@ -712,7 +725,7 @@ function parseTryCatch(pi: ParseInfo) {
   }
 }
 
-function parseFnArrow(pi: ParseInfo) {
+function parseFnArrow(pi: IParseInfo) {
   // { -> namesValues
   if (pi.peek(2) !== "=>") { return; }
   pi.i += 2;
@@ -731,7 +744,7 @@ function parseFnArrow(pi: ParseInfo) {
 
 }
 
-function parseSpread(pi: ParseInfo) {
+function parseSpread(pi: IParseInfo) {
   if (pi.peek(3) !== "...") { return; }
   pi.i += 3;
 
@@ -766,7 +779,7 @@ function parseSpread(pi: ParseInfo) {
   */
 }
 
-function parseTabSize(pi: ParseInfo) {
+function parseTabSize(pi: IParseInfo) {
   const llist: any = last(pi.clist);
   if (isExpr(llist) && llist[1] === "`tabSize") {
     pi.clist.pop();

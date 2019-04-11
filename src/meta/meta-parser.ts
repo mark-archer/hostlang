@@ -1,12 +1,12 @@
 import { flatten, sortBy, last } from 'lodash';
-import { isExpr, untick, tick, nameLookup } from './meta-common';
-import { $eval, $apply } from './meta-lang';
+import { isExpr, untick, tick, nameLookup, isList } from './meta-common';
+import { $eval, $apply, $fn } from './meta-lang';
 
 export function isParser(x:any) {
   return x && x.IParser
 }
 
-export type ParserApplyFn = (pi: ParseInfo) => (boolean|Promise<boolean>)
+export type ParserApplyFn = (pi: IParseInfo) => (boolean|Promise<boolean>)
 
 interface IParser {
   IParser: true
@@ -28,7 +28,7 @@ const lispParser: IParser = {
   IParser: true,
   name: "lispParser",
   priority: 1001,
-  apply: (pi: ParseInfo) => {
+  apply: (pi: IParseInfo) => {
     const word = pi.peekWord();
     if (!word) return false;    
     // open list
@@ -76,19 +76,27 @@ const lispParser: IParser = {
   }
 }
 
-const parserParser: IParser = {
+export const parserParser: IParser = {
   IParser: true,
   name: "parserParser",
   priority: 1000,
-  apply: async (pi: ParseInfo) => {
+  apply: async (pi: IParseInfo) => {
     const stack = pi.runtimeStack;
     let llist: any = last(pi.clist);
     if (isExpr(llist) && llist[1] === "`parser") {
       pi.clist.pop(); // remove from ast
-      const name = await $eval(stack, untick(llist[2]));
-      const apply = await $eval(stack, llist[3]);
-      const priority = await $eval(stack, llist[4]);
-      last(stack)[name] = parser(name, apply, priority);
+      llist.splice(0, 2) // remove tick and parser sym
+      const name = untick(llist.shift());
+      let priority;
+      let params = llist.shift();
+      if (!isList(params)) {
+        priority = Number(params)
+        params = llist.shift();
+      }
+      // const parserApplyAst = ['`', $fn, name, params, ...llist];
+      // const parserApply = $eval(stack, parserApplyAst);
+      const parserApply: any = $fn(stack, name, params, ...llist)
+      last(stack)[name] = parser(name, parserApply, priority);
       pi.parsers = getParsers(stack);
       return true;
     }
@@ -100,7 +108,7 @@ const excludeDefaultParsers: IParser = {
   IParser: true,
   name: "excludeDefaultParsers",
   priority: 1000,
-  apply: async (pi: ParseInfo) => {
+  apply: async (pi: IParseInfo) => {
     const stack = pi.runtimeStack;
     let llist: any = last(pi.clist);
     if (isExpr(llist) && llist[1] === "`exclude_default_parsers") {
@@ -118,12 +126,12 @@ const parsetimeEval: IParser = {
   IParser: true,
   name: "parsetimeEval",
   priority: 1000,
-  apply: async (pi: ParseInfo) => {
+  apply: async (pi: IParseInfo) => {
     const stack = pi.runtimeStack;
     let llist: any = last(pi.clist);
     if (isExpr(llist) && llist[1] === "`%") {
       pi.clist.pop(); // remove from ast
-      llist.splice(1,1) // remove `%: (% log 1) => (log 1)
+      llist.splice(1,1) // remove percentSym: (% log 1) => (log 1)
       await $eval(stack, llist); // if this doesn't modify the stack or do IO it's a no-op
       pi.parsers = getParsers(stack);
       return true;
@@ -148,12 +156,13 @@ export function getParsers(stack: any[]) {
 // source code -> ast
 export async function $parse(stack: any[], code:string, options?: ParseInfoOptions) {
   const pi = parseInfo(stack, code, options);
+  //last(stack).pi = pi;
   try {
     while (true) {
       // try compilers one at a time until a match is found
       let matched = false;
       for(let parser of pi.parsers) {
-        matched = await $apply(stack, parser, [pi]);
+        matched = await $apply(stack, parser, [pi]);        
         if (matched) break;
       }
       if (matched) continue;
@@ -177,8 +186,10 @@ export async function $parse(stack: any[], code:string, options?: ParseInfoOptio
 
   return pi.root;
 }
+// @ts-ignore
+$parse.isMeta = true;
 
-export interface ParseInfo {
+export interface IParseInfo {
   runtimeStack: any[];
   parsers: IParser[];
   code: string;
@@ -214,7 +225,7 @@ export interface ParseInfoOptions {
 export function parseInfo(stack: any[], code: string, options: ParseInfoOptions = {}) {
   // options.tabSize = detectTabSize(stack, code, options);
   const root: any[] = [];
-  const pi: ParseInfo = {
+  const pi: IParseInfo = {
     parsers: getParsers(stack),
     runtimeStack: stack,
     code,
@@ -282,7 +293,7 @@ export function parseInfo(stack: any[], code: string, options: ParseInfoOptions 
   return pi;
 }
 
-export function parseError (pi: ParseInfo, err: any) {
+export function parseError (pi: IParseInfo, err: any) {
   let lineNum = pi.getCurrentLineNum();
   let colNum = pi.getCurrentColNum();
   let line = pi.getLine(lineNum);

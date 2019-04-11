@@ -72,14 +72,19 @@ describe("meta-parser", () => {
 
   it('should allow adding parsers at parsetime', async () => {
     const stack: any[] = [{
-      a: pi => (pi.push("a"), false),
+      a: pi => {
+        pi.push("☺")
+      },
     }];
-    const code = `(parser b a 1)`;
-    const r = await $parse(stack, code)    
-    cleanCopyList(r).should.eql(['a'])
+    // note this is creating a host fn which calls a js fn
+    const code = `(parser b 1 (pi) (a pi))`; 
+    const r = await $parse(stack, code);
+    // the parser should be consumed and called a single time because no code is left
+    cleanCopyList(r).should.eql(['☺']) 
     const bParser = stack[0].b
     bParser.should.be.ok();
-    bParser.apply.should.equal(stack[0].a);
+    bParser.should.match({ name: 'b', priority: 1 });
+    bParser.apply.should.match({ kind: 'Fn', name: 'b', params: [{name:'pi'}], body: [['`', '`a']] });
     bParser.priority.should.equal(1);
   })
 

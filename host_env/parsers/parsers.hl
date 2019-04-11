@@ -1,8 +1,50 @@
 
 ;*
-parser 999 parseSymbol(pi)
+parser parseSymbol(pi) 999
     ;; whitespace - consume and move on
     if(pi.peek!.trim! == "")
         pi.pop!
         return true
-*;
+
+    var maybeSymbol: pi.peekWord!
+
+    if (maybeSymbol == "undefined")
+        pi.push undefined
+        pi.popWord!
+        return true
+    
+    if (maybeSymbol == "null")
+        pi.push null
+        pi.popWord!
+        return true
+
+    if (maybeSymbol == "true")
+        pi.push true
+        pi.popWord!
+        return true
+    
+    if (maybeSymbol == "false")
+        pi.push false
+        pi.popWord!
+        return true
+    
+    if (maybeSymbol == "`")
+        pi.push "`"
+        pi.popWord!
+        return true
+    
+    if (maybeSymbol == "'")
+        pi.push "'"
+        pi.popWord!
+        return true
+
+    ;; test for symbol (with optional leading quotes and ticks)
+    var aSym = maybeSymbol.match re/^['`]*[\$%a-zA-Z_][a-zA-Z_0-9-]*/
+    if (aSym) {
+        aSym = aSym[0];
+        pi.i += aSym.length;
+        pi.clist.push(tick(aSym));
+        return true;
+    }
+        
+;*;

@@ -1,4 +1,4 @@
-import { runtime, $eval, $apply } from "../../src/meta/meta-lang";
+import { runtime, $eval, $apply, $doBlock, doEarlyExit } from "../../src/meta/meta-lang";
 import { add } from "../../src/common";
 import { expr } from "../../src/meta/meta-common";
 import { makeFn } from "../../src/typeInfo";
@@ -37,10 +37,31 @@ describe("meta-lang", () => {
       $eval([{add}], expr('add', 1, 1)).should.equal(2)
     });
 
-    it("should eval ticed expressions", async () => {
+    it("should eval ticked expressions", async () => {
       $eval([{add}], expr('`', 'add', 1, 1))
         .should.eql(expr('add', 1, 1))
-    });    
+    });
+
+    it("should allow evaling Fns with return statements", async () => {
+      const fn = makeFn(undefined, ['x'], undefined, [
+        ['`', '`return', '`x'],
+        1
+      ])
+      $eval([], ['`', fn, 2]).should.equal(2)
+    });
+  });
+
+  describe("$doBlock", () => {
+    it("should allow early exists by setting flag", async () => {
+      const fnCtx: any = {};
+      const fnRtn = _ => {
+        fnCtx.doEarlyExit = doEarlyExit;
+        return _;
+      }
+      const stack = [fnCtx,{}];
+      const r = $doBlock(stack, [['`', fnRtn, 1], 2])
+      r.should.equal(1);
+    });
   });
 
   describe("$apply", () => {
@@ -101,5 +122,13 @@ describe("meta-lang", () => {
     it("should throw an error if the name is not defined anywhere in the stack", async () => {
       should(() => rt.set('b')).throw(`b is not defined`)
     });
+  });
+
+  describe("getr", () => {
+    // TODO
+  });
+
+  describe("setr", () => {
+    // TODO
   });
 });

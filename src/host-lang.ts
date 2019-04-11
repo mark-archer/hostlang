@@ -1,4 +1,4 @@
-import { runtime, $get } from "./meta/meta-lang";
+import { runtime, $get, $newScope } from "./meta/meta-lang";
 import { readFile, readdirSync, lstatSync } from "fs";
 import { parseHost } from "./host-parser";
 import { nameLookup } from "./meta/meta-common";
@@ -8,15 +8,17 @@ import { jsCompilerInfo, buildJs } from "./js-compiler";
 export async function hostRuntime(stack: any[] = []) {
   const hostRuntime = runtime(stack);
   const hostScope = hostRuntime.newScope();
+  
   hostScope._ = hostRuntime._ === undefined ? null : hostRuntime._
   
   const stackFns = {
     parse: parseHost,
     import: $import,
-    shell: $shell
+    shell: $shell,
   }
-  Object.keys(stackFns)
-    .forEach(name => hostScope[name] = (...args) => stackFns[name](stack, ...args));
+  // Object.keys(stackFns)
+  //   .forEach(name => hostScope[name] = (...args) => stackFns[name](stack, ...args));
+  Object.assign(hostScope, stackFns);
 
   hostScope.fetch = fetch;
 
@@ -52,12 +54,11 @@ export async function loadHostEnv(stack, envScope:any) {
 }
 
 export async function $import(stack: any[], path: string, options?: any) {
-  const fetch = nameLookup(stack, "fetch");
-  const parse = nameLookup(stack, "parse");
+  const _fetch = fetch;
+  const parse = parseHost;
   
-  const code = await fetch(path, options);
-  const ast = await parse(code, Object.assign({}, options, { sourceFile: path }));
-
+  const code = await _fetch(path, options);
+  const ast = await parse(stack, code, Object.assign({}, options, { sourceFile: path }));  
   const ci = jsCompilerInfo(stack, undefined, [{}]);
   const jsCode = $compile(ast, ci);
   const _module: any = { exports: {} };
@@ -65,10 +66,12 @@ export async function $import(stack: any[], path: string, options?: any) {
   moduleFn(); // module code needs to be run to generate exports
   return await _module.exports;
 }
+// @ts-ignore
+$import.isMeta = true;
 
 export async function fetch(path: string, options: any = { encoding: 'utf-8' }) {
-  const r = await new Promise((resolve, reject) => {
-    readFile(path, options, (err, data) => {
+  const r: string = await new Promise((resolve, reject) => {
+    readFile(path, options, (err, data:any) => {
       if(err) reject(err);
       else resolve(data);
     })
@@ -77,9 +80,10 @@ export async function fetch(path: string, options: any = { encoding: 'utf-8' }) 
 }
 
 export async function $shell(stack, cmd: string) {
-  const parse = $get(stack, "parse");
   const doBlock = $get(stack, "do");
-  const ast = await parse(cmd);
-  return doBlock(ast);
+  const ast = await parseHost(stack, cmd);
+  return doBlock(stack, ast);
 }
+// @ts-ignore
+$shell.isMeta = true;
 

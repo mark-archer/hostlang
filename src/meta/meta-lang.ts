@@ -44,6 +44,7 @@ export function runtime(stack: Stack = []): Runtime {
     apply: $apply,
     parse: $parse,
     getr: $getr,
+    setr: $setr,
     cond: $cond,
     AND: $AND,
   };
@@ -94,8 +95,7 @@ $cond.isMeta = true;
 
 export function $getr(stack: Stack, ...path) {
   path.reverse()
-  const root = $eval(stack, path.pop())
-  let item = root;
+  let item = $eval(stack, path.pop());
   while(path.length) {
     let pname = untick(path.pop())
     pname = $eval(stack, pname);
@@ -105,16 +105,37 @@ export function $getr(stack: Stack, ...path) {
         pname = item.length + pname;
       }
     }
-    // todo maybe allow list.(, 1 3 5) to get items 1 2 and 5
-    //    list.(2..6) === list.(range 2 6) which would get items 2 through 6
-    //    object.(, fname lname age) would return a list with fname lname and age
-    //    object.(new (fname) (lname) (age)) would return an object with fname lname and age
     item = item[pname];
   }
   return item;
 }
 // @ts-ignore
 $getr.isMeta = true;
+
+export function $setr(stack: Stack, ...path) {
+  const setValue = $eval(stack, path.pop());
+  path.reverse();
+  const root = $eval(stack, path.pop())
+  let parent = root;
+  let item = root;
+  let pname;
+  while(path.length) {
+    parent = item;
+    pname = untick(path.pop())
+    pname = $eval(stack, pname);
+    if (!isNaN(Number(pname))) {
+      pname = Number(pname)
+      if (pname < 0 && isList(item)) {
+        pname = item.length + pname;
+      }
+    }
+    item = item[pname];
+  }  
+  parent[pname] = setValue;
+  return root;
+}
+// @ts-ignore
+$setr.isMeta = true;
 
 export const doEarlyExit = Symbol('doEarlyExit');
 export function $doBlock(stack: Stack, ast: any[]) {

@@ -170,3 +170,5 @@ export function compileSet(ast: any, ci:ICompilerInfo) {
   const code = `${name}=${$compile(ast[3], ci)}`;
   return code
 }
+
+//export function compileSetr(ast: any, ci)

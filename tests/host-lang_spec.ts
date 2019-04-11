@@ -84,12 +84,12 @@ describe("host-lang", () => {
       const rt = await hostRuntime()
       const greet = rt.greet;
       greet().should.equal('Hey you!');
-      greet('Mark').should.equal('Hi Mark!');      
+      greet('Mark').should.equal('Hi Mark!');
     });
   });
 
   describe("hostParsers", () => {
-    it.skip("should load parsers from host_env", async () => {
+    it("should load parsers from host_env", async () => {
       const rt = await hostRuntime()      
       rt.parseTabSize.should.be.ok();
     });

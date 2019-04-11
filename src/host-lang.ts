@@ -69,8 +69,8 @@ export async function $import(stack: any[], path: string, options?: any) {
 // @ts-ignore
 $import.isMeta = true;
 
-export async function fetch(path: string, options: any = { encoding: 'utf-8' }) {
-  const r: string = await new Promise((resolve, reject) => {
+export async function fetch(path: string, options: any = { encoding: 'utf-8' }): Promise<string> {
+  const r: any = await new Promise((resolve, reject) => {
     readFile(path, options, (err, data:any) => {
       if(err) reject(err);
       else resolve(data);

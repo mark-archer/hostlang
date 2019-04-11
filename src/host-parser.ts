@@ -1,12 +1,12 @@
 import { range, isNumber, last } from "lodash";
 import { js } from "./utils";
-import { ParseInfoOptions, IParseInfo, parser, $parse, parserParser, getParsers } from "./meta/meta-parser";
+import { IParseInfoOptions, IParseInfo, parser, $parse, parserParser, getParsers } from "./meta/meta-parser";
 import { tick, untick, isSym, sym, isExpr } from "./meta/meta-common";
 import { nvp, isList } from "./common";
 import { meta, IParamInfo } from "./typeInfo";
 import { $eval, $fn } from "./meta/meta-lang";
 
-export async function parseHost(stack: any[], code: string, options: ParseInfoOptions = {}): Promise<any> {
+export async function parseHost(stack: any[], code: string, options: IParseInfoOptions = {}): Promise<any> {
   //const $import = nameLookup(stack, "common")
   // if($import) commonLib = await $import("common")
   

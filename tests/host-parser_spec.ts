@@ -976,7 +976,7 @@ else
       }),
     );
 
-    it("should parse if statements with EQ", async () => {
+    it("should parse if statements with EQ", async () => {      
       const ast = await parseHost([], `
 tabSize 2
 import "./common.js": EQ

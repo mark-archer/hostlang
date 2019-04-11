@@ -1,8 +1,10 @@
 
 parser parseTabSize 100 (pi)
-    return!
     var llist: last pi.clist
-    if ((isExpr llist) && llist.1 == "`tabSize")
+    return!
+    if ((isExpr llist) && llist.1 == `tabSize)
         pi.clist.pop!
         pi.tabSize = (Number llist.2)
         true
+    else
+        false

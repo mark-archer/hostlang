@@ -44,6 +44,8 @@ export function runtime(stack: Stack = []): Runtime {
     apply: $apply,
     parse: $parse,
     getr: $getr,
+    cond: $cond,
+    AND: $AND,
   };
   Object.keys(stackFns).forEach(name => {
     runtimeScope[name] = stackFns[name]
@@ -65,16 +67,37 @@ export function runtime(stack: Stack = []): Runtime {
   }})
 }
 
+export function $AND(stack: Stack, ...ands) {
+  let result = $get(stack, "_");
+  for (const and of ands) {
+    result = $eval(stack, and);
+    if(!result) return result;
+  }
+  return result;
+}
+// @ts-ignore
+$AND.isMeta = true;
+
+export function $cond(stack: Stack, ...conds) {
+  for (const cond of conds) {
+    let check = cond[0];
+    check = $eval(stack, check);
+    if (check) {
+      let body = ['`', ...skip(cond,2)];
+      return $doBlock(stack, body)
+    } 
+  }
+  return $get(stack, "_");
+}
+// @ts-ignore
+$cond.isMeta = true;
+
 export function $getr(stack: Stack, ...path) {
-  console.log(stack)  
   path.reverse()
-  console.log(path);
   const root = $eval(stack, path.pop())
-  console.log(root);
   let item = root;
   while(path.length) {
     let pname = untick(path.pop())
-    console.log(pname);
     pname = $eval(stack, pname);
     if (!isNaN(Number(pname))) {
       pname = Number(pname)

@@ -154,11 +154,24 @@ export function getParsers(stack: any[]) {
 }
 
 // source code -> ast
-export async function $parse(stack: any[], code:string, options?: ParseInfoOptions) {
+export async function $parse(stack: any[], code:string, options?: IParseInfoOptions) {
   const pi = parseInfo(stack, code, options);
   //last(stack).pi = pi;
   try {
+    let lastI = pi.i - 1;
+    let iEQCnt = 0;
     while (true) {
+      if (lastI == pi.i) {
+        iEQCnt++;
+      } else {
+        lastI = pi.i;
+        iEQCnt = 0;
+      }
+      if (iEQCnt > 10) {
+        throw "parsers are proceeding but code is not being comsumed, "
+          + "check for a parser that is not comsuming code or is returning true when it shouldn't"
+          + "\n" + pi.getLine(pi.getCurrentLineNum()-1);
+      }
       // try compilers one at a time until a match is found
       let matched = false;
       for(let parser of pi.parsers) {
@@ -190,6 +203,7 @@ export async function $parse(stack: any[], code:string, options?: ParseInfoOptio
 $parse.isMeta = true;
 
 export interface IParseInfo {
+  options: IParseInfoOptions;
   runtimeStack: any[];
   parsers: IParser[];
   code: string;
@@ -213,7 +227,7 @@ export interface IParseInfo {
   getLine: (lineNum: number) => string;
 }
 
-export interface ParseInfoOptions {
+export interface IParseInfoOptions {
   terminators?: RegExp;
   maxSymLength?: number;
   tabSize?: number;
@@ -222,10 +236,11 @@ export interface ParseInfoOptions {
   sourceFile?: string;
 }
 
-export function parseInfo(stack: any[], code: string, options: ParseInfoOptions = {}) {
+export function parseInfo(stack: any[], code: string, options: IParseInfoOptions = {}) {
   // options.tabSize = detectTabSize(stack, code, options);
   const root: any[] = [];
   const pi: IParseInfo = {
+    options,
     parsers: getParsers(stack),
     runtimeStack: stack,
     code,
@@ -295,13 +310,17 @@ export function parseInfo(stack: any[], code: string, options: ParseInfoOptions 
 
 export function parseError (pi: IParseInfo, err: any) {
   let lineNum = pi.getCurrentLineNum();
-  let colNum = pi.getCurrentColNum();
+  let colNum: any = pi.getCurrentColNum();
   let line = pi.getLine(lineNum);
   if (line.trim()) {
     lineNum = pi.clist && pi.clist._sourceLine || lineNum;
     colNum = pi.clist && pi.clist._sourceColumn || colNum;
     line = pi.getLine(lineNum);
   }
-  if (line && line.trim()) { line = "\n" + line; }
+  if (pi.options.sourceFile) {
+    colNum += `, file ${pi.options.sourceFile}`
+  }
+  if (line && line.trim()) line = "\n" + line;
+
   return new Error(`parse error at line ${lineNum}, col ${colNum}:${line}${"\n" + err}`);  
 };

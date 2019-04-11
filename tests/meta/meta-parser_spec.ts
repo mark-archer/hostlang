@@ -1,5 +1,6 @@
 import { $parse, parser, parseInfo } from "../../src/meta/meta-parser";
 import { cleanCopyList } from "../../src/utils";
+import { $eval, $fn } from "../../src/meta/meta-lang";
 
 const should = require("should");
 
@@ -72,6 +73,7 @@ describe("meta-parser", () => {
 
   it('should allow adding parsers at parsetime', async () => {
     const stack: any[] = [{
+      fn: $fn,
       a: pi => {
         pi.push("☺")
       },

@@ -1,6 +1,6 @@
 import { flatten, sortBy, last } from 'lodash';
 import { isExpr, untick, tick, isList } from './meta-common';
-import { $eval, $apply, $fn, $get } from './meta-lang';
+import { $eval, $apply, $get } from './meta-lang';
 
 export function isParser(x:any) {
   return x && x.IParser
@@ -93,9 +93,9 @@ export const parserParser: IParser = {
         priority = Number(params)
         params = llist.shift();
       }
-      // const parserApplyAst = ['`', $fn, name, params, ...llist];
-      // const parserApply = $eval(stack, parserApplyAst);
-      const parserApply: any = $fn(stack, name, params, ...llist)
+      //const parserApply: any = $fn(stack, name, params, ...llist)
+      const _eval = $get(stack, 'eval') || $eval;
+      const parserApply = _eval(stack, ['`', '`fn', name, params, ...llist])
       last(stack)[name] = parser(name, parserApply, priority);
       pi.parsers = getParsers(stack);
       return true;
@@ -175,7 +175,8 @@ export async function $parse(stack: any[], code:string, options?: IParseInfoOpti
       // try compilers one at a time until a match is found
       let matched = false;
       for(let parser of pi.parsers) {
-        matched = await $apply(stack, parser, [pi]);        
+        const _apply = $get(stack, "apply") || $apply;
+        matched = await _apply(stack, parser, [pi]);        
         if (matched) break;
       }
       if (matched) continue;

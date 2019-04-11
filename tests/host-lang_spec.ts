@@ -89,7 +89,7 @@ describe("host-lang", () => {
   });
 
   describe("hostParsers", () => {
-    it("should load parsers from host_env", async () => {
+    it.skip("should load parsers from host_env", async () => {
       const rt = await hostRuntime()      
       rt.parseTabSize.should.be.ok();
     });

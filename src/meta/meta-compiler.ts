@@ -1,8 +1,8 @@
 import { flatten, sortBy, last } from 'lodash';
-import { nameLookup, isExpr, sym, untick } from './meta-common';
+import { isExpr, sym, untick } from './meta-common';
 import { stringify } from '../utils';
 import { isString } from 'util';
-import { $eval, $apply } from './meta-lang';
+import { $eval, $apply, $get } from './meta-lang';
 import { skip } from '../common';
 //export function 
 
@@ -43,7 +43,7 @@ const compilerCompiler: ICompiler = compiler("compilerCompiler", (ast: any, ci: 
 
 export function getCompilers(stack: any[]): ICompiler[] {
   let compilers = flatten(stack.map(scope => (<any>Object).values(scope).filter(isCompiler)));
-  if (!nameLookup(stack, "exclude_default_compilers")) {
+  if (!$get(stack, "exclude_default_compilers")) {
     compilers.push(compilerCompiler)
   }
   compilers = sortBy(compilers, c => c.priority);

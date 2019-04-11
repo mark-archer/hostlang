@@ -1,6 +1,6 @@
 import { flatten, sortBy, last } from 'lodash';
-import { isExpr, untick, tick, nameLookup, isList } from './meta-common';
-import { $eval, $apply, $fn } from './meta-lang';
+import { isExpr, untick, tick, isList } from './meta-common';
+import { $eval, $apply, $fn, $get } from './meta-lang';
 
 export function isParser(x:any) {
   return x && x.IParser
@@ -143,7 +143,7 @@ const parsetimeEval: IParser = {
 export function getParsers(stack: any[]) {
   // get parsers
   let parsers: IParser[] = flatten(stack.map(ctx => (<any>Object).values(ctx).filter(isParser) as IParser[]));
-  if (!nameLookup(stack, "exclude_default_parsers")) {
+  if (!$get(stack, "exclude_default_parsers")) {
     parsers.push(lispParser);
     parsers.push(parserParser);
     parsers.push(excludeDefaultParsers);

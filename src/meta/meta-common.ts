@@ -1,12 +1,5 @@
 import { isArray, isString } from 'lodash'
 
-export function nameLookup(stack: any[], name: string) {
-  for (let i = stack.length - 1; i >= 0; i--) {
-    if (stack[i][name] !== undefined) { return stack[i][name]; }
-  }
-  return undefined;
-}
-
 export const isList = isArray;
 
 export function sym(s: string) {

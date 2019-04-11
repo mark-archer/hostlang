@@ -1,7 +1,6 @@
 import { runtime, $get, $newScope } from "./meta/meta-lang";
 import { readFile, readdirSync, lstatSync } from "fs";
 import { parseHost } from "./host-parser";
-import { nameLookup } from "./meta/meta-common";
 import { $compile } from "./meta/meta-compiler";
 import { jsCompilerInfo, buildJs } from "./js-compiler";
 

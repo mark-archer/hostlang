@@ -1,5 +1,5 @@
 import { $compile, ICompilerInfo, compiler, compilerInfo } from "./meta/meta-compiler";
-import { untick, isSym, unquote, isExpr, isList } from "./meta/meta-common";
+import { untick, isSym, unquote, isExpr, isList, isExprOf } from "./meta/meta-common";
 import { skip, sym, isString, keys, last } from "./common";
 import { Fn, makeFn, isFn } from "./typeInfo";
 import { $exists, $get } from "./meta/meta-lang";
@@ -16,6 +16,8 @@ export function jsCompilerInfo(stack=[], refs=[], compilerStack=[]) {
     compileExport,
     compileVar,
     compileSet,
+    compileGetr,
+    compileSetr,
   };
   Object.keys(compilerScope).forEach((name, i) => {
     const applyFn = compilerScope[name];
@@ -70,7 +72,8 @@ export function compileSym(ast: any, ci: ICompilerInfo) {
   // TODO Quote logic
   if (isSym(ast)) return `"${ast}"`;
   let name = ast;
-  if (name === '_') return name;
+  // special names
+  if (['_', 'return'].includes(name)) return name;
   if ($exists(ci.compilerStack, name)) return name;
   for (let i = ci.stack.length - 1; i >= 0; i--) {
     const scope = ci.stack[i];
@@ -101,13 +104,13 @@ export function compileDo(ast: any, ci: ICompilerInfo) {
 }
 
 export function compileFn(ast: any, ci: ICompilerInfo) {
-  if (!(isFn(ast) || (isExpr(ast) && ast[1] === sym('fn')))) return;
+  if (!(isFn(ast) || isExprOf(ast, "fn"))) return;
   let stack = ci.stack;
   let fn: Fn;
   if (isList(ast)) {
-    const args = skip(ast, 2);
+    const args = skip(untick(ast), 1);
     let name;
-    if (isSym(args[0])) { name = untick(args.shift()); }
+    if (isString(args[0])) { name = untick(args.shift()); }
     const params = untick(args.shift()).map(untick);
     const body = args;
     fn = makeFn(name, params, undefined, body, stack);
@@ -135,7 +138,7 @@ export function compileFn(ast: any, ci: ICompilerInfo) {
 }
 
 export function compileExport(ast: any, ci:ICompilerInfo) {
-  if (!(isExpr(ast) && ast[1] === sym("export"))) return;
+  if (!isExprOf(ast, "export")) return;
   (ast as any[]).splice(1,1);
   const name = untick(ast[2]);
   const code = `${$compile(ast, ci)};\nexports.${name}=_`;
@@ -143,7 +146,7 @@ export function compileExport(ast: any, ci:ICompilerInfo) {
 }
 
 export function compileCond(ast: any, ci: ICompilerInfo) {
-  if (!(isExpr(ast) && ast[1] === sym("cond"))) return;
+  if (!isExprOf(ast, "cond")) return;
   const conds = skip(ast, 2);
   let code = "(function(_){\n";
   for (let cond of conds) {    
@@ -157,7 +160,7 @@ export function compileCond(ast: any, ci: ICompilerInfo) {
 }
 
 export function compileVar(ast: any, ci:ICompilerInfo) {
-  if (!(isExpr(ast) && ast[1] === sym("var"))) return;
+  if (!isExprOf(ast, "var")) return;
   const name = untick(ast[2]);
   declareVar(name, ci);
   const code = `_;let ${name}=${$compile(ast[3], ci)};_=${name}`;
@@ -165,10 +168,34 @@ export function compileVar(ast: any, ci:ICompilerInfo) {
 }
 
 export function compileSet(ast: any, ci:ICompilerInfo) {
-  if (!(isExpr(ast) && ast[1] === sym("set"))) return;
+  if (!isExprOf(ast, "set")) return;
   const name = compileSym(ast[2], ci);
   const code = `${name}=${$compile(ast[3], ci)}`;
   return code
 }
 
-//export function compileSetr(ast: any, ci)
+export function compileGetr(ast: any, ci) {
+  if (!isExprOf(ast, "getr")) return;
+  ast = skip(ast,2)
+  let code = $compile(ast.shift(), ci);
+  ast.forEach(i => {
+    if (isSym(i)) i = untick(i);
+    i = $compile(i, ci);
+    code += `[${i}]`
+  })
+  return code;
+}
+
+export function compileSetr(ast: any, ci) {
+  if (!isExprOf(ast, "setr")) return;
+  const value = $compile(ast.pop(), ci);
+  ast = skip(ast,2)
+  let code = $compile(ast.shift(), ci);
+  ast.forEach(i => {
+    if (isSym(i)) i = untick(i);
+    i = $compile(i, ci);
+    code += `[${i}]`
+  })
+  code += `=${value}`
+  return code;
+}

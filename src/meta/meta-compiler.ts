@@ -59,10 +59,8 @@ export interface ICompilerInfo {
 export function $compile(ast: any, ci: ICompilerInfo) {
   const compilers = getCompilers(ci.stack)
   for (const _compiler of compilers) {
-    //const result = _compiler.apply(ast, ci);
     const result = $apply(ci.stack, _compiler, [ast, ci]);
-    if (isString(result) || result) return result;
-    //if (result) throw new Error(`a compiler returned a truthy, non-string value: ${stringify({ compiler: _compiler, result })}`);
+    if (isString(result) || result) return result;    
   }
   throw new Error(`no compilers are proceeding: ${stringify(ast)}`)
 }

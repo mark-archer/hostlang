@@ -1,4 +1,4 @@
-import { runtime, $get, $newScope } from "./meta/meta-lang";
+import { runtime, $get, $newScope, $eval } from "./meta/meta-lang";
 import { readFile, readdirSync, lstatSync } from "fs";
 import { parseHost } from "./host-parser";
 import { $compile } from "./meta/meta-compiler";
@@ -11,6 +11,7 @@ export async function hostRuntime(stack: any[] = []) {
   hostScope._ = hostRuntime._ === undefined ? null : hostRuntime._
   
   const stackFns = {
+    eval: $hostEval,
     parse: parseHost,
     import: $import,
     shell: $shell,
@@ -24,6 +25,14 @@ export async function hostRuntime(stack: any[] = []) {
   await loadHostEnv(stack, hostScope);
   return hostRuntime;  
 }
+
+export function $hostEval(stack, ast) {
+  const jsCode = $compile(ast, jsCompilerInfo(stack));
+  jsCode
+  return $eval(stack, ast);
+}
+//@ts-ignore
+$hostEval.isMeta = true;
 
 export async function loadHostEnv(stack, envScope:any) {  
   // this copies all exports directly into the env scope

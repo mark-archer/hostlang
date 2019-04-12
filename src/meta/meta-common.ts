@@ -51,3 +51,7 @@ export function unquote(x: any) {
   }
   return x;
 }
+
+export function isExprOf(x: any, f: any) {  
+  return isExpr(x) && untick(x[1]) == untick(f);
+}

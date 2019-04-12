@@ -1,4 +1,4 @@
-import { compileSym, compileExpr, jsCompilerInfo, compileDo, compileFn, buildJs, compileExport, compileCond } from "../src/js-compiler";
+import { compileSym, compileExpr, jsCompilerInfo, compileDo, compileFn, buildJs, compileExport, compileCond, compileSetr } from "../src/js-compiler";
 import { add } from "../src/common";
 import { parseHost } from "../src/host-parser";
 import { js } from "../src/utils";
@@ -222,6 +222,20 @@ describe("compileJs", () => {
       const ci = jsCompilerInfo([]);
       const ast = [['`', '`set', '`a', 2]];
       should(() => $compile(ast, ci)).throw(/a is not defined/);
+    });
+  });
+
+  describe("compileSetr", () => {
+    it("should work with strings, syms, refs, and exprs", async () => {
+      const ci = jsCompilerInfo([{b:2}], undefined, [{a:1, add}]);    
+      const r = compileSetr(['`', '`setr', '`a', 
+        "a", // string
+        '`a', // sym
+        '``b', // ref
+        ['`', '`add', 'a', 'b'], // expr
+        ['`', '`add', 'a', 'b'], // value
+      ], ci)
+      r.should.equal('a["a"]["a"][__ref0.b][add("a","b")]=add("a","b")')
     });
   });
 

@@ -30,17 +30,17 @@ describe("host-lang", () => {
     //   rt.exec(['`', '`add', 1, 1]).should.equal(2)      
     // });    
 
-    it("should allow evaluating code blocks with do", async () => {      
+    it("should allow evaluating code", async () => {
       const rt = await hostRuntime()
       const ast = await rt.parse('add 1 1')
-      const f = rt.do(ast);
+      const f = rt.eval(ast);
       f.should.equal(2)
     });
     
     it("should allow declaring variables", async () => {
       const rt = await hostRuntime()
       const ast = await rt.parse('var a 1, a + a')
-      const f = rt.do(ast);
+      const f = rt.eval(ast);
       f.should.equal(2)
     });
 
@@ -53,11 +53,12 @@ describe("host-lang", () => {
       it("should remember the state in between calls", async () => {
         const rt = await hostRuntime()
         await rt.shell('1 + 1').should.eventually.equal(2)
-        await rt.shell('_ + 1 >> * 3').should.eventually.equal(9)
+        should(rt._).equal(2)
+        await rt.shell('_ + 1 >> * 3').should.eventually.equal(9)        
       });      
     });
 
-    it("should allow setting unevaluated code to variables", async () => {
+    it("should allow setting unevaluated code to variables", async () => {      
       const rt = await hostRuntime()
       const r = await rt.shell('var a: ` 1')
       r.should.eql([ '`', 1 ]);
@@ -68,16 +69,19 @@ describe("host-lang", () => {
     it("should allow declaring functions", async () => {
       const rt = await hostRuntime()
       const r = await rt.shell('a => 1')
-      r.should.match({ kind: "Fn", params: [{name:'a'}], body: [1]})      
+      r.should.be.type("function");
+      r().should.equal(1)
     });
 
     it("should add named functions to the scope when declaring them", async () => {
       const rt = await hostRuntime()
       const r = await rt.shell('f a => a')
-      r.should.match({ kind: "Fn", name: "f", params: [{name:'a'}], body: ['`a']})      
-      should(rt.f).equal(r);
+      r.should.be.type("function");      
+      r.should.equal(rt.f);
+      r(1).should.equal(1);
+      r(2).should.equal(2);
       const r2 = await rt.shell('f 1')
-      r2.should.equal(1);
+      r2.should.equal(1);      
     });
 
     it("should automatically load files in host_env folder", async () => {      

@@ -1,6 +1,6 @@
 import { flatten, sortBy, last } from 'lodash';
 import { isExpr, untick, tick, isList } from './meta-common';
-import { $eval, $apply, $get } from './meta-lang';
+import { $get, $apply, $fn, $eval } from './meta-lang';
 
 export function isParser(x:any) {
   return x && x.IParser
@@ -94,8 +94,9 @@ export const parserParser: IParser = {
         params = llist.shift();
       }
       //const parserApply: any = $fn(stack, name, params, ...llist)
-      const _eval = $get(stack, 'eval') || $eval;
-      const parserApply = _eval(stack, ['`', '`fn', name, params, ...llist])
+      // const parserApply = $eval(stack, ['`', '`fn', name, params, ...llist])
+      const _fn = $get(stack, 'fn') || $fn;
+      const parserApply  = _fn(stack, name, params, ...llist);
       last(stack)[name] = parser(name, parserApply, priority);
       pi.parsers = getParsers(stack);
       return true;

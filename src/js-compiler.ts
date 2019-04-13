@@ -1,8 +1,10 @@
 import { $compile, ICompilerInfo, compiler, compilerInfo } from "./meta/meta-compiler";
 import { untick, isSym, unquote, isExpr, isList, isExprOf } from "./meta/meta-common";
-import { skip, sym, isString, keys, last } from "./common";
+import { skip, sym, isString, keys, last, tick } from "./common";
 import { Fn, makeFn, isFn } from "./typeInfo";
-import { $exists, $get } from "./meta/meta-lang";
+import { $exists, $get, $var } from "./meta/meta-lang";
+import { isObject } from "util";
+import { getRef } from "./compile";
 
 export function jsCompilerInfo(stack=[], refs=[], compilerStack=[]) {
   const ci = compilerInfo(stack, refs, compilerStack);
@@ -18,6 +20,9 @@ export function jsCompilerInfo(stack=[], refs=[], compilerStack=[]) {
     compileSet,
     compileGetr,
     compileSetr,
+    compileReturn,
+    compileAND,
+    compileOR,
   };
   Object.keys(compilerScope).forEach((name, i) => {
     const applyFn = compilerScope[name];
@@ -46,15 +51,26 @@ export function buildJs(jsCode: string, ci: ICompilerInfo, externalRefs = {}) {
 }
 
 export function compileLiteral(expr: any, ci: ICompilerInfo) {
-  if (isString(expr)) { return `"${expr}"`; }
-  // TODO object
-  // TODO Array
+  if (isString(expr)) return `"${expr}"`;
+  if (isList(expr)) {
+    return `[${expr.map(i => $compile(i, ci))}]`;
+  }
+  if (isObject(expr)) {
+    let r = `{${Object.keys(k => `"${k}":${$compile(expr[k], ci)}`)}}`
+    r
+    return r;
+  }
   return String(expr);
 }
 
 export function declareVar(name: string, ci: ICompilerInfo) {
-  if(!ci.compilerStack.length) ci.compilerStack.push({});
-  last(ci.compilerStack)[name] = null;
+  //if(!ci.compilerStack.length) ci.compilerStack.push({});
+  $var(ci.compilerStack, name);
+  // if(ci.compilerStack.length) {
+  //   $var(ci.compilerStack, name);
+  // } else if(!$exists(ci.stack, name)) {
+  //    $var(ci.stack, name);
+  // }
 }
 
 export function compileRef(obj:any, ci: ICompilerInfo) {
@@ -88,6 +104,9 @@ export function compileSym(ast: any, ci: ICompilerInfo) {
 export function compileExpr(ast: any, ci: ICompilerInfo) {
   if (!isExpr(ast)) return;
   if (ast[1] === '`do') return compileDo(skip(ast, 2), ci);
+  if (isExpr(untick(ast))) {
+    return compileLiteral(untick(ast), ci);
+  }
   const f = $compile(ast[1], ci);
   const args = skip(ast, 2).map(a => $compile(a, ci));
   return `${f}(${args.join()})`
@@ -131,8 +150,13 @@ export function compileFn(ast: any, ci: ICompilerInfo) {
   ci.compilerStack.pop();
   code += "\n}";
   if(fn.name) {
-    code += `;let ${fn.name}=_`
-    declareVar(fn.name, ci);
+    if(ci.compilerStack.length) {
+      declareVar(fn.name, ci);
+      code += `;let ${fn.name}=_`
+    } else {
+      if (!$exists(ci.stack, fn.name)) $var(ci.stack, fn.name);
+      code += `;${compileSym(tick(name), ci)}=_`
+    }    
   }
   return code;
 }
@@ -149,10 +173,10 @@ export function compileCond(ast: any, ci: ICompilerInfo) {
   if (!isExprOf(ast, "cond")) return;
   const conds = skip(ast, 2);
   let code = "(function(_){\n";
-  for (let cond of conds) {    
+  for (let cond of conds) {
     cond = untick(cond);
     code += `if(${$compile(cond[0], ci)}) return ${$compile(cond[1], ci)};\nelse `
-  }   
+  }
   code = code.substr(0, code.length - 5);
   code += "\nreturn _;"
   code += "})(_)"
@@ -162,9 +186,14 @@ export function compileCond(ast: any, ci: ICompilerInfo) {
 export function compileVar(ast: any, ci:ICompilerInfo) {
   if (!isExprOf(ast, "var")) return;
   const name = untick(ast[2]);
+  if (!ci.compilerStack.length) { // top level variable
+    if (!$exists(ci.stack, name)) $var(ci.stack, name);
+    const r = compileSym(ast[2], ci)
+    const code = `${r}=${$compile(ast[3], ci)}`
+    return code
+  }
   declareVar(name, ci);
-  const code = `_;let ${name}=${$compile(ast[3], ci)};_=${name}`;
-  return code
+  return `_;let ${name}=${$compile(ast[3], ci)};_=${name}`;  
 }
 
 export function compileSet(ast: any, ci:ICompilerInfo) {
@@ -197,5 +226,25 @@ export function compileSetr(ast: any, ci) {
     code += `[${i}]`
   })
   code += `=${value}`
+  return code;
+}
+
+export function compileReturn(ast: any, ci) {
+  if (!isExprOf(ast, "return")) return;
+  if (ast.length === 2) {
+    return `_;return null`;
+  }
+  return `_;return ${$compile(ast[2], ci)}`;
+}
+
+export function compileAND(ast: any, ci) {
+  if (!isExprOf(ast, "AND")) return;
+  let code = skip(ast, 2).map(i => $compile(i, ci)).join(' && ');
+  return code;
+}
+
+export function compileOR(ast: any, ci) {
+  if (!isExprOf(ast, "OR")) return;
+  let code = skip(ast, 2).map(i => $compile(i, ci)).join(' || ');
   return code;
 }

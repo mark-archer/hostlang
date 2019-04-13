@@ -4,7 +4,6 @@ import { IParseInfoOptions, IParseInfo, parser, $parse, parserParser, getParsers
 import { tick, untick, isSym, sym, isExpr } from "./meta/meta-common";
 import { nvp, isList } from "./common";
 import { meta, IParamInfo } from "./typeInfo";
-import { $eval, $fn } from "./meta/meta-lang";
 
 export async function parseHost(stack: any[], code: string, options: IParseInfoOptions = {}): Promise<any> {
   //const $import = nameLookup(stack, "common")

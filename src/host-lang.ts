@@ -1,8 +1,9 @@
-import { runtime, $get, $newScope, $eval } from "./meta/meta-lang";
+import { runtime, $get, Stack } from "./meta/meta-lang";
 import { readFile, readdirSync, lstatSync } from "fs";
 import { parseHost } from "./host-parser";
 import { $compile } from "./meta/meta-compiler";
 import { jsCompilerInfo, buildJs } from "./js-compiler";
+import { last } from "./common";
 
 export async function hostRuntime(stack: any[] = []) {
   const hostRuntime = runtime(stack);
@@ -27,9 +28,12 @@ export async function hostRuntime(stack: any[] = []) {
 }
 
 export function $hostEval(stack, ast) {
-  const jsCode = $compile(ast, jsCompilerInfo(stack));
-  jsCode
-  return $eval(stack, ast);
+  //return $eval(stack, ast);
+  const ci = jsCompilerInfo(stack);
+  const jsCode = $compile(ast, ci);
+  const f = buildJs(jsCode, ci);
+  const r = f();
+  return r;
 }
 //@ts-ignore
 $hostEval.isMeta = true;
@@ -87,10 +91,25 @@ export async function fetch(path: string, options: any = { encoding: 'utf-8' }):
   return r
 }
 
-export async function $shell(stack, cmd: string) {
-  const doBlock = $get(stack, "do");
+export async function $shell(stack: Stack, cmd: string) {
   const ast = await parseHost(stack, cmd);
-  return doBlock(stack, ast);
+  const ci = jsCompilerInfo(stack);
+  ci.stack.push(last(stack));
+  const jsCode = $compile(ast, ci);
+  const f = buildJs(jsCode, ci);
+  const r = f();
+  last(stack)._ = r;
+  return r;
+
+  //return $hostEval(stack, ast);
+  
+  // const ast = await parseHost(stack, cmd);
+  // let r;
+  // for (const i of ast) {
+  //   r = $hostEval(stack, i);
+  //   $var(stack, "_", r);
+  // }
+  // return r;
 }
 // @ts-ignore
 $shell.isMeta = true;

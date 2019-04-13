@@ -12,23 +12,8 @@ describe("host-lang", () => {
     it("should expose runtime dependent functions as closures", async () => {
       const rt = await hostRuntime()
       await rt.get("fetch")('/not/a/real/path').should.be.rejectedWith(/no such file or directory/)
-      await rt.fetch('/not/a/real/path').should.be.rejectedWith(/no such file or directory/)      
+      await rt.fetch('/not/a/real/path').should.be.rejectedWith(/no such file or directory/)
     });
-
-    // it("should provide `compile to compile ast to js", async () => {
-    //   const rt = hostRuntime()      
-    //   rt.eval(['`', '`add', 1, 1]).should.equal(2)
-    //   const exe = rt.compile([['`', '`add', 1, 1]])
-    //   exe.exec().should.equal(2)
-    // });
-
-    // it("should provide `exec to compile code before evaluation", async () => {
-    //   const rt = hostRuntime()      
-    //   const f = await rt.exec(['`', '`fn', [], 1])
-    //   f().should.equal(1)
-    //   rt.eval(['`', '`add', 1, 1]).should.equal(2)
-    //   rt.exec(['`', '`add', 1, 1]).should.equal(2)      
-    // });    
 
     it("should allow evaluating code", async () => {
       const rt = await hostRuntime()
@@ -36,7 +21,7 @@ describe("host-lang", () => {
       const f = rt.eval(ast);
       f.should.equal(2)
     });
-    
+
     it("should allow declaring variables", async () => {
       const rt = await hostRuntime()
       const ast = await rt.parse('var a 1, a + a')
@@ -54,11 +39,11 @@ describe("host-lang", () => {
         const rt = await hostRuntime()
         await rt.shell('1 + 1').should.eventually.equal(2)
         should(rt._).equal(2)
-        await rt.shell('_ + 1 >> * 3').should.eventually.equal(9)        
-      });      
+        await rt.shell('_ + 1 >> * 3').should.eventually.equal(9)
+      });
     });
 
-    it("should allow setting unevaluated code to variables", async () => {      
+    it("should allow setting unevaluated code to variables", async () => {
       const rt = await hostRuntime()
       const r = await rt.shell('var a: ` 1')
       r.should.eql([ '`', 1 ]);
@@ -76,15 +61,15 @@ describe("host-lang", () => {
     it("should add named functions to the scope when declaring them", async () => {
       const rt = await hostRuntime()
       const r = await rt.shell('f a => a')
-      r.should.be.type("function");      
+      r.should.be.type("function");
       r.should.equal(rt.f);
       r(1).should.equal(1);
       r(2).should.equal(2);
       const r2 = await rt.shell('f 1')
-      r2.should.equal(1);      
+      r2.should.equal(1);
     });
 
-    it("should automatically load files in host_env folder", async () => {      
+    it("should automatically load files in host_env folder", async () => {
       const rt = await hostRuntime()
       const greet = rt.greet;
       greet().should.equal('Hey you!');
@@ -93,9 +78,9 @@ describe("host-lang", () => {
   });
 
   describe("hostParsers", () => {
-    it.skip("should load parsers from host_env", async () => {
-      const rt = await hostRuntime()      
-      rt.parseTabSize.should.be.ok();
+    it("should load parsers from host_env", async () => {
+      const rt = await hostRuntime();
+      //rt.parseTabSize.should.be.ok();
     });
   });
 

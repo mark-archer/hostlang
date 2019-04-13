@@ -1,5 +1,4 @@
 
-;*
 parser tabSize 100 (pi)
     var llist: last pi.clist
     return!
@@ -10,4 +9,3 @@ parser tabSize 100 (pi)
     else
         false
 ;exports.parseTabSize = parseTabSize 
-*;

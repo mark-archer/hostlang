@@ -15,7 +15,7 @@ export async function hostRuntime(stack: any[] = []) {
     eval: $hostEval,
     parse: parseHost,
     import: $import,
-    shell: $shell,
+    shell: $shell
   }
   // Object.keys(stackFns)
   //   .forEach(name => hostScope[name] = (...args) => stackFns[name](stack, ...args));

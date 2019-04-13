@@ -30,7 +30,7 @@ const lispParser: IParser = {
   priority: 1001,
   apply: (pi: IParseInfo) => {
     const word = pi.peekWord();
-    if (!word) return false;    
+    if (!word) return false;
     // open list
     if (word == "(") {
       pi.newList(true);
@@ -93,10 +93,7 @@ export const parserParser: IParser = {
         priority = Number(params)
         params = llist.shift();
       }
-      //const parserApply: any = $fn(stack, name, params, ...llist)
-      // const parserApply = $eval(stack, ['`', '`fn', name, params, ...llist])
-      const _fn = $get(stack, 'fn') || $fn;
-      const parserApply  = _fn(stack, name, params, ...llist);
+      const parserApply = $eval(stack, ['`', '`fn', name, params, ...llist])
       last(stack)[name] = parser(name, parserApply, priority);
       pi.parsers = getParsers(stack);
       return true;
@@ -176,22 +173,23 @@ export async function $parse(stack: any[], code:string, options?: IParseInfoOpti
       // try compilers one at a time until a match is found
       let matched = false;
       for(let parser of pi.parsers) {
-        const _apply = $get(stack, "apply") || $apply;
-        matched = await _apply(stack, parser, [pi]);        
+        // const _apply = $get(stack, "apply") || $apply;
+        // matched = await _apply(stack, parser, [pi]);
+        matched = await $apply(stack, parser, [pi]);
         if (matched) break;
       }
       if (matched) continue;
       // if no parsers are continuing, break out of loop
-      // NOTE: this is designed to continue even if we're at end of the code in case 
+      // NOTE: this is designed to continue even if we're at end of the code in case
       //       there are parsers specifically added to modify the ast after parsing is finished
       break;
     }
   } catch (err) {
     throw parseError(pi, err);
-  } 
+  }
 
-  if (pi.parseStack.length > 1) { 
-    throw parseError(pi, 'parser did not end on root list, probably missing right parens ")"'); 
+  if (pi.parseStack.length > 1) {
+    throw parseError(pi, 'parser did not end on root list, probably missing right parens ")"');
   }
 
   // if we're not at end of code throw error
@@ -324,5 +322,5 @@ export function parseError (pi: IParseInfo, err: any) {
   }
   if (line && line.trim()) line = "\n" + line;
 
-  return new Error(`parse error at line ${lineNum}, col ${colNum}:${line}${"\n" + err}`);  
+  return new Error(`parse error at line ${lineNum}, col ${colNum}:${line}${"\n" + err}`);
 };

@@ -7,6 +7,7 @@ export const {
   union,
   isNumber,
   clone,
+  cloneDeep,
   isDate,
   isBoolean,
 } = _;

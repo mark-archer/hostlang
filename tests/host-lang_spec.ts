@@ -8,7 +8,7 @@ const should = require('should');
 describe("host-lang", () => {
   describe("HostRuntime", () => {
     it("should not require parameters", async () => {
-      const rt = hostRuntime()
+      const rt = await hostRuntime()
       should(rt).be.ok();
     });
 

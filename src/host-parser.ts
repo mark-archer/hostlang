@@ -49,14 +49,15 @@ function hostParserParser(pi: IParseInfo){
     exportParser = true;
     llist.splice(1,1);
     parserName = untick(llist[2]);
-    parserName
   }    
   if (isExpr(llist) && llist[1] === "`parser") {
     parserCleanup(pi);
     parserParser.apply(pi);
     if (exportParser) {
       $get(pi.runtimeStack, "exports")[parserName] = $get(pi.runtimeStack, parserName)
+      console.log($get(pi.runtimeStack, "exports")[parserName].apply.toString());
     }
+
   }  
   return false;
 

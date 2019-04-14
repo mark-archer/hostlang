@@ -1,6 +1,6 @@
 import { $compile, ICompilerInfo, compiler, compilerInfo } from "./meta/meta-compiler";
 import { untick, isSym, unquote, isExpr, isList, isExprOf } from "./meta/meta-common";
-import { skip, sym, isString, keys, last, tick } from "./common";
+import { skip, sym, isString, keys, last, tick, clone, cloneDeep } from "./common";
 import { Fn, makeFn, isFn } from "./typeInfo";
 import { $exists, $get, $var } from "./meta/meta-lang";
 import { isObject } from "util";
@@ -135,19 +135,37 @@ export function compileFn(ast: any, ci: ICompilerInfo) {
   } else {
     fn = ast;
   }
-
-  let code = "";
-  code += `_=function(`;
+  let code = `_=function(`;
   const fnScope = {};
   code += fn.params.map((p) => {
     fnScope[p.name] = null;
     return p.name;
   }).join();
-  code += "){\n\tlet _=null;\n\treturn";
+  code += `){
+    let _ = null;
+    let __rtnFlag = false;
+    let __iStm = 0;
+    while(true) {
+      if (__rtnFlag) return _;
+      switch (__iStm) {`;
   ci.compilerStack.push(fnScope);
-  code += compileDo(fn.body, ci);
+  //code += compileDo(fn.body, ci);
+  let __iStm = 0;
+  for (const stmt of cloneDeep(fn.body)) {
+    code += `
+        case ${__iStm}:
+          _=${$compile(stmt, ci)};
+          break;`
+    __iStm++;
+  }
   ci.compilerStack.pop();
-  code += "\n}";
+  code += `
+        default:
+          return _;
+      } 
+      __iStm++;
+    }
+  }`;
   if(fn.name) {
     if(ci.compilerStack.length) {
       declareVar(fn.name, ci);
@@ -156,8 +174,16 @@ export function compileFn(ast: any, ci: ICompilerInfo) {
       if (!$exists(ci.stack, fn.name)) $var(ci.stack, fn.name);
       code += `;${compileSym(tick(name), ci)}=_`
     }    
-  }
+  }  
   return code;
+}
+
+export function compileReturn(ast: any, ci) {
+  if (!isExprOf(ast, "return")) return;
+  if (ast.length === 2) {
+    return `null;__rtnFlag=true`;
+  }
+  return `${$compile(ast[2], ci)};__rtnFlag=true`;
 }
 
 export function compileExport(ast: any, ci:ICompilerInfo) {
@@ -196,7 +222,7 @@ export function compileVar(ast: any, ci:ICompilerInfo) {
     return code
   }
   declareVar(name, ci);
-  return `_;let ${name}=${$compile(ast[3], ci)};_=${name}`;  
+  return `_;var ${name}=${$compile(ast[3], ci)};_=${name}`;  
 }
 
 export function compileSet(ast: any, ci:ICompilerInfo) {
@@ -230,14 +256,6 @@ export function compileSetr(ast: any, ci) {
   })
   code += `=${value}`
   return code;
-}
-
-export function compileReturn(ast: any, ci) {
-  if (!isExprOf(ast, "return")) return;
-  if (ast.length === 2) {
-    return `_;return null`;
-  }
-  return `_;return ${$compile(ast[2], ci)}`;
 }
 
 export function compileAND(ast: any, ci) {

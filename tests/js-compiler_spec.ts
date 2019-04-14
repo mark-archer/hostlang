@@ -9,7 +9,7 @@ import { $parse } from "../src/meta/meta-parser";
 const should = require('should');
 
 describe("compileJs", () => {
-  const ci = jsCompilerInfo([{b:2}], undefined, [{a:1, add}]);    
+  const ci = jsCompilerInfo([{b:2}], undefined, [{a:1, add}]);
   describe("compileSym", () => {
     it("should return undefined if not given a sym", async () => {
       should(compileSym(1, ci)).equal(undefined);
@@ -67,7 +67,7 @@ describe("compileJs", () => {
     it("should return undefined if not given a list or given an expression", async () => {
       should(compileDo(1, ci)).equal(undefined)
       should(compileDo(['`'], ci)).equal(undefined)
-      should(compileDo([], ci)).not.equal(undefined)      
+      should(compileDo([], ci)).not.equal(undefined)
     });
   });
 
@@ -84,17 +84,26 @@ describe("compileJs", () => {
       const r = compileFn(fnAst, ci);
       linesJoinedShouldEqual(r, `
         _=function(x){
-          let _=null;
-          return(function(_){
-            _=add(x,1);
-            return _;
-          })(_)};
-        let add1=_
+          let _ = null;
+          let __rtnFlag = false;
+          let __iStm = 0;
+          while(true) {
+            if (__rtnFlag) return _;
+            switch (__iStm) {
+              case 0:
+                _=add(x,1);
+                break;
+              default:
+                return _;
+            } 
+            __iStm++;
+          }
+        };let add1=_
       `)
       const r2 = $compile(ast, ci);
       const add1 = js(r2, { add, _: null });
       add1(1).should.equal(2);
-      add1("a").should.equal("a1");      
+      add1("a").should.equal("a1");
     });
 
     it("should compile a fn object", async () => {
@@ -102,36 +111,87 @@ describe("compileJs", () => {
       const r = compileFn(fn, ci);
       linesJoinedShouldEqual(r, `
         _=function(x){
-          let _=null;
-          return(function(_){
-            _=add(x,1);
-            return _;
-          })(_)};
+          let _ = null;
+          let __rtnFlag = false;
+          let __iStm = 0;
+          while(true) {
+            if (__rtnFlag) return _;
+            switch (__iStm) {
+              case 0:
+                _=add(x,1);
+                break;
+              default:
+                return _;
+            }
+            __iStm++;
+          }
+        };
         let add1=_
       `)
     });
+
+    it("should compile fn so control flows like return work", async () => {
+      const ast = await $parseHost([], 'fn rtnx(x): return x, 2 + 2')
+      const fnAst = ast[0];
+      const r = compileFn(fnAst, ci);
+      linesJoinedShouldEqual(r, `
+        _=function(x){
+          let _ = null;
+          let __rtnFlag = false;
+          let __iStm = 0;
+          while(true) {
+            if (__rtnFlag) return _;
+            switch (__iStm) {
+              case 0:
+                _=x;
+                __rtnFlag=true;
+                break;
+              case 1:
+                _=add(2,2);
+                break;
+              default:
+                return _;
+            }
+            __iStm++;
+          }
+        };
+        let rtnx=_
+      `)
+      const r2 = $compile(ast, ci);
+      const rtnx = js(r2, { add, _: null });
+      rtnx(1).should.equal(1);
+      rtnx("a").should.equal("a");
+    })
   });
 
   describe("compileExport", () => {
     it("should compile exported functions", async () => {
       const ast = await $parseHost([], 'export fn add1(x): x + 1')
       const exportAst = ast[0];
-      const r = compileExport(exportAst, ci);      
+      const r = compileExport(exportAst, ci);
       linesJoinedShouldEqual(r, `
         _=function(x){
-          let _=null;
-          return(function(_){
-            _=add(x,1);
-            return _;
-          })(_)
-        };
-        let add1=_;
+          let _ = null;
+          let __rtnFlag = false;
+          let __iStm = 0;
+          while(true) {
+            if (__rtnFlag) return _;
+            switch (__iStm) {
+              case 0:
+                _=add(x,1);
+                break;
+              default:
+                return _;
+            } 
+            __iStm++;
+          }
+        };let add1=_;
         exports.add1=_
       `)
       const add1 = js(r, { add, _:null });
       add1(1).should.equal(2);
       add1("a").should.equal("a1");
-    });    
+    });
   });
 
   describe("compileCond", () => {
@@ -170,10 +230,10 @@ describe("compileJs", () => {
           else if(true) return 1;
           return _;
         })(_)
-      `)      
+      `)
     });
 
-    it("should compile cond bodies with multipule statments", async () => {
+    it("should compile cond bodies with multipule statements", async () => {
       const ast = await $parseHost([], 'if false\n\tadd 1 1\n\t+ _ 2\nelse\n\tadd 2 2\n\t+ _ 3')
       const condAst = ast[0];
       const r = compileCond(condAst, ci);
@@ -191,8 +251,16 @@ describe("compileJs", () => {
         })(_);
         return _;
       })(_)
-      `)      
+      `)
     });
+
+    // it("should allow returning from inside a cond", async () => {
+    //   const ast = await $parseHost([], 'fn a (): if true\n\tadd 1 1\n\treturn _\n\t1')
+    //   const r = $compile(ast, ci);
+    //   linesJoinedShouldEqual(r, `
+    //   (function(_){_=_=function(){let _=null;return(function(_){_=(function(_){if(true) return (function(_){_=add(1,1);_=_;return _;_=1;return _;})(_);return _;})(_);return _;})(_)};let a=_;return _;})(_)
+    //   `)
+    // });
   });
 
   describe("buildJs", () => {
@@ -214,7 +282,7 @@ describe("compileJs", () => {
       const ast = [['`', '`var', '`a', 1]];
       const jsCode = $compile(ast, ci);
       const f = buildJs(jsCode, ci)
-      f().should.equal(1)      
+      f().should.equal(1)
     });
 
     it("should allow updating external refs", async () => {
@@ -248,8 +316,8 @@ describe("compileJs", () => {
 
   describe("compileSetr", () => {
     it("should work with strings, syms, refs, and exprs", async () => {
-      const ci = jsCompilerInfo([{b:2}], undefined, [{a:1, add}]);    
-      const r = compileSetr(['`', '`setr', '`a', 
+      const ci = jsCompilerInfo([{b:2}], undefined, [{a:1, add}]);
+      const r = compileSetr(['`', '`setr', '`a',
         "a", // string
         '`a', // sym
         '``b', // ref

@@ -164,26 +164,34 @@ describe("compileJs", () => {
       const ast = await $parseHost([], 'if false 0 else 1')
       const condAst = ast[0];
       const r = compileCond(condAst, ci);
-      // linesJoinedShouldEqual(r, `
-      //   (function(_){
-      //     if(false) return 0;
-      //     else if(true) return 1;
-      //     return _;
-      //   })(_)
-      // `)
       linesJoinedShouldEqual(r, `
         (function(_){
-          if(false) return (function(_){
-            _=0;
-            return _;
-          })(_);
-          else if(true) return (function(_){
-            _=1;
-            return _;
-          })(_);
+          if(false) return 0;
+          else if(true) return 1;
           return _;
         })(_)
-      `)
+      `)      
+    });
+
+    it("should compile cond bodies with multipule statments", async () => {
+      const ast = await $parseHost([], 'if false\n\tadd 1 1\n\t+ _ 2\nelse\n\tadd 2 2\n\t+ _ 3')
+      const condAst = ast[0];
+      const r = compileCond(condAst, ci);
+      linesJoinedShouldEqual(r, `
+      (function(_){
+        if(false) return (function(_){
+          _=add(1,1);
+          _=add(_,2);
+          return _;
+        })(_);
+        else if(true) return (function(_){
+          _=add(2,2);
+          _=add(_,3);
+          return _;
+        })(_);
+        return _;
+      })(_)
+      `)      
     });
   });
 

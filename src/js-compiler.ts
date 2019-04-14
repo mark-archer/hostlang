@@ -173,8 +173,12 @@ export function compileCond(ast: any, ci: ICompilerInfo) {
   const conds = skip(ast, 2);
   let code = "(function(_){\n";
   for (let cond of conds) {
-    cond = untick(cond);    
-    code += `if(${$compile(cond[0], ci)}) return ${$compile(skip(cond), ci)};\nelse `
+    cond = untick(cond);
+    if(cond.length == 2) { // expr
+      code += `if(${$compile(cond[0], ci)}) return ${$compile(cond[1], ci)};\nelse `;
+    } else { // block
+      code += `if(${$compile(cond[0], ci)}) return ${$compile(skip(cond), ci)};\nelse `;
+    }
   }
   code = code.substr(0, code.length - 5);
   code += "\nreturn _;"

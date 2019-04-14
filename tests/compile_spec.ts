@@ -3,14 +3,14 @@ import { add, list } from "../src/common";
 import * as common from "../src/common";
 import { compileExpr, compileDo, compileFn, compileHost, compileMacro, compileModule, compileSet, compileSym, defineVar } from "../src/compile";
 //import { $import } from "../src/import";
-import { parseHost } from "../src/host-parser";
+import { $parseHost } from "../src/host-parser";
 import { Fn, objectInfo } from "../src/typeInfo";
 import { cleanCopyList, stringify } from "../src/utils";
 
 const should = require("should");
 
 async function execHost(env: any, code: string) {
-  let ast = await parseHost([env], code);
+  let ast = await $parseHost([env], code);
   ast = cleanCopyList(ast);
   const r = compileHost(env, ast);
   return r.exec();  
@@ -121,7 +121,7 @@ describe("compile", () => {
     it("should maintain closures between multipule instances of a function", async () => {
       const exports: any = {};
       const env = { add, exports };
-      const ast = await parseHost([common], "n => () => n + 1");
+      const ast = await $parseHost([common], "n => () => n + 1");
       const c = compileHost(env, ast);
       const f = c.exec();
       const f1 = f(1);
@@ -135,7 +135,7 @@ describe("compile", () => {
     it("should use import and export references with closures correctly", async () => {
       const exports: any = {};
       const env = { add, exports, a: 1 };
-      const ast = await parseHost([], "n => () => n + a");
+      const ast = await $parseHost([], "n => () => n + a");
       const c = compileHost(env, ast);
       const f = c.exec();
       const f1 = f(1);
@@ -152,7 +152,7 @@ describe("compile", () => {
 
     it("should reference imported values as references", async () => {
       const env = { a: 1 };
-      const ast = await parseHost([], "() => a");
+      const ast = await $parseHost([], "() => a");
       const c = compileHost(env, ast);
       const f = c.exec();
       f().should.equal(1);
@@ -162,7 +162,7 @@ describe("compile", () => {
 
     it("should reference imported functions as references", async () => {
       const env = { a: 1, add };
-      const ast = await parseHost([], "() => a + 1");
+      const ast = await $parseHost([], "() => a + 1");
       const c = compileHost(env, ast);
       const f = c.exec();
       f().should.equal(2);
@@ -172,7 +172,7 @@ describe("compile", () => {
 
     it("should allow calling functions that have just been declared", async () => {
       const env = { a: 1, add };
-      const ast = await parseHost([], "add2 () => a + 1\n add2!");
+      const ast = await $parseHost([], "add2 () => a + 1\n add2!");
       const c = compileHost(env, ast);
       const f = c.exec();
       f.should.equal(2);
@@ -180,7 +180,7 @@ describe("compile", () => {
 
     it("should allow calling functions that have just been declared", async () => {
       const env = { a: 1, add };
-      const ast = await parseHost([], "add2 () => a + 1\n () => add2!");
+      const ast = await $parseHost([], "add2 () => a + 1\n () => add2!");
       const c = compileHost(env, ast);
       const f = c.exec();
       f().should.equal(2);
@@ -256,7 +256,7 @@ describe("compile", () => {
 
     it("should work with function declarations", async () => {
       const env = { add, a: 1 };
-      const ast = await parseHost([], "() => add a 1");
+      const ast = await $parseHost([], "() => add a 1");
       const r = compileHost(env, ast);
       const f = r.exec();
       f().should.equal(2);
@@ -293,21 +293,21 @@ describe("compile", () => {
   describe("compileVar", () => {
     it("should allow declaring variables with no value", async () => {
       const env = { };
-      const ast = await parseHost([], "var a");
+      const ast = await $parseHost([], "var a");
       const r = compileHost(env, ast);
       should(r.exec()).be.null();
     });
 
     it("should allow declaring variables with values", async () => {
       const env = { };
-      const ast = await parseHost([], "var a 1");
+      const ast = await $parseHost([], "var a 1");
       const r = compileHost(env, ast);
       r.exec().should.equal(1);
     });
 
     it("should allow declaring variables with expressions", async () => {
       const env = { add };
-      const ast = await parseHost([], "var a : add 1 1");
+      const ast = await $parseHost([], "var a : add 1 1");
       const r = compileHost(env, ast);
       r.exec().should.equal(2);
     });
@@ -316,14 +316,14 @@ describe("compile", () => {
   describe("compileSet", () => {
     it("should allow assigning values to variable names", async () => {
       const env = { add, a: 1 };
-      const ast = await parseHost([], "a = 2");
+      const ast = await $parseHost([], "a = 2");
       const r = compileHost(env, ast);
       r.exec().should.equal(2);
     });
 
     it("should allow assigning expression results to variable names", async () => {
       const env = { add, a: 1, b: 0 };
-      const ast = await parseHost([], "a =: add a 1\nb");
+      const ast = await $parseHost([], "a =: add a 1\nb");
       const r = compileHost(env, ast);
       r.exec().should.equal(0);
     });
@@ -338,35 +338,35 @@ describe("compile", () => {
   describe("compileCond", () => {
     it("should work with a single if statement", async () => {
       const env = { add, a: 1 };
-      const ast = await parseHost([], "if a : add a 1");
+      const ast = await $parseHost([], "if a : add a 1");
       const r = compileHost(env, ast);
       r.exec().should.equal(2);
     });
 
     it("should compile an if statements body as a block", async () => {
       const env = { add, a: 1 };
-      const ast = await parseHost([], "if a : add a 1, add _ 3");
+      const ast = await $parseHost([], "if a : add a 1, add _ 3");
       const r = compileHost(env, ast);
       r.exec().should.equal(5);
     });
 
     it("should work with if-else statement", async () => {
       const env = { add, a: 0 };
-      const ast = await parseHost([], "if a : add a 1\nelse 3");
+      const ast = await $parseHost([], "if a : add a 1\nelse 3");
       const r = compileHost(env, ast);
       r.exec().should.equal(3);
     });
 
     it("should transform `cond into if-else statments", async () => {
       const env = { add, a: 0, b: 2, c: 3 };
-      const ast = await parseHost([], "if a : add a 1\nelif (add b 1) b\nelse c");
+      const ast = await $parseHost([], "if a : add a 1\nelif (add b 1) b\nelse c");
       const r = compileHost(env, ast);
       r.exec().should.equal(2);
     });
 
     it("should transform `cond into if-else statments", async () => {
       const env = { add, a: 0, b: -1, c: 5 };
-      const ast = await parseHost([], "if a : add a 1\nelif (add b 1) b\nelse c");
+      const ast = await $parseHost([], "if a : add a 1\nelif (add b 1) b\nelse c");
       const r = compileHost(env, ast);
       r.exec().should.equal(5);
     });
@@ -375,14 +375,14 @@ describe("compile", () => {
   describe("compileExport", () => {
     it("should throw an error if exports object does not exist", async () => {
       const env = { };
-      const ast = await parseHost([], "export var a 1");
+      const ast = await $parseHost([], "export var a 1");
       should(() => compileHost(env, ast)).throw("no export object found: ` export var a 1");
     });
 
     it("should allow declaring variables that will be exported", async () => {
       const exports: any = {};
       const env = { add, exports };
-      const ast = await parseHost([], "export var a 1");
+      const ast = await $parseHost([], "export var a 1");
       const r = compileHost(env, ast);
       r.exec().should.equal(1);
       exports.a.should.equal(1);
@@ -391,7 +391,7 @@ describe("compile", () => {
     it("should allow declaring functions that will be exported", async () => {
       const exports: any = {};
       const env = { add, exports };
-      const ast = await parseHost([], "export add1 n => n + 1");
+      const ast = await $parseHost([], "export add1 n => n + 1");
       const r = compileHost(env, ast);
       const add1 = r.exec();
       add1(1).should.equal(2);
@@ -400,25 +400,25 @@ describe("compile", () => {
 
     it("should throw an error if export already exists", async () => {
       const env = { exports: {} };
-      const ast = await parseHost([], "export var a 1\nexport var a");
+      const ast = await $parseHost([], "export var a 1\nexport var a");
       should(() => compileHost(env, ast)).throw("export already exists: a");
     });
 
     it("should throw an error if trying to export a variable that already exists", async () => {
       const env = { exports: {} };
-      const ast = await parseHost([], "var a 1\nexport var a");
+      const ast = await $parseHost([], "var a 1\nexport var a");
       should(() => compileHost(env, ast)).throw("export cannot be declared because something with that name already exists: a");
     });
 
     it("should throw an error if trying to declare a variable that is already an export", async () => {
       const env = { exports: {} };
-      const ast = await parseHost([], "export var a\nvar a 1");
+      const ast = await $parseHost([], "export var a\nvar a 1");
       should(() => compileHost(env, ast)).throw("var already exists as an export: a");
     });
 
     it("should throw an error if not used with var or fn", async () => {
       const env = { exports: {} };
-      const ast = await parseHost([], "export a");
+      const ast = await $parseHost([], "export a");
       should(() => compileHost(env, ast)).throw("export called without `var or `fn");
     });
   });
@@ -428,7 +428,7 @@ describe("compile", () => {
     it("should allow a symbol to be returned without being evaluated", async () => {
       const exports: any = {};
       const env = { add, exports };
-      const ast = await parseHost([], "`a");
+      const ast = await $parseHost([], "`a");
       const r = compileHost(env, ast);
       r.exec().should.equal("`a");
     });
@@ -436,7 +436,7 @@ describe("compile", () => {
     it("should allow an expression to be returned without evaluated", async () => {
       const exports: any = {};
       const env = { add, exports };
-      const ast = await parseHost([], "` add a b");
+      const ast = await $parseHost([], "` add a b");
       const r = compileHost(env, ast);
       cleanCopyList(r.exec()).should.eql([ "`", "`add", "`a", "`b" ]);
     });

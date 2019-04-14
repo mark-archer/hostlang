@@ -1,11 +1,11 @@
 
-parser tabSize 100 (pi)
+export parser parseTabSize 100 (pi)
     var llist: last pi.clist
-    return!
+    ;return!
+    ;if (isExprOf llist `tabSize)
     if ((isExpr llist) && llist.1 == `tabSize)
         pi.clist.pop!
         pi.tabSize = (Number llist.2)
         true
     else
         false
-;exports.parseTabSize = parseTabSize 

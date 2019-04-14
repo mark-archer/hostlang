@@ -1,4 +1,7 @@
 import { hostRuntime, $import } from "../src/host-lang";
+import { expr } from "../src/meta/meta-common";
+import { cleanCopyList } from "../src/utils";
+import { parseInfo } from "../src/meta/meta-parser";
 
 const should = require('should');
 
@@ -80,7 +83,26 @@ describe("host-lang", () => {
   describe("hostParsers", () => {
     it("should load parsers from host_env", async () => {
       const rt = await hostRuntime();
-      //rt.parseTabSize.should.be.ok();
+      rt.parseTabSize.should.be.ok();
+      rt.parseTabSize.should.match({ IParser: true }) 
+      rt.parseTabSize.apply.should.be.type("function");     
+      rt.parsers.parseTabSize.should.equal(rt.parseTabSize)
+    });
+
+    describe("parseTabSize", () => {
+      it("should set tabSize at parseTime", async () => {
+        const rt = await hostRuntime();      
+        const pi = parseInfo([],'')
+        pi.newList();
+        pi.push(expr("tabSize", 2))
+        rt.parseTabSize.apply(pi);
+        pi.tabSize.should.equal(2);
+        let ast = await rt.parse(`tabSize 2\nadd\n  1\n  2`)
+        cleanCopyList(ast).should.eql([expr("add", 1, 2)])
+
+        ast = await rt.parse(`tabSize 4\nadd\n    1\n    2`)
+        cleanCopyList(ast).should.eql([expr("add", 1, 2)])
+      });
     });
   });
 

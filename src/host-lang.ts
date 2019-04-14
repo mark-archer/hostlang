@@ -1,6 +1,6 @@
 import { runtime, $get, Stack } from "./meta/meta-lang";
 import { readFile, readdirSync, lstatSync } from "fs";
-import { parseHost } from "./host-parser";
+import { $parseHost } from "./host-parser";
 import { $compile } from "./meta/meta-compiler";
 import { jsCompilerInfo, buildJs } from "./js-compiler";
 import { last } from "./common";
@@ -12,8 +12,8 @@ export async function hostRuntime(stack: any[] = []) {
   hostScope._ = hostRuntime._ === undefined ? null : hostRuntime._
   
   const stackFns = {
-    eval: $hostEval,
-    parse: parseHost,
+    eval: $evalHost,
+    parse: $parseHost,
     import: $import,
     shell: $shell
   }
@@ -27,7 +27,7 @@ export async function hostRuntime(stack: any[] = []) {
   return hostRuntime;  
 }
 
-export function $hostEval(stack, ast) {
+export function $evalHost(stack, ast) {
   //return $eval(stack, ast);
   const ci = jsCompilerInfo(stack);
   const jsCode = $compile(ast, ci);
@@ -36,7 +36,7 @@ export function $hostEval(stack, ast) {
   return r;
 }
 //@ts-ignore
-$hostEval.isMeta = true;
+$evalHost.isMeta = true;
 
 export async function loadHostEnv(stack, envScope:any) {  
   // this copies all exports directly into the env scope
@@ -67,14 +67,16 @@ export async function loadHostEnv(stack, envScope:any) {
 
 export async function $import(stack: any[], path: string, options?: any) {
   const _fetch = fetch;
-  const parse = parseHost;
+  const parse = $parseHost;
   
   const code = await _fetch(path, options);
+  const _module: any = { exports: {} };
+  const _moduleScope = { module: _module, exports: _module.exports };    
+  stack = [...stack, _moduleScope];
   const ast = await parse(stack, code, Object.assign({}, options, { sourceFile: path }));  
   const ci = jsCompilerInfo(stack, undefined, [{}]);
   const jsCode = $compile(ast, ci);
-  const _module: any = { exports: {} };
-  const moduleFn = buildJs(jsCode, ci, { module: _module, exports: _module.exports });
+  const moduleFn = buildJs(jsCode, ci, _moduleScope);
   moduleFn(); // module code needs to be run to generate exports
   return await _module.exports;
 }
@@ -92,7 +94,7 @@ export async function fetch(path: string, options: any = { encoding: 'utf-8' }):
 }
 
 export async function $shell(stack: Stack, cmd: string) {
-  const ast = await parseHost(stack, cmd);
+  const ast = await $parseHost(stack, cmd);
   const ci = jsCompilerInfo(stack);
   ci.stack.push(last(stack));
   const jsCode = $compile(ast, ci);
@@ -100,16 +102,6 @@ export async function $shell(stack: Stack, cmd: string) {
   const r = f();
   last(stack)._ = r;
   return r;
-
-  //return $hostEval(stack, ast);
-  
-  // const ast = await parseHost(stack, cmd);
-  // let r;
-  // for (const i of ast) {
-  //   r = $hostEval(stack, i);
-  //   $var(stack, "_", r);
-  // }
-  // return r;
 }
 // @ts-ignore
 $shell.isMeta = true;

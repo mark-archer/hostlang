@@ -52,6 +52,6 @@ export function unquote(x: any) {
   return x;
 }
 
-export function isExprOf(x: any, f: any) {  
-  return isExpr(x) && untick(x[1]) == untick(f);
+export function isExprOf(ast: any, f: any, f_sub?: any) {  
+  return isExpr(ast) && untick(ast[1]) == untick(f) && (f_sub === undefined || untick(ast[2]) == untick(f_sub));
 }

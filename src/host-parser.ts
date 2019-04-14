@@ -1,11 +1,12 @@
 import { range, isNumber, last } from "lodash";
 import { js } from "./utils";
 import { IParseInfoOptions, IParseInfo, parser, $parse, parserParser, getParsers } from "./meta/meta-parser";
-import { tick, untick, isSym, sym, isExpr } from "./meta/meta-common";
+import { tick, untick, isSym, sym, isExpr, isExprOf } from "./meta/meta-common";
 import { nvp, isList } from "./common";
 import { meta, IParamInfo } from "./typeInfo";
+import { $get } from "./meta/meta-lang";
 
-export async function parseHost(stack: any[], code: string, options: IParseInfoOptions = {}): Promise<any> {
+export async function $parseHost(stack: any[], code: string, options: IParseInfoOptions = {}): Promise<any> {
   //const $import = nameLookup(stack, "common")
   // if($import) commonLib = await $import("common")
   
@@ -24,7 +25,7 @@ export async function parseHost(stack: any[], code: string, options: IParseInfoO
     parseNumbers, parseComments, parseNvp,
     parseDots, parsePipes, parseIfElifElse, parseSet,
     parseBasicOps, parseNew, parseTryCatch, parseFnArrow, parseSpread,
-    parseTabSize,
+    //parseTabSize,
     init    
   }
   const parserNames = Object.keys(parseCtx);
@@ -37,16 +38,26 @@ export async function parseHost(stack: any[], code: string, options: IParseInfoO
   return ast;
 }
 // @ts-ignore
-parseHost.isMeta = true;
+$parseHost.isMeta = true;
 
 function hostParserParser(pi: IParseInfo){
   const stack = pi.runtimeStack;
   let llist: any = last(pi.clist);
+  let exportParser = false;
+  let parserName = "";
+  if (isExprOf(llist, "export", "parser")) {
+    exportParser = true;
+    llist.splice(1,1);
+    parserName = untick(llist[2]);
+    parserName
+  }    
   if (isExpr(llist) && llist[1] === "`parser") {
-    //pi.clist.pop(); // remove from ast
     parserCleanup(pi);
     parserParser.apply(pi);
-  }
+    if (exportParser) {
+      $get(pi.runtimeStack, "exports")[parserName] = $get(pi.runtimeStack, parserName)
+    }
+  }  
   return false;
 
 }
@@ -778,11 +789,11 @@ function parseSpread(pi: IParseInfo) {
   */
 }
 
-function parseTabSize(pi: IParseInfo) {
-  const llist: any = last(pi.clist);
-  if (isExpr(llist) && llist[1] === "`tabSize") {
-    pi.clist.pop();
-    pi.tabSize = Number(llist[2]); // MAYBE: this should be an expression evaluated
-    return true;
-  }
-}
+// function parseTabSize(pi: IParseInfo) {
+//   const llist: any = last(pi.clist);
+//   if (isExpr(llist) && llist[1] === "`tabSize") {
+//     pi.clist.pop();
+//     pi.tabSize = Number(llist[2]);
+//     return true;
+//   }
+// }

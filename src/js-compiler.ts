@@ -4,7 +4,6 @@ import { skip, sym, isString, keys, last, tick } from "./common";
 import { Fn, makeFn, isFn } from "./typeInfo";
 import { $exists, $get, $var } from "./meta/meta-lang";
 import { isObject } from "util";
-import { getRef } from "./compile";
 
 export function jsCompilerInfo(stack=[], refs=[], compilerStack=[]) {
   const ci = compilerInfo(stack, refs, compilerStack);
@@ -89,7 +88,7 @@ export function compileSym(ast: any, ci: ICompilerInfo) {
   if (isSym(ast)) return `"${ast}"`;
   let name = ast;
   // special names
-  if (['_', 'return'].includes(name)) return name;
+  if (['_', 'return', 'Number'].includes(name)) return name;
   if ($exists(ci.compilerStack, name)) return name;
   for (let i = ci.stack.length - 1; i >= 0; i--) {
     const scope = ci.stack[i];
@@ -174,8 +173,8 @@ export function compileCond(ast: any, ci: ICompilerInfo) {
   const conds = skip(ast, 2);
   let code = "(function(_){\n";
   for (let cond of conds) {
-    cond = untick(cond);
-    code += `if(${$compile(cond[0], ci)}) return ${$compile(cond[1], ci)};\nelse `
+    cond = untick(cond);    
+    code += `if(${$compile(cond[0], ci)}) return ${$compile(skip(cond), ci)};\nelse `
   }
   code = code.substr(0, code.length - 5);
   code += "\nreturn _;"

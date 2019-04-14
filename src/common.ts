@@ -27,6 +27,10 @@ export function isExpr(x: any) {
   return isList(x) && x[0] === "`";
 }
 
+export function isExprOf(ast: any, f: any, f_sub?: any) {  
+  return isExpr(ast) && untick(ast[1]) == untick(f) && (f_sub === undefined || untick(ast[2]) == untick(f_sub));
+}
+
 export function isHostCode(x: any) {
   return x && (isSym(x) || isExpr(x));
 }

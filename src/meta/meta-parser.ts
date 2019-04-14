@@ -1,5 +1,5 @@
 import { flatten, sortBy, last } from 'lodash';
-import { isExpr, untick, tick, isList } from './meta-common';
+import { isExpr, untick, tick, isList, isExprOf } from './meta-common';
 import { $get, $apply, $fn, $eval } from './meta-lang';
 
 export function isParser(x:any) {
@@ -83,7 +83,7 @@ export const parserParser: IParser = {
   apply: async (pi: IParseInfo) => {
     const stack = pi.runtimeStack;
     let llist: any = last(pi.clist);
-    if (isExpr(llist) && llist[1] === "`parser") {
+    if (isExprOf(llist, "parser")) {
       pi.clist.pop(); // remove from ast
       llist.splice(0, 2) // remove tick and parser sym
       const name = untick(llist.shift());
@@ -127,7 +127,7 @@ const parsetimeEval: IParser = {
   apply: async (pi: IParseInfo) => {
     const stack = pi.runtimeStack;
     let llist: any = last(pi.clist);
-    if (isExpr(llist) && llist[1] === "`%") {
+    if (isExpr(llist) && llist[1] === "`%") {      
       pi.clist.pop(); // remove from ast
       llist.splice(1,1) // remove percentSym: (% log 1) => (log 1)
       await $eval(stack, llist); // if this doesn't modify the stack or do IO it's a no-op
@@ -173,8 +173,6 @@ export async function $parse(stack: any[], code:string, options?: IParseInfoOpti
       // try compilers one at a time until a match is found
       let matched = false;
       for(let parser of pi.parsers) {
-        // const _apply = $get(stack, "apply") || $apply;
-        // matched = await _apply(stack, parser, [pi]);
         matched = await $apply(stack, parser, [pi]);
         if (matched) break;
       }

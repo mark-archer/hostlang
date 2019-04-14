@@ -3,7 +3,7 @@ import * as fsPath from "path";
 import * as common from "./common";
 import * as compile from "./compile";
 import { compileHost, compileModule } from "./compile";
-import { parseHost } from "./host-parser";
+import { $parseHost } from "./host-parser";
 import { cleanCopyList } from "./utils";
 
 const moduleCache: any = {};
@@ -51,7 +51,7 @@ export async function $import_old(path: string, options: any= {type: null}) {
   const stack = [{import: $import_old, exports}];
   let ast: any;
   try {
-    ast = await parseHost(stack, code);
+    ast = await $parseHost(stack, code);
   } catch (err) {
     throw new Error(`import - failed to parse ${path}:\n${err}`);    
   }

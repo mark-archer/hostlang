@@ -27,34 +27,19 @@ export function runtime(stack: Stack = []): Runtime {
   $newScope(stack, runtimeScope);  
   // import common functions
   Object.assign(runtimeScope, common)
-  // copy stack based functions
   const stackFns = {
     get: $get,
     newScope: $newScope,
     exitScope: $exitScope,
     exists: $exists, 
-    // fn: $fn,
     var: $var,
     set: $set,
     apply: $apply,
     parse: $parse,
     eval: $eval,
-    // do: $doBlock,
-    // getr: $getr,
-    // setr: $setr,
-    // cond: $cond,
-    // AND: $AND,
   };
-  // Object.keys(stackFns).forEach(name => {
-  //   runtimeScope[name] = stackFns[name]
-  //   // runtimeScope[name] = (...args) => stackFns[name](stack, ...args)
-  //   // if (stackFns[name].isMacro) runtimeScope[name].isMacro = true;
-  //   // if (stackFns[name].isMeta) runtimeScope[name].isMeta = true;
-  // });  
   Object.assign(runtimeScope, stackFns);
 
-  // @ts-ignore
-  //return runtimeScope; // should be able to do everything you need with functions on stack
   // @ts-ignore
   return new Proxy({},{ get(target,name:any) {
     if (name === "stack") return stack;
@@ -65,92 +50,6 @@ export function runtime(stack: Stack = []): Runtime {
     return r;
   }})
 }
-
-// export function $AND(stack: Stack, ...ands) {
-//   let result = $get(stack, "_");
-//   for (const and of ands) {
-//     result = $eval(stack, and);
-//     if(!result) return result;
-//   }
-//   return result;
-// }
-// // @ts-ignore
-// $AND.isMeta = true;
-
-// export function $cond(stack: Stack, ...conds) {
-//   for (const cond of conds) {
-//     let check = cond[0];
-//     check = $eval(stack, check);
-//     if (check) {
-//       let body = ['`', ...skip(cond,2)];
-//       return $doBlock(stack, body)
-//     } 
-//   }
-//   return $get(stack, "_");
-// }
-// // @ts-ignore
-// $cond.isMeta = true;
-
-// export function $getr(stack: Stack, ...path) {
-//   path.reverse()
-//   let item = $eval(stack, path.pop());
-//   while(path.length) {
-//     let pname = untick(path.pop())
-//     pname = $eval(stack, pname);
-//     if (!isNaN(Number(pname))) {
-//       pname = Number(pname)
-//       if (pname < 0 && isList(item)) {
-//         pname = item.length + pname;
-//       }
-//     }
-//     item = item[pname];
-//   }
-//   return item;
-// }
-// // @ts-ignore
-// $getr.isMeta = true;
-
-// export function $setr(stack: Stack, ...path) {
-//   const setValue = $eval(stack, path.pop());
-//   path.reverse();
-//   const root = $eval(stack, path.pop())
-//   let parent = root;
-//   let item = root;
-//   let pname;
-//   while(path.length) {
-//     parent = item;
-//     pname = untick(path.pop())
-//     pname = $eval(stack, pname);
-//     if (!isNaN(Number(pname))) {
-//       pname = Number(pname)
-//       if (pname < 0 && isList(item)) {
-//         pname = item.length + pname;
-//       }
-//     }
-//     item = item[pname];
-//   }  
-//   parent[pname] = setValue;
-//   return root;
-// }
-// // @ts-ignore
-// $setr.isMeta = true;
-
-// export const doEarlyExit = Symbol('doEarlyExit');
-// export function $doBlock(stack: Stack, ast: any[]) {
-//   if (!isList(ast)) ast = [ast];
-//   for (const i of ast) {
-//     if(last(stack).isParseTabSize) {
-//       stack
-//       i
-//     }        
-//     const r = $eval(stack, i);
-//     last(stack)._ = r;
-//     if ($get(stack, 'doEarlyExit') === doEarlyExit) break; // allows for control flow (e.g. return, break, etc)
-//   }  
-//   return $get(stack, '_');
-// }
-// // @ts-ignore
-// $doBlock.isMeta = true;
 
 export function $eval(stack: Stack, ast) {
   const _eval = $get(stack, "eval");
@@ -190,21 +89,6 @@ export function $eval(stack: Stack, ast) {
 // @ts-ignore
 $eval.isMeta = true;
 
-// function applyMetaFn(f, args:any[]) {
-//   const _f:Fn = f;
-//   const fnStack = [...(_f.closure || [])];
-//   const fnAst = _.cloneDeep(_f.body);  
-//   const fnScope = $newScope(fnStack);
-//   const argMap = _.zipObject(_f.params.map(p => p.name), args);
-//   Object.assign(fnScope, argMap);
-//   fnScope.return = _ => {
-//     fnScope.doEarlyExit = doEarlyExit;
-//     return _;
-//   }
-//   const r = $doBlock(fnStack, fnAst);
-//   return r
-// }
-
 export function $apply(stack: Stack, f, args:any[]) {
   const _apply = $get(stack, "apply");
   if (_apply && _apply !== $apply) return _apply(stack, f, args);
@@ -218,24 +102,6 @@ export function $apply(stack: Stack, f, args:any[]) {
   else if (isFunction(f && f.apply)) {
     result = f.apply(...args);
   }
-  // // host fn apply
-  // else if (isFn(f)) {
-  //   result = applyHost(f, args);    
-  // }
-  // // host fn.apply apply
-  // else if (isFn(f && f.apply)) {
-  //   result = applyHost(f.apply, args);
-  // }
-  // // meta fn apply
-  // else if (isFn(f)) {
-  //   const _f = $eval(stack, f);
-  //   result = $apply(stack, _f, args);    
-  // }
-  // // host fn.apply apply
-  // else if (isFn(f && f.apply)) {
-  //   const _f = $eval(stack, f.apply);
-  //   result = $apply(stack, _f, args);
-  // }
   else {
     throw new Error(`unknown apply ${stringify({ f, args, }, 2)}`)
   }  

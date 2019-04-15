@@ -12,13 +12,12 @@ export async function hostRuntime(stack: any[] = []) {
   hostScope._ = hostRuntime._ === undefined ? null : hostRuntime._
   
   const stackFns = {
+    compile: $compile,
     eval: $evalHost,
     parse: $parseHost,
     import: $import,
     shell: $shell
   }
-  // Object.keys(stackFns)
-  //   .forEach(name => hostScope[name] = (...args) => stackFns[name](stack, ...args));
   Object.assign(hostScope, stackFns);
 
   hostScope.fetch = fetch;

@@ -1,9 +1,9 @@
 import { range, isNumber, last } from "lodash";
 import { js } from "./utils";
-import { IParseInfoOptions, IParseInfo, parser, $parse, parserParser, getParsers } from "./meta/meta-parser";
+import { IParseInfoOptions, IParseInfo, parser, $parse, parserParser } from "./meta/meta-parser";
 import { tick, untick, isSym, sym, isExpr, isExprOf } from "./meta/meta-common";
 import { nvp, isList } from "./common";
-import { meta, IParamInfo } from "./typeInfo";
+import { meta } from "./typeInfo";
 import { $get } from "./meta/meta-lang";
 
 export async function $parseHost(stack: any[], code: string, options: IParseInfoOptions = {}): Promise<any> {
@@ -53,9 +53,10 @@ function hostParserParser(pi: IParseInfo){
   if (isExpr(llist) && llist[1] === "`parser") {
     parserCleanup(pi);
     parserParser.apply(pi);
-    if (exportParser) {
-      $get(pi.runtimeStack, "exports")[parserName] = $get(pi.runtimeStack, parserName)
-      console.log($get(pi.runtimeStack, "exports")[parserName].apply.toString());
+    const _exports = $get(pi.runtimeStack, "exports");
+    if (exportParser && _exports) {
+      _exports[parserName] = $get(pi.runtimeStack, parserName)
+      //console.log($get(pi.runtimeStack, "exports")[parserName].apply.toString());
     }
 
   }  

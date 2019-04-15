@@ -1,0 +1,10 @@
+
+export compiler compileAdd 100 (ast ci)
+    if (isExprOf ast `add)
+        ast >> skip 2
+        ;*
+        >> map: compile i ci
+        >> reduce: add m "+" i
+        *;
+        _.map: i => compile i ci
+        _.join "+"

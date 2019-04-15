@@ -13,7 +13,7 @@ describe("meta-compiler", () => {
       if (ast === '*') return 'multiply';
     }
     const r = $compile(['`', '`compiler', 'compileStar', 10, ['`ast'], [['`'], applyFn, '`ast']], ci)
-    r.should.equal('');
+    r.should.equal('_');
     ci.stack[0].compileStar.should.be.ok();
     const r2 = $compile('*', ci);
     r2.should.equal('multiply');    

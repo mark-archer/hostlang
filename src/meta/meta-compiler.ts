@@ -1,14 +1,9 @@
 import { flatten, sortBy, last } from 'lodash';
-import { isExpr, sym, untick } from './meta-common';
+import { untick, isExprOf } from './meta-common';
 import { stringify } from '../utils';
 import { isString } from 'util';
-import { $eval, $apply, $get } from './meta-lang';
+import { $eval, $apply, $get, $set } from './meta-lang';
 import { skip } from '../common';
-//export function 
-
-// ast -> machine code
-
-// js == machine code -> fn
 
 export function isCompiler(x: any) {
   return x && x.ICompiler
@@ -33,13 +28,24 @@ export function compiler(name:string, apply: CompilerApplyFn, priority: number =
 }
 
 const compilerCompiler: ICompiler = compiler("compilerCompiler", (ast: any, ci: ICompilerInfo) => {
-  if (!(isExpr(ast) && ast[1] === sym("compiler"))) return;
-  const name = $eval(ci.stack, untick(ast[2]));
-  const priority = $eval(ci.stack, ast[3]);
-  const apply = $eval(ci.stack, ['`', '`fn', ...skip(ast, 4)]);
-  last(ci.stack)[name] = compiler(name, apply, priority);
-  return ""
-})
+  let exportCompiler = false;
+  if (isExprOf(ast, "export", "compiler")) {
+    exportCompiler = true;
+    ast = ['`', ...skip(ast, 2)]    
+  }
+  if (isExprOf(ast, "compiler")) {
+    const name = $eval(ci.stack, untick(ast[2]));
+    const priority = $eval(ci.stack, ast[3]);
+    const apply = $eval(ci.stack, ['`', '`fn', ...skip(ast, 4)]);
+    const _compiler = compiler(name, apply, priority);    
+    last(ci.stack)[name] = _compiler;
+    if (exportCompiler) {
+      $get(ci.stack, "exports")[name] = _compiler;
+    }
+    //$set(ci.stack, "_", _compiler);
+    return "_"
+  }
+}, 1)
 
 export function getCompilers(stack: any[]): ICompiler[] {
   let compilers = flatten(stack.map(scope => (<any>Object).values(scope).filter(isCompiler)));

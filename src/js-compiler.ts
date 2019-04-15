@@ -3,7 +3,7 @@ import { untick, isSym, unquote, isExpr, isList, isExprOf } from "./meta/meta-co
 import { skip, sym, isString, keys, last, tick, clone, cloneDeep } from "./common";
 import { Fn, makeFn, isFn } from "./typeInfo";
 import { $exists, $get, $var } from "./meta/meta-lang";
-import { isObject } from "util";
+import { isObject, isNumber } from "util";
 
 export function jsCompilerInfo(stack=[], refs=[], compilerStack=[]) {
   const ci = compilerInfo(stack, refs, compilerStack);
@@ -239,6 +239,9 @@ export function compileGetr(ast: any, ci) {
   ast.forEach(i => {
     if (isSym(i)) i = untick(i);
     i = $compile(i, ci);
+    if (Number(i) && Number(i) < 0) {
+      i = `${code}.length${i}`
+    }
     code += `[${i}]`
   })
   return code;
@@ -252,6 +255,9 @@ export function compileSetr(ast: any, ci) {
   ast.forEach(i => {
     if (isSym(i)) i = untick(i);
     i = $compile(i, ci);
+    if (Number(i) && Number(i) < 0) {
+      i = `${code}.length${i}`
+    }
     code += `[${i}]`
   })
   code += `=${value}`

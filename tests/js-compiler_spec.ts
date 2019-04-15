@@ -5,6 +5,7 @@ import { js } from "../src/utils";
 import { makeFn } from "../src/typeInfo";
 import { $compile } from "../src/meta/meta-compiler";
 import { $parse } from "../src/meta/meta-parser";
+import { hostRuntime } from "../src/host-lang";
 
 const should = require('should');
 
@@ -314,6 +315,22 @@ describe("compileJs", () => {
     });
   });
 
+  describe("compileGetr", () => {
+    it("should allow negative accessors", async () => {
+      const rt = await hostRuntime();
+      const ast = await rt.parse(`a.clist.-1\na.clist.-1.-2`)
+      const ci = jsCompilerInfo(rt.stack, undefined, [{a:1}]);
+      const jsCode = $compile(ast, ci);
+      linesJoinedShouldEqual(jsCode, `
+        (function(_){
+          _=a["clist"][a["clist"].length-1];
+          _=a["clist"][a["clist"].length-1][a["clist"][a["clist"].length-1].length-2];
+          return _;
+        })(_)
+      `)
+    });
+  });
+
   describe("compileSetr", () => {
     it("should work with strings, syms, refs, and exprs", async () => {
       const ci = jsCompilerInfo([{b:2}], undefined, [{a:1, add}]);
@@ -325,6 +342,20 @@ describe("compileJs", () => {
         ['`', '`add', 'a', 'b'], // value
       ], ci)
       r.should.equal('a["a"]["a"][__ref0.b][add("a","b")]=add("a","b")')
+    });
+
+    it("should allow negative accessors", async () => {
+      const rt = await hostRuntime();
+      const ast = await rt.parse(`b = a.clist.-1\nb = a.clist.-1.-2`)
+      const ci = jsCompilerInfo(rt.stack, undefined, [{a:1,b:2}]);
+      const jsCode = $compile(ast, ci);
+      linesJoinedShouldEqual(jsCode, `
+        (function(_){
+          _=b=a["clist"][a["clist"].length-1];
+          _=b=a["clist"][a["clist"].length-1][a["clist"][a["clist"].length-1].length-2];
+          return _;
+        })(_)
+      `)
     });
   });
 
